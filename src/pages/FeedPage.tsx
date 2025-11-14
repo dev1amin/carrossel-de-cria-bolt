@@ -252,11 +252,11 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               className="pointer-events-none absolute inset-0 opacity-60"
               style={{
                 backgroundImage: `
-                  linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
+                  linear-gradient(rgba(122,95,255,0.5) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(122,95,255,0.5) 1px, transparent 1px)
                 `,
                 backgroundSize: "50px 50px",
-                height: "50vh", // A altura foi ajustada para ocupar até metade do primeiro carrossel
+                height: "100vh",
               }}
             />
 
@@ -271,7 +271,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             {/* Conteúdo normal */}
             <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[4.5rem] space-y-6">
               <div className="text-center">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3" style={{ fontFamily: '"Shadows Into Light", cursive' }}>
                   Bem vindo de volta {userName}!
                 </h1>
                 <p className="text-lg md:text-xl text-gray-dark">
@@ -286,12 +286,14 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
           {/* Feed logo em seguida */}
           <section className="max-w-6xl mx-auto px-8 -mt-[6.5rem]">
-            <Feed
-              posts={posts}
-              searchTerm=""
-              activeSort={activeSort}
-              onGenerateCarousel={handleGenerateCarousel}
-            />
+            <div className="bg-white rounded-3xl shadow-lg p-8">
+              <Feed
+                posts={posts}
+                searchTerm=""
+                activeSort={activeSort}
+                onGenerateCarousel={handleGenerateCarousel}
+              />
+            </div>
           </section>
         </main>
       </div>
