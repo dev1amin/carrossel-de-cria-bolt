@@ -237,34 +237,24 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
           <section className="relative pb-20 md:pb-24">
 
-            {/* Bola de luz agora com animação de cima para baixo */}
+            {/* Fundo roxo de cima para baixo */}
             <div
-              className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
+              className="absolute top-0 left-0 right-0 w-full h-[60vh] pointer-events-none"
               style={{
-                background: "radial-gradient(circle, rgba(59,130,246,0.3) 0%, rgba(59,130,246,0.2) 50%, rgba(255,255,255,0) 100%)",
-                filter: "blur(70px)",
-                animation: "glowDown 3s ease-in-out infinite",
+                background: "linear-gradient(to bottom, rgba(122,95,255,0.4) 0%, rgba(122,95,255,0.2) 40%, rgba(255,255,255,0) 100%)",
               }}
             />
 
-            {/* Quadrados mais visíveis e ocupando mais altura (até metade do carrossel) */}
+            {/* Quadrados azuis ocupando toda a tela */}
             <div
               className="pointer-events-none absolute inset-0 opacity-60"
               style={{
                 backgroundImage: `
-                  linear-gradient(rgba(122,95,255,0.5) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(122,95,255,0.5) 1px, transparent 1px)
+                  linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
                 `,
                 backgroundSize: "50px 50px",
                 height: "100vh",
-              }}
-            />
-
-            {/* Fade azul para branco no final */}
-            <div
-              className="absolute inset-0 bottom-0 pointer-events-none"
-              style={{
-                background: "linear-gradient(to bottom, rgba(249,250,251,0) 30%, rgba(249,250,251,0.95) 100%)"
               }}
             />
 
