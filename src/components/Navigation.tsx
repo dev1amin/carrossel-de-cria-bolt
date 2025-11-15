@@ -8,16 +8,17 @@ import {
   User,
   Ghost,
   Wrench,
+  Home,
 } from 'lucide-react';
 
 interface NavigationProps {
-  currentPage?: 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools';
-  onPageChange?: (page: 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools') => void;
+  currentPage?: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools';
+  onPageChange?: (page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools') => void;
   unviewedCount?: number;
 }
 
 type MenuItem =
-  | { id: string; label: string; icon: React.ComponentType<any>; page: 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' }
+  | { id: string; label: string; icon: React.ComponentType<any>; page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' }
   | { id: string; label: string; icon: React.ComponentType<any>; onClick: () => void };
 
 const Navigation: React.FC<NavigationProps> = ({
@@ -44,13 +45,16 @@ const Navigation: React.FC<NavigationProps> = ({
   const userName = getUserName();
 
   const handlePageChange = (
-    page: 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools',
+    page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools',
   ) => {
     onPageChange?.(page);
 
     switch (page) {
+      case 'home':
+        navigate('/home');
+        break;
       case 'feed':
-        navigate('/');
+        navigate('/feed');
         break;
       case 'gallery':
         navigate('/gallery');
@@ -71,6 +75,7 @@ const Navigation: React.FC<NavigationProps> = ({
   };
 
   const menuItems: MenuItem[] = [
+    { id: 'home', label: 'Início', icon: Home, page: 'home' },
     { id: 'feed', label: 'Feed', icon: Grid, page: 'feed' },
     { id: 'news', label: 'Notícias', icon: Newspaper, page: 'news' },
     {

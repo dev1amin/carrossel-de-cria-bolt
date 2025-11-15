@@ -6,6 +6,7 @@ import { GenerationQueueProvider, useGenerationQueue } from './contexts/Generati
 import { GenerationQueue } from './carousel';
 import type { GenerationQueueItem } from './carousel';
 import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
 import FeedPage from './pages/FeedPage';
 import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
@@ -98,10 +99,11 @@ function AppContent() {
         <Route path="/setup-business" element={<CreateBusinessPage />} />
 
         {/* Rota Raiz */}
-        <Route path="/" element={<Navigate to="/feed" replace />} />
+        <Route path="/" element={<Navigate to="/home" replace />} />
 
         {/* Rotas Protegidas */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<HomePage />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/news" element={<NewsPage />} />
