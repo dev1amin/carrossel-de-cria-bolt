@@ -258,17 +258,19 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="pointer-events-none absolute inset-0 opacity-60"
+              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "35vh",
+                height: "280px",
               }}
             />
 
             <div
-              className="absolute bottom-0 left-0 right-0 pointer-events-none h-24"
+              className="absolute left-0 right-0 pointer-events-none"
               style={{
+                top: "280px",
+                height: "100px",
                 background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
               }}
             />

@@ -7,7 +7,7 @@ import {
   ChevronRight,
   User,
   Ghost,
-  Wrench,
+  Plus,
   Home,
 } from 'lucide-react';
 
@@ -77,13 +77,13 @@ const Navigation: React.FC<NavigationProps> = ({
   const menuItems: MenuItem[] = [
     { id: 'home', label: 'Início', icon: Home, page: 'home' },
     { id: 'feed', label: 'Feed', icon: Grid, page: 'feed' },
-    { id: 'news', label: 'Notícias', icon: Newspaper, page: 'news' },
     {
       id: 'tools',
       label: 'Ferramentas',
-      icon: Wrench,
+      icon: Plus,
       onClick: () => navigate('/create-carousel'),
     },
+    { id: 'news', label: 'Notícias', icon: Newspaper, page: 'news' },
     { id: 'gallery', label: 'Galeria', icon: Image, page: 'gallery' },
   ];
 
