@@ -177,7 +177,7 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
             </button>
             <button
               onClick={handleOpenModal}
-              className="flex-1 bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium shadow-glow hover:shadow-xl"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium shadow-glow hover:shadow-xl"
             >
               <Sparkles className="w-4 h-4" />
               <span>Gerar</span>
