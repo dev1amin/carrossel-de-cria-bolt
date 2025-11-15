@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Edit, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
-import { deleteGeneratedContent } from '../services/generatedContent';
+import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import type { CarouselTab } from '../carousel';
+import type { GeneratedContent } from '../types/generatedContent';
+import type { CarouselData } from '../carousel';
+import { templateService } from '../services/carousel/template.service';
+import { templateRenderer } from '../services/carousel/templateRenderer.service';
 
 interface GalleryCarousel {
   id: string;
@@ -14,7 +18,7 @@ interface GalleryCarousel {
   templateName: string;
   createdAt: number;
   slides: string[];
-  carouselData: any;
+  carouselData: CarouselData;
   viewed?: boolean;
   generatedContentId?: number;
 }
@@ -22,8 +26,7 @@ interface GalleryCarousel {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [carousels, setCarousels] = useState<GalleryCarousel[]>([]);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { addEditorTab, setShouldShowEditor } = useEditorTabs();
 
   const getUserName = (): string => {
@@ -41,46 +44,225 @@ const HomePage: React.FC = () => {
 
   const userName = getUserName();
 
-  useEffect(() => {
-    const loadGallery = () => {
-      try {
-        const stored = localStorage.getItem('gallery');
-        if (stored) {
-          const items = JSON.parse(stored);
-          setCarousels(items);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar galeria:', error);
-      }
-    };
+  const renderSlidesWithTemplate = async (
+    conteudos: any[],
+    dados_gerais: any,
+    templateId: string
+  ): Promise<string[]> => {
+    try {
+      console.log(`🎨 Renderizando com template "${templateId}" para preview na home`);
 
-    loadGallery();
+      const templateSlides = await templateService.fetchTemplate(templateId);
 
-    const handleGalleryUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      setCarousels(customEvent.detail || []);
-    };
+      console.log(`✅ Template "${templateId}" carregado: ${templateSlides.length} slides`);
 
-    window.addEventListener('gallery:updated', handleGalleryUpdate);
-    return () => window.removeEventListener('gallery:updated', handleGalleryUpdate);
-  }, []);
+      const carouselData: CarouselData = {
+        conteudos: conteudos,
+        dados_gerais: dados_gerais,
+      };
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePosition({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      }
-    };
+      const renderedSlides = templateRenderer.renderAllSlides(templateSlides, carouselData);
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      return () => container.removeEventListener('mousemove', handleMouseMove);
+      console.log(`✅ ${renderedSlides.length} slides renderizados para preview`);
+
+      return renderedSlides;
+    } catch (error) {
+      console.error(`❌ Erro ao renderizar template "${templateId}":`, error);
+
+      return conteudos.map((slideData: any, index: number) =>
+        convertSlideToHTML(slideData, index)
+      );
     }
+  };
+
+  const convertSlideToHTML = (slideData: any, index: number): string => {
+    const { title = '', subtitle = '', imagem_fundo = '', thumbnail_url = '' } = slideData;
+
+    const isVideo = imagem_fundo?.includes('.mp4');
+    const backgroundTag = isVideo
+      ? `<video autoplay loop muted playsinline class="slide-background" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;"><source src="${imagem_fundo}" type="video/mp4"></video>`
+      : `<img src="${imagem_fundo}" alt="Background" class="slide-background" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" />`;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1080, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1080px;
+      height: 1350px;
+      overflow: hidden;
+      position: relative;
+      background: #000;
+    }
+    .slide-background { z-index: 0; }
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+      z-index: 1;
+    }
+    .content {
+      position: absolute;
+      bottom: 80px;
+      left: 60px;
+      right: 60px;
+      z-index: 2;
+      color: white;
+    }
+    .title {
+      font-size: 48px;
+      font-weight: bold;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    }
+    .subtitle {
+      font-size: 28px;
+      line-height: 1.4;
+      opacity: 0.9;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    }
+    .thumbnail {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      width: 120px;
+      height: 120px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid rgba(255,255,255,0.2);
+      z-index: 2;
+    }
+    .thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  ${backgroundTag}
+  <div class="overlay"></div>
+  ${thumbnail_url ? `<div class="thumbnail"><img src="${thumbnail_url}" alt="Thumbnail" /></div>` : ''}
+  <div class="content">
+    ${title ? `<div class="title">${title}</div>` : ''}
+    ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
+  </div>
+</body>
+</html>
+    `.trim();
+  };
+
+  const convertAPIToGalleryCarousel = async (apiContent: GeneratedContent): Promise<GalleryCarousel | null> => {
+    try {
+      const result = apiContent.result;
+
+      console.log('📦 Convertendo conteúdo da API (HomePage):', {
+        id: apiContent.id,
+        media_type: apiContent.media_type,
+        provider_type: apiContent.provider_type,
+        result_keys: result ? Object.keys(result) : []
+      });
+
+      if (!result) {
+        console.warn('⚠️ API content missing result:', apiContent);
+        return null;
+      }
+
+      let slides: string[] = [];
+      let carouselData: any = {};
+
+      if (result.conteudos && Array.isArray(result.conteudos)) {
+        console.log(`✅ Encontrados ${result.conteudos.length} slides no formato 'conteudos'`);
+
+        const templateId = result.dados_gerais?.template || '2';
+        console.log(`🎨 Template detectado: "${templateId}"`);
+
+        slides = await renderSlidesWithTemplate(
+          result.conteudos,
+          result.dados_gerais || {},
+          templateId
+        );
+
+        carouselData = {
+          conteudos: result.conteudos,
+          dados_gerais: result.dados_gerais || {},
+          styles: result.styles || {},
+        };
+      }
+      else if (result.slides && Array.isArray(result.slides)) {
+        console.log(`✅ Encontrados ${result.slides.length} slides no formato antigo`);
+        slides = result.slides;
+        carouselData = result.metadata || result;
+      }
+      else {
+        console.warn('⚠️ Formato desconhecido de resultado:', result);
+        return null;
+      }
+
+      if (slides.length === 0) {
+        console.warn('⚠️ Nenhum slide encontrado');
+        return null;
+      }
+
+      const carousel: GalleryCarousel = {
+        id: `api-${apiContent.id}`,
+        postCode: apiContent.content_id?.toString() || String(apiContent.id),
+        templateName: `${apiContent.media_type} - ${apiContent.provider_type}`,
+        createdAt: new Date(apiContent.created_at).getTime(),
+        slides: slides,
+        carouselData: carouselData as CarouselData,
+        viewed: false,
+        generatedContentId: apiContent.id,
+      };
+
+      console.log('✅ Carrossel convertido (HomePage):', {
+        id: carousel.id,
+        slides_count: carousel.slides.length,
+        templateName: carousel.templateName
+      });
+
+      return carousel;
+    } catch (err) {
+      console.error('❌ Erro ao converter conteúdo da API:', err, apiContent);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const loadCarouselsFromAPI = async () => {
+      setIsLoading(true);
+      try {
+        console.log('🔄 Carregando carrosséis da API para HomePage...');
+
+        const response = await getGeneratedContent({ page: 1, limit: 100 });
+
+        console.log('✅ Resposta da API (HomePage):', response);
+
+        const apiCarouselsPromises = response.data.map(content =>
+          convertAPIToGalleryCarousel(content)
+        );
+        const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
+        const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
+
+        console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API (HomePage)`);
+
+        setCarousels(apiCarousels);
+      } catch (err) {
+        console.error('❌ Erro ao carregar carrosséis da API:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCarouselsFromAPI();
   }, []);
 
   const menuItems = [
@@ -118,16 +300,49 @@ const HomePage: React.FC = () => {
     navigate(route);
   };
 
-  const handleViewCarousel = (carousel: GalleryCarousel) => {
+  const handleViewCarousel = async (carousel: GalleryCarousel) => {
     if (!carousel.slides || !carousel.carouselData) {
       alert('Erro: Dados do carrossel não encontrados.');
       return;
     }
 
+    let carouselData = carousel.carouselData;
+    let slides = carousel.slides;
+
+    if (carousel.generatedContentId) {
+      try {
+        console.log('🔄 Buscando dados atualizados da API...');
+        const freshData = await getGeneratedContentById(carousel.generatedContentId);
+
+        if (freshData.success && freshData.data.result) {
+          const apiData = freshData.data.result as any;
+
+          if (apiData.conteudos && apiData.dados_gerais) {
+            carouselData = {
+              conteudos: apiData.conteudos,
+              dados_gerais: apiData.dados_gerais,
+              styles: apiData.styles || {},
+            } as CarouselData;
+
+            const templateId = apiData.dados_gerais.template || '2';
+            slides = await renderSlidesWithTemplate(
+              apiData.conteudos,
+              apiData.dados_gerais,
+              templateId
+            );
+
+            console.log('✅ Dados atualizados carregados da API');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar dados atualizados:', error);
+      }
+    }
+
     const newTab: CarouselTab = {
       id: `home-${carousel.id}`,
-      slides: carousel.slides,
-      carouselData: carousel.carouselData,
+      slides: slides,
+      carouselData: carouselData,
       title: carousel.templateName,
       generatedContentId: carousel.generatedContentId,
     };
@@ -158,9 +373,6 @@ const HomePage: React.FC = () => {
 
       const updatedCarousels = carousels.filter(c => c.id !== carousel.id);
       setCarousels(updatedCarousels);
-
-      localStorage.setItem('gallery', JSON.stringify(updatedCarousels));
-      window.dispatchEvent(new CustomEvent('gallery:updated', { detail: updatedCarousels }));
     } catch (error) {
       console.error('Erro ao deletar carrossel:', error);
       alert('Erro ao deletar carrossel: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
@@ -171,19 +383,42 @@ const HomePage: React.FC = () => {
     <div className="flex h-screen">
       <Navigation currentPage="home" />
 
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto bg-white relative"
-        style={{
-          backgroundImage: `
-            linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
-          `,
-          backgroundSize: '40px 40px',
-          backgroundPosition: `${mousePosition.x * 0.02}px ${mousePosition.y * 0.02}px`,
-          transition: 'background-position 0.1s ease-out',
-        }}
-      >
+      <div className="flex-1 overflow-y-auto bg-white relative">
+        <style>
+          {`
+            @keyframes movingLight {
+              0%, 100% {
+                transform: translateX(-50%) translateY(0);
+              }
+              50% {
+                transform: translateX(-50%) translateY(100px);
+              }
+            }
+          `}
+        </style>
+
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
+          }}
+        />
+
+        <div
+          className="absolute top-0 left-1/2 pointer-events-none"
+          style={{
+            width: '800px',
+            height: '800px',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.1) 30%, rgba(255,255,255,0) 70%)',
+            filter: 'blur(60px)',
+            animation: 'movingLight 4s ease-in-out infinite',
+          }}
+        />
+
         <div className="max-w-7xl mx-auto px-6 py-12 relative">
           <div className="text-center mb-12">
             <h1
@@ -216,41 +451,48 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
-          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
+            </div>
 
-          {carousels.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                <Image className="w-12 h-12 text-gray-400" />
+            {isLoading ? (
+              <div className="text-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Carregando carrosséis...</p>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Nenhum design criado ainda
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Comece criando seu primeiro carrossel
-              </p>
-              <button
-                onClick={() => navigate('/create-carousel')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-shadow"
-              >
-                Criar Carrossel
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {carousels.map((carousel) => (
-                <GalleryItem
-                  key={carousel.id}
-                  carousel={carousel}
-                  onEdit={handleViewCarousel}
-                  onDownload={handleDownload}
-                  onDelete={handleDeleteCarousel}
-                />
-              ))}
-            </div>
-          )}
+            ) : carousels.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                  <Image className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Nenhum design criado ainda
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Comece criando seu primeiro carrossel
+                </p>
+                <button
+                  onClick={() => navigate('/create-carousel')}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-shadow"
+                >
+                  Criar Carrossel
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {carousels.map((carousel) => (
+                  <GalleryItem
+                    key={carousel.id}
+                    carousel={carousel}
+                    onEdit={handleViewCarousel}
+                    onDownload={handleDownload}
+                    onDelete={handleDeleteCarousel}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
