@@ -117,7 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -126,7 +126,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-8 text-center">
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
-              <button className="text-blue hover:text-blue-dark font-medium hover:underline transition-colors">
+              <button className="w-full text-white bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg">
                 Criar conta
               </button>
             </p>
@@ -218,7 +218,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
                 opacity: 0.4 + Math.random() * 0.3,
                 filter: `blur(${2 + Math.random() * 4}px)`,
-                animationDelay: `${Math.random() * 5}s`,
+                animationDelay: `0s`, // Iniciar imediatamente
                 animationDuration: `${8 + Math.random() * 7}s`,
                 top: `${-100 + Math.random() * 20}%`, // Start above the screen
               }}
