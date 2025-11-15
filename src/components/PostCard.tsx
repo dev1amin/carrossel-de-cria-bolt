@@ -97,7 +97,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel }) 
       </div>
 
       {onGenerateCarousel && (
-        <div className="p-3 bg-white border-t border-gray-100 z-99">
+      <div className="p-3 bg-white border-t border-gray-100" style={{ zIndex: 99 }}>
           <div className="flex gap-2">
             <button
               onClick={() => {}}
