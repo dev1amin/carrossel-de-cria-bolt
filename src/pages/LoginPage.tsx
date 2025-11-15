@@ -135,14 +135,27 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       {/* Right Section - Decorative Area with Instagram Icon and Falling Dots */}
-      <div className="flex-1 relative overflow-hidden bg-gradient-to-tr from-[#ff7eb9] via-[#ff65a3] via-[#6a82fb] to-[#fc9d9a] min-h-[400px] lg:min-h-screen">
-        {/* Falling Dots Animation */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Generate multiple falling dots with different animations */}
+      <div className="flex-1 relative overflow-hidden bg-white min-h-[400px] lg:min-h-screen">
+        {/* Quadriculado */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
+            `,
+            backgroundSize: '40px 40px',
+            width: '100%',
+            height: '100%',
+          }}
+        />
+
+        {/* Bolas de Luz */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 bg-white/30 rounded-full animate-fall"
+              className="absolute w-2 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full animate-fall"
               style={{
                 left: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 5}s`,
@@ -152,33 +165,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           ))}
         </div>
 
-        {/* Static decorative dots */}
-        <div className="absolute inset-0">
-          <div className="absolute top-[15%] left-[20%] w-1 h-1 bg-white/30 rounded-full"></div>
-          <div className="absolute top-[25%] right-[25%] w-1.5 h-1.5 bg-white/40 rounded-full"></div>
-          <div className="absolute top-[45%] left-[15%] w-1 h-1 bg-white/25 rounded-full"></div>
-          <div className="absolute bottom-[30%] right-[20%] w-1 h-1 bg-white/35 rounded-full"></div>
-          <div className="absolute bottom-[15%] left-[30%] w-1.5 h-1.5 bg-white/30 rounded-full"></div>
-        </div>
-
-        {/* Glowing orbs */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div
-            className="absolute top-[30%] right-[15%] w-32 h-32 rounded-full blur-3xl opacity-40"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%)',
-            }}
-          ></div>
-
-          <div
-            className="absolute bottom-[25%] left-[20%] w-24 h-24 rounded-full blur-2xl opacity-30"
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
-            }}
-          ></div>
-        </div>
-
-        {/* Instagram Icon - Official style without background */}
+        {/* Instagram Icon */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="instagram-icon-container group cursor-pointer"
@@ -194,76 +181,57 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               }}
             >
               {/* Instagram Official Icon - SVG */}
-              <div className="relative">
-                <svg
-                  width="200"
-                  height="200"
-                  viewBox="0 0 256 256"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="transition-transform duration-500 group-hover:scale-110"
-                >
-                  <defs>
-                    <radialGradient id="instagramGradient" cx="30%" cy="107%">
-                      <stop offset="0%" stopColor="#fdf497" />
-                      <stop offset="5%" stopColor="#fdf497" />
-                      <stop offset="45%" stopColor="#fd5949" />
-                      <stop offset="60%" stopColor="#d6249f" />
-                      <stop offset="90%" stopColor="#285AEB" />
-                    </radialGradient>
-                  </defs>
-
-                  {/* Background rounded square */}
+              <svg
+                width="200"
+                height="200"
+                viewBox="0 0 256 256"
+                xmlns="http://www.w3.org/2000/svg"
+                className="transition-transform duration-500 group-hover:scale-110"
+                fill="none"
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="256"
+                  height="256"
+                  rx="55"
+                  fill="white"
+                />
+                <g transform="translate(38, 38)">
                   <rect
                     x="0"
                     y="0"
-                    width="256"
-                    height="256"
-                    rx="55"
-                    fill="url(#instagramGradient)"
+                    width="180"
+                    height="180"
+                    rx="34"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="14"
                   />
+                  <circle
+                    cx="90"
+                    cy="90"
+                    r="45"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="14"
+                  />
+                  <circle
+                    cx="140"
+                    cy="40"
+                    r="13"
+                    fill="white"
+                  />
+                </g>
+              </svg>
 
-                  {/* Camera icon */}
-                  <g transform="translate(38, 38)">
-                    {/* Outer square (camera body) */}
-                    <rect
-                      x="0"
-                      y="0"
-                      width="180"
-                      height="180"
-                      rx="34"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="14"
-                    />
-
-                    {/* Inner circle (lens) */}
-                    <circle
-                      cx="90"
-                      cy="90"
-                      r="45"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="14"
-                    />
-
-                    {/* Viewfinder dot */}
-                    <circle
-                      cx="140"
-                      cy="40"
-                      r="13"
-                      fill="white"
-                    />
-                  </g>
-                </svg>
-
-                {/* Glow effect */}
-                <div
-                  className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
-                  }}
-                ></div>
-              </div>
+              {/* Glow effect */}
+              <div
+                className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
+                }}
+              ></div>
             </div>
           </div>
         </div>
