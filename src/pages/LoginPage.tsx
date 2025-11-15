@@ -81,7 +81,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   className="text-sm font-medium transition-colors"
-                  style={{ color: '#2563eb' }} // azul
+                  style={{ color: '#2563eb' }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
                   onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
                 >
@@ -117,7 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               disabled={isLoading}
               className="w-full rounded-lg px-4 py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
               style={{
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', // adaptado, menos "paia"
                 cursor: isLoading ? 'not-allowed' : 'pointer',
               }}
             >
@@ -130,7 +130,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               Não tem uma conta?{' '}
               <button
                 className="font-medium transition-colors"
-                style={{ color: '#2563eb' }} // azul
+                style={{ color: '#2563eb' }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
                 onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
               >
@@ -248,24 +248,29 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Falling Mini Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(18)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full animate-fall-orb"
-              style={{
-                top: '-10%',
-                left: `${Math.random() * 100}%`,
-                width: `${8 + Math.random() * 12}px`,
-                height: `${8 + Math.random() * 12}px`,
-                background:
-                  'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.7,
-                filter: `blur(${2 + Math.random() * 4}px)`,
-                animationDuration: `${6 + Math.random() * 4}s`,     // 6–10s
-                animationDelay: `${-Math.random() * 6}s`,           // atraso NEGATIVO => já começam no meio da animação
-              }}
-            />
-          ))}
+          {[...Array(20)].map((_, i) => {
+            const duration = 4 + Math.random() * 3; // 4–7s
+            const delay = -Math.random() * duration; // delay negativo -> já começa no meio
+
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full animate-fall-orb"
+                style={{
+                  top: 0,
+                  left: `${Math.random() * 100}%`,
+                  width: `${8 + Math.random() * 12}px`,
+                  height: `${8 + Math.random() * 12}px`,
+                  background:
+                    'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                  opacity: 0.9,
+                  filter: `blur(${1 + Math.random() * 2}px)`,
+                  animationDuration: `${duration}s`,
+                  animationDelay: `${delay}s`,
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* Instagram Icon */}
@@ -377,17 +382,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         @keyframes fallOrb {
           0% {
-            transform: translateY(-120%);
+            transform: translateY(-120vh);
             opacity: 0;
           }
-          15% {
-            opacity: 0.7;
+          10% {
+            opacity: 0.9;
           }
-          85% {
-            opacity: 0.7;
+          90% {
+            opacity: 0.9;
           }
           100% {
-            transform: translateY(140%);
+            transform: translateY(120vh);
             opacity: 0;
           }
         }
