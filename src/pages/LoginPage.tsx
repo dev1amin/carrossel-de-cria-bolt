@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Inicia a animação das bolinhas assim que a página for carregada
+    const orbs = document.querySelectorAll('.animate-fall-orb');
+    orbs.forEach((orb, index) => {
+      orb.classList.add('start-falling');  // Isso faz com que as bolinhas comecem a cair imediatamente
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +93,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </label>
                 <button
                   type="button"
-                  className="text-sm text-blue hover:text-blue-dark transition-colors"
+                  className="text-sm text-gradient hover:text-gradient-dark transition-colors"
                 >
                   Esqueceu a senha?
                 </button>
@@ -126,7 +134,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-8 text-center">
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
-              <button className="w-full text-white bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg">
+              <button className="text-gradient hover:text-gradient-dark font-medium hover:underline transition-colors">
                 Criar conta
               </button>
             </p>
@@ -218,7 +226,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
                 opacity: 0.4 + Math.random() * 0.3,
                 filter: `blur(${2 + Math.random() * 4}px)`,
-                animationDelay: `0s`, // Iniciar imediatamente
+                animationDelay: `${Math.random() * 5}s`,
                 animationDuration: `${8 + Math.random() * 7}s`,
                 top: `${-100 + Math.random() * 20}%`, // Start above the screen
               }}
@@ -313,43 +321,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       <style>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-
-        @keyframes floatSlow {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px);
-          }
-          25% {
-            transform: translateY(-15px) translateX(10px);
-          }
-          50% {
-            transform: translateY(-25px) translateX(-5px);
-          }
-          75% {
-            transform: translateY(-10px) translateX(-15px);
-          }
-        }
-
-        @keyframes floatReverse {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px);
-          }
-          25% {
-            transform: translateY(-10px) translateX(-15px);
-          }
-          50% {
-            transform: translateY(-20px) translateX(5px);
-          }
-          75% {
-            transform: translateY(-15px) translateX(10px);
-          }
+        .animate-fall-orb.start-falling {
+          animation: fallOrb 8s linear infinite; /* Ajustando o tempo para que a animação comece de imediato */
         }
 
         @keyframes fallOrb {
@@ -367,22 +340,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             transform: translateY(calc(100vh + 100px)) scale(1);
             opacity: 0;
           }
-        }
-
-        .animate-float-slow {
-          animation: floatSlow 8s ease-in-out infinite;
-        }
-
-        .animate-float-reverse {
-          animation: floatReverse 10s ease-in-out infinite;
-        }
-
-        .animate-fall-orb {
-          animation: fallOrb linear infinite;
-        }
-
-        .instagram-icon-container:hover {
-          transform: rotate(-25deg) scale(1.05);
         }
       `}</style>
     </div>
