@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Play, Trophy, Medal, Award, ExternalLink, Sparkles } from 'lucide-react';
+import { Heart, Play, Trophy, Medal, Award, Sparkles, Bookmark } from 'lucide-react';
 import { TemplateSelectionModal } from '../carousel';
 import { Post } from '../types';
 import { formatNumber } from '../utils/formatters';
@@ -87,34 +87,38 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel }) 
             transformOrigin: 'top left'
           }}
         />
-        <button
-          onClick={handleOpenOriginal}
-          className="absolute top-3 right-1 z-50 bg-white/90 text-gray-900 px-3 py-1.5 rounded text-sm flex items-center space-x-2 shadow-lg hover:bg-white transition-colors"
-        >
-          <ExternalLink className="w-4 h-4" />
-          <span>See Content</span>
-        </button>
-        <div className="absolute bottom-4 right-4 z-50 flex flex-col items-end space-y-2">
-          <div className="bg-gray-900/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
-            {getRankIcon(index)}
-            <span>#{index + 1}</span>
+        <div className="absolute bottom-4 left-4 right-4 z-50">
+          <div className="flex items-center justify-between">
+            <div className="bg-gray-900/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
+              {getRankIcon(index)}
+              <span>#{index + 1}</span>
+            </div>
+            {onGenerateCarousel && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {}}
+                  className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  <span>Salvar</span>
+                </button>
+                <button
+                  onClick={handleOpenModal}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Gerar</span>
+                </button>
+              </div>
+            )}
           </div>
           {onGenerateCarousel && (
-            <>
-              <button
-                onClick={handleOpenModal}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Gerar</span>
-              </button>
-              <TemplateSelectionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSelectTemplate={handleSelectTemplate}
-                postCode={post.code}
-              />
-            </>
+            <TemplateSelectionModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSelectTemplate={handleSelectTemplate}
+              postCode={post.code}
+            />
           )}
         </div>
       </div>

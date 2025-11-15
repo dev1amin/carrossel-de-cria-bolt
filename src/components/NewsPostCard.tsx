@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink, Sparkles, Newspaper } from 'lucide-react';
+import { Sparkles, Newspaper, Bookmark } from 'lucide-react';
 import { TemplateSelectionModal } from '../carousel';
 import type { NewsItem } from '../types/news';
 import { motion } from 'framer-motion';
@@ -144,35 +144,38 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
         </div>
 
         {/* Buttons Overlay */}
-        <button
-          onClick={handleOpenOriginal}
-          className="absolute top-3 right-1 z-50 bg-primary-500/80 text-white px-3 py-1.5 rounded-lg text-sm flex items-center space-x-2 hover:bg-primary-500/30 transition-all"
-        >
-          <ExternalLink className="w-4 h-4" />
-          <span>See Content</span>
-        </button>
-
-        <div className="absolute bottom-4 right-4 z-50 flex flex-col items-end space-y-2">
-          <div className="bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
-            <Newspaper className="w-4 h-4 text-gray-900" />
-            <span>#{index + 1}</span>
+        <div className="absolute bottom-4 left-4 right-4 z-50">
+          <div className="flex items-center justify-between">
+            <div className="bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
+              <Newspaper className="w-4 h-4 text-gray-900" />
+              <span>#{index + 1}</span>
+            </div>
+            {onGenerateCarousel && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {}}
+                  className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  <span>Salvar</span>
+                </button>
+                <button
+                  onClick={handleOpenModal}
+                  className="bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-glow hover:shadow-xl"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Gerar</span>
+                </button>
+              </div>
+            )}
           </div>
           {onGenerateCarousel && (
-            <>
-              <button
-                onClick={handleOpenModal}
-                className="bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-glow hover:shadow-xl"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Gerar</span>
-              </button>
-              <TemplateSelectionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSelectTemplate={handleSelectTemplate}
-                postCode={news.id}
-              />
-            </>
+            <TemplateSelectionModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSelectTemplate={handleSelectTemplate}
+              postCode={news.id}
+            />
           )}
         </div>
       </div>

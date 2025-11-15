@@ -400,6 +400,8 @@ const HomePage: React.FC = () => {
               linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
             `,
             backgroundSize: '40px 40px',
+            width: '100%',
+            height: '100%',
           }}
         />
 
@@ -420,8 +422,8 @@ const HomePage: React.FC = () => {
         <div
           className="absolute pointer-events-none"
           style={{
-            top: '15%',
-            left: '10%',
+            top: '10%',
+            left: '8%',
             width: '300px',
             height: '300px',
             borderRadius: '50%',
@@ -435,8 +437,8 @@ const HomePage: React.FC = () => {
         <div
           className="absolute pointer-events-none"
           style={{
-            top: '60%',
-            right: '15%',
+            top: '5%',
+            right: '12%',
             width: '250px',
             height: '250px',
             borderRadius: '50%',
@@ -450,15 +452,90 @@ const HomePage: React.FC = () => {
         <div
           className="absolute pointer-events-none"
           style={{
+            top: '40%',
+            left: '5%',
+            width: '280px',
+            height: '280px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.2,
+            filter: 'blur(75px)',
+            animation: 'float 11s ease-in-out infinite',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: '45%',
+            right: '8%',
+            width: '220px',
+            height: '220px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.28,
+            filter: 'blur(65px)',
+            animation: 'float 9s ease-in-out infinite reverse',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            bottom: '15%',
+            left: '15%',
+            width: '260px',
+            height: '260px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.22,
+            filter: 'blur(70px)',
+            animation: 'float 12s ease-in-out infinite',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
             bottom: '20%',
-            left: '25%',
+            right: '20%',
+            width: '240px',
+            height: '240px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.26,
+            filter: 'blur(68px)',
+            animation: 'float 13s ease-in-out infinite reverse',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: '25%',
+            left: '45%',
             width: '200px',
             height: '200px',
             borderRadius: '50%',
             background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.2,
+            opacity: 0.18,
             filter: 'blur(60px)',
-            animation: 'float 12s ease-in-out infinite',
+            animation: 'float 10s ease-in-out infinite',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: '70%',
+            left: '35%',
+            width: '230px',
+            height: '230px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.24,
+            filter: 'blur(72px)',
+            animation: 'float 14s ease-in-out infinite reverse',
           }}
         />
 
