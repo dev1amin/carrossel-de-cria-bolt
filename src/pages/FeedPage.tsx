@@ -247,7 +247,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         <LoadingBar isLoading={isLoading} />
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
-          <section className="relative pb-[7rem]">
+          <section className="relative pb-[2rem]">
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -262,45 +262,43 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "50vh",
+                height: "35vh",
               }}
             />
 
             <div
-              className="absolute inset-0 bottom-0 pointer-events-none"
+              className="absolute bottom-0 left-0 right-0 pointer-events-none h-24"
               style={{
-                background: "linear-gradient(to bottom, rgba(249,250,251,0) 50%, rgba(249,250,251,0.95) 100%)"
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
               }}
             />
 
-            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[4.5rem] space-y-6">
+            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[2rem] space-y-6">
               <div className="text-center">
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
                   Seu Feed Personalizado
                 </h1>
-                <p className="text-lg md:text-xl text-gray-dark">
-                  Aqui está o seu feed de posts!
-                </p>
               </div>
             </div>
           </section>
 
-          <section className="max-w-6xl mx-auto px-8 -mt-[6.5rem]">
-            <div className="mb-6 flex justify-center">
+          <section className="max-w-6xl mx-auto px-8">
+            <div className="mb-6 flex justify-between items-center">
+              <p className="text-lg md:text-xl text-gray-dark font-medium">
+                Aqui está o seu feed de posts!
+              </p>
               <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
 
             {posts.length === 0 && !isLoading ? (
               <EmptyState />
             ) : (
-              <div className="bg-white rounded-3xl shadow-lg p-8">
-                <Feed
-                  posts={posts}
-                  searchTerm=""
-                  activeSort={activeSort}
-                  onGenerateCarousel={handleGenerateCarousel}
-                />
-              </div>
+              <Feed
+                posts={posts}
+                searchTerm=""
+                activeSort={activeSort}
+                onGenerateCarousel={handleGenerateCarousel}
+              />
             )}
           </section>
         </main>

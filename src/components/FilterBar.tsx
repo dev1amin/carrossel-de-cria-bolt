@@ -1,5 +1,5 @@
-import React from 'react';
-import { TrendingUp, Clock, Heart, MessageCircle, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, Clock, Heart, MessageCircle, Share2, ChevronDown } from 'lucide-react';
 import { SortOption } from '../types';
 
 interface FilterBarProps {
@@ -8,6 +8,8 @@ interface FilterBarProps {
 }
 
 const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   const filters: { label: string; value: SortOption; icon: React.ElementType }[] = [
     { label: 'Popular', value: 'popular', icon: TrendingUp },
     { label: 'Latest', value: 'latest', icon: Clock },
@@ -16,24 +18,51 @@ const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
     { label: 'Shares', value: 'shares', icon: Share2 },
   ];
 
+  const activeFilter = filters.find(f => f.value === activeSort);
+  const ActiveIcon = activeFilter?.icon;
+
   return (
     <div className="relative inline-block">
-      <select
-        value={activeSort}
-        onChange={(e) => onSortChange(e.target.value as SortOption)}
-        className="appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 font-medium text-gray-800 cursor-pointer hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 bg-white border-2 border-blue-500 rounded-lg px-4 py-2.5 font-medium text-gray-800 cursor-pointer hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-w-[180px]"
       >
-        {filters.map((filter) => (
-          <option key={filter.value} value={filter.value}>
-            {filter.label}
-          </option>
-        ))}
-      </select>
-      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-600">
-        {filters.find(f => f.value === activeSort)?.icon &&
-          React.createElement(filters.find(f => f.value === activeSort)!.icon, { className: "w-4 h-4" })
-        }
-      </div>
+        {ActiveIcon && <ActiveIcon className="w-5 h-5 text-blue-500" />}
+        <span className="flex-1 text-left">{activeFilter?.label}</span>
+        <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute top-full mt-2 w-full bg-white border-2 border-blue-500 rounded-lg shadow-lg overflow-hidden z-20">
+            {filters.map((filter) => {
+              const Icon = filter.icon;
+              const isActive = filter.value === activeSort;
+              return (
+                <button
+                  key={filter.value}
+                  onClick={() => {
+                    onSortChange(filter.value);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+                    isActive
+                      ? 'bg-blue-500 text-white'
+                      : 'hover:bg-blue-50 text-gray-800'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-blue-500'}`} />
+                  <span className="font-medium">{filter.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 };
