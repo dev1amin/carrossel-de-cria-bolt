@@ -246,7 +246,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="feed" unviewedCount={unviewedCount} />, [unviewedCount]);
 
   return (
-    <div className="flex h-screen bg-light">
+    <div className="flex h-screen bg-white">
       {memoizedNavigation}
       <div className="flex-1">
         {shouldShowEditor && (
@@ -325,23 +325,6 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               }}
             />
 
-            <div
-              className="absolute left-0 right-0 pointer-events-none"
-              style={{
-                top: "280px",
-                height: "80px",
-                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
-              }}
-            />
-
-            <div
-              className="absolute left-0 right-0 pointer-events-none"
-              style={{
-                top: "360px",
-                height: "60px",
-                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
-              }}
-            />
 
             <div className="relative z-10 max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
               <div className="text-center">
