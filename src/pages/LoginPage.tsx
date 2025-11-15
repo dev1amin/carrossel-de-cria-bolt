@@ -150,7 +150,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
-        {/* Bolas de Luz */}
+        {/* Bolas de Luz Coloridas */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
@@ -163,6 +163,31 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               }}
             />
           ))}
+        </div>
+
+        {/* Bolas de Fundo com Efeito de Fluidez */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute top-[15%] left-[20%] w-1 h-1 bg-white/30 rounded-full animate-fall"
+            style={{
+              animationDuration: '15s',
+              animationDelay: '2s',
+            }}
+          ></div>
+          <div
+            className="absolute top-[25%] right-[25%] w-1.5 h-1.5 bg-white/40 rounded-full animate-fall"
+            style={{
+              animationDuration: '20s',
+              animationDelay: '5s',
+            }}
+          ></div>
+          <div
+            className="absolute top-[45%] left-[15%] w-1 h-1 bg-white/25 rounded-full animate-fall"
+            style={{
+              animationDuration: '25s',
+              animationDelay: '7s',
+            }}
+          ></div>
         </div>
 
         {/* Instagram Icon */}
@@ -195,7 +220,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   width="256"
                   height="256"
                   rx="55"
-                  fill="white"
+                  fill="transparent"  // Transparent background for Instagram icon
                 />
                 <g transform="translate(38, 38)">
                   <rect
