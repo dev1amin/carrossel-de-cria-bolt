@@ -270,8 +270,17 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               className="absolute left-0 right-0 pointer-events-none"
               style={{
                 top: "280px",
-                height: "100px",
+                height: "80px",
                 background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
+
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "360px",
+                height: "60px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
               }}
             />
 

@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { TrendingUp, Clock, Heart, MessageCircle, Share2, ChevronDown } from 'lucide-react';
-import { SortOption } from '../types';
+import { Clock, Layers, ChevronDown } from 'lucide-react';
 
-interface FilterBarProps {
-  activeSort: SortOption;
-  onSortChange: (sort: SortOption) => void;
+interface GalleryFiltersProps {
+  onSortChange: (sort: 'recent' | 'template') => void;
+  activeSort: 'recent' | 'template';
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
+const GalleryFilters: React.FC<GalleryFiltersProps> = ({ onSortChange, activeSort }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const filters: { label: string; value: SortOption; icon: React.ElementType }[] = [
-    { label: 'Maior engajamento', value: 'popular', icon: TrendingUp },
-    { label: 'Mais recentes', value: 'latest', icon: Clock },
-    { label: 'Mais curtidos', value: 'likes', icon: Heart },
-    { label: 'Mais comentados', value: 'comments', icon: MessageCircle },
-    { label: 'Mais compartilhados', value: 'shares', icon: Share2 },
+  const filters: { label: string; value: 'recent' | 'template'; icon: React.ElementType }[] = [
+    { label: 'Mais recentes', value: 'recent', icon: Clock },
+    { label: 'Por template', value: 'template', icon: Layers },
   ];
 
   const activeFilter = filters.find(f => f.value === activeSort);
@@ -67,4 +63,4 @@ const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
   );
 };
 
-export default FilterBar;
+export default GalleryFilters;

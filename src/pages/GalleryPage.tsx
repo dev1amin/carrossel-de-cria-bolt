@@ -3,6 +3,7 @@ import Gallery from '../components/Gallery';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
 import Toast, { ToastMessage } from '../components/Toast';
+import GalleryFilters from '../components/GalleryFilters';
 import { CarouselEditorTabs, type CarouselTab } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
@@ -28,6 +29,7 @@ const GalleryPage = () => {
   const [galleryCarousels, setGalleryCarousels] = useState<GalleryCarousel[]>([]);
   const [isLoadingFromAPI, setIsLoadingFromAPI] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [activeSort, setActiveSort] = useState<'recent' | 'template'>('recent');
   
   // Usa o contexto compartilhado de abas
   const { editorTabs, addEditorTab: addTab, closeEditorTab, closeAllEditorTabs, shouldShowEditor, setShouldShowEditor } = useEditorTabs();
@@ -486,11 +488,8 @@ const GalleryPage = () => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoadingFromAPI} />
 
-        {/* main sem necessidade de margin-top do header */}
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
-          {/* Área com quadriculado azul, AGORA com margin-top pra não ficar debaixo do header */}
-          <section className="relative pb-20 md:pb-24">
-            {/* Bola de luz agora com animação de cima para baixo */}
+          <section className="relative pb-[2rem]">
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -500,39 +499,49 @@ const GalleryPage = () => {
               }}
             />
 
-            {/* Quadrados mais visíveis e ocupando mais altura */}
             <div
-              className="pointer-events-none absolute inset-0 opacity-60"
+              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "100%", // Preenche toda a altura controlada
+                height: "280px",
               }}
             />
 
-            {/* Fade azul para branco no final */}
             <div
-              className="absolute inset-0 bottom-0 pointer-events-none"
+              className="absolute left-0 right-0 pointer-events-none"
               style={{
-                background: "linear-gradient(to bottom, rgba(249,250,251,0) 30%, rgba(249,250,251,0.95) 100%)"
+                top: "280px",
+                height: "80px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
               }}
             />
 
-            {/* Conteúdo normal */}
-            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[4.5rem] space-y-6">
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "360px",
+                height: "60px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
+
+            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[2rem] space-y-6">
               <div className="text-center">
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
                   Todos os seus posts estão aqui!
                 </h1>
-                <p className="text-lg md:text-xl text-gray-dark">
-                  Galeria de carrosséis
-                </p>
               </div>
             </div>
           </section>
 
-          {/* Galeria logo em seguida */}
-          <section className="max-w-6xl mx-auto px-8 -mt-[6.5rem]">
+          <section className="max-w-6xl mx-auto px-8">
+            <div className="mb-6 flex justify-between items-center">
+              <p className="text-lg md:text-xl text-gray-dark font-medium">
+                Galeria de carrosséis
+              </p>
+              <GalleryFilters activeSort={activeSort} onSortChange={setActiveSort} />
+            </div>
             {isLoadingFromAPI && galleryCarousels.length === 0 ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="flex flex-col items-center gap-4">

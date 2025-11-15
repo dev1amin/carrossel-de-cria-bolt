@@ -7,7 +7,7 @@ import {
   ChevronRight,
   User,
   Ghost,
-  Plus,
+  PlusCircle,
   Home,
 } from 'lucide-react';
 
@@ -80,7 +80,7 @@ const Navigation: React.FC<NavigationProps> = ({
     {
       id: 'tools',
       label: 'Ferramentas',
-      icon: Plus,
+      icon: PlusCircle,
       onClick: () => navigate('/create-carousel'),
     },
     { id: 'news', label: 'Notícias', icon: Newspaper, page: 'news' },
