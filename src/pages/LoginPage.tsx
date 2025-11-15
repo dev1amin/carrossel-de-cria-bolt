@@ -135,14 +135,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       {/* Right Section - Decorative Area with Instagram Icon and Floating Orbs */}
-      <div className="flex-1 relative overflow-hidden bg-gradient-to-tr from-[#ff7eb9] via-[#ff65a3] via-[#6a82fb] to-[#fc9d9a] min-h-[400px] lg:min-h-screen">
+      <div className="flex-1 relative overflow-hidden bg-white min-h-[400px] lg:min-h-screen">
         {/* Grid Background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
+              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
             `,
             backgroundSize: '40px 40px',
           }}
@@ -261,8 +261,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
+        {/* Falling Mini Orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(15)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full animate-fall-orb"
+              style={{
+                left: `${Math.random() * 100}%`,
+                width: `${8 + Math.random() * 12}px`,
+                height: `${8 + Math.random() * 12}px`,
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.4 + Math.random() * 0.3,
+                filter: `blur(${2 + Math.random() * 4}px)`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${8 + Math.random() * 7}s`,
+              }}
+            />
+          ))}
+        </div>
+
         {/* Instagram Icon - Official style with 0.6 opacity */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
           <div
             className="instagram-icon-container group cursor-pointer"
             style={{
@@ -386,12 +406,33 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }
         }
 
+        @keyframes fallOrb {
+          0% {
+            transform: translateY(-100px) scale(0.5);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.7;
+          }
+          90% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(calc(100vh + 100px)) scale(1);
+            opacity: 0;
+          }
+        }
+
         .animate-float-slow {
           animation: floatSlow 8s ease-in-out infinite;
         }
 
         .animate-float-reverse {
           animation: floatReverse 10s ease-in-out infinite;
+        }
+
+        .animate-fall-orb {
+          animation: fallOrb linear infinite;
         }
 
         .instagram-icon-container:hover {
