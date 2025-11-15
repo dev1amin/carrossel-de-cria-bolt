@@ -47,7 +47,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row relative">
       {/* Left Section - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white min-h-screen lg:min-h-0">
         <div className="w-full max-w-md">
