@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Bot, User as UserIcon, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import PageTitle from '../components/PageTitle';
 import { TemplateSelectionModal } from '../components/carousel';
@@ -16,6 +16,9 @@ import {
 } from '../services/chatbot';
 
 const ChatBotPage: React.FC = () => {
+  const location = useLocation();
+  const initialMessage = location.state?.initialMessage || '';
+
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: generateMessageId(),
@@ -24,7 +27,7 @@ const ChatBotPage: React.FC = () => {
       timestamp: new Date(),
     },
   ]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState(initialMessage);
   const [isLoading, setIsLoading] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [postCode] = useState('');
@@ -48,6 +51,12 @@ const ChatBotPage: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (initialMessage && !isLoading) {
+      handleSendMessage();
+    }
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {

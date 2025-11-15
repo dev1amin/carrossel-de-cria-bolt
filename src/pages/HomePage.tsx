@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Edit, Trash2 } from 'lucide-react';
+import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Edit, Send, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
@@ -27,6 +27,9 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [carousels, setCarousels] = useState<GalleryCarousel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [aiMessage, setAiMessage] = useState('');
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const { addEditorTab, setShouldShowEditor } = useEditorTabs();
 
   const getUserName = (): string => {
@@ -43,6 +46,24 @@ const HomePage: React.FC = () => {
   };
 
   const userName = getUserName();
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePosition({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+      return () => container.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, []);
 
   const renderSlidesWithTemplate = async (
     conteudos: any[],
@@ -356,26 +377,10 @@ const HomePage: React.FC = () => {
     alert('Funcionalidade de download em desenvolvimento');
   };
 
-  const handleDeleteCarousel = async (carousel: GalleryCarousel) => {
-    if (!carousel.generatedContentId) {
-      alert('Não é possível deletar: ID do conteúdo não encontrado.');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Tem certeza que deseja deletar este carrossel? Esta ação não pode ser desfeita.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await deleteGeneratedContent(carousel.generatedContentId);
-
-      const updatedCarousels = carousels.filter(c => c.id !== carousel.id);
-      setCarousels(updatedCarousels);
-    } catch (error) {
-      console.error('Erro ao deletar carrossel:', error);
-      alert('Erro ao deletar carrossel: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+  const handleAISubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (aiMessage.trim()) {
+      navigate('/chatbot', { state: { initialMessage: aiMessage } });
     }
   };
 
@@ -383,20 +388,10 @@ const HomePage: React.FC = () => {
     <div className="flex h-screen">
       <Navigation currentPage="home" />
 
-      <div className="flex-1 overflow-y-auto bg-white relative">
-        <style>
-          {`
-            @keyframes movingLight {
-              0%, 100% {
-                transform: translateX(-50%) translateY(0);
-              }
-              50% {
-                transform: translateX(-50%) translateY(100px);
-              }
-            }
-          `}
-        </style>
-
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto bg-white relative ml-16"
+      >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -409,24 +404,50 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute top-0 left-1/2 pointer-events-none"
+          className="absolute pointer-events-none"
           style={{
-            width: '800px',
-            height: '800px',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.1) 30%, rgba(255,255,255,0) 70%)',
-            filter: 'blur(60px)',
-            animation: 'movingLight 4s ease-in-out infinite',
+            left: `${mousePosition.x}px`,
+            top: `${mousePosition.y}px`,
+            width: '600px',
+            height: '600px',
+            transform: 'translate(-50%, -50%)',
+            background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.15) 25%, rgba(59,130,246,0.05) 50%, rgba(255,255,255,0) 70%)',
+            filter: 'blur(50px)',
+            transition: 'left 0.15s ease-out, top 0.15s ease-out',
           }}
         />
 
         <div className="max-w-7xl mx-auto px-6 py-12 relative">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-8"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-6"
               style={{ fontFamily: '"Shadows Into Light", cursive' }}
             >
               Bem vindo de volta {userName}!
             </h1>
+
+            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-8">
+              <div className="relative bg-white rounded-2xl border-2 border-gray-200 shadow-lg hover:border-blue-300 transition-colors">
+                <div className="flex items-center gap-3 px-6 py-4">
+                  <Sparkles className="w-6 h-6 text-blue-500 flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="O que você gostaria de criar hoje?"
+                    value={aiMessage}
+                    onChange={(e) => setAiMessage(e.target.value)}
+                    className="flex-1 text-base md:text-lg outline-none bg-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!aiMessage.trim()}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span className="hidden sm:inline">Enviar</span>
+                  </button>
+                </div>
+              </div>
+            </form>
 
             <div className="flex flex-wrap items-center justify-center gap-6 mb-12">
               {menuItems.map((item) => {
@@ -487,7 +508,6 @@ const HomePage: React.FC = () => {
                     carousel={carousel}
                     onEdit={handleViewCarousel}
                     onDownload={handleDownload}
-                    onDelete={handleDeleteCarousel}
                   />
                 ))}
               </div>
@@ -503,14 +523,12 @@ interface GalleryItemProps {
   carousel: GalleryCarousel;
   onEdit: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
-  onDelete: (carousel: GalleryCarousel) => void;
 }
 
-const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload, onDelete }) => {
+const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const minSwipeDistance = 50;
 
@@ -648,23 +666,6 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
           >
             <Download className="w-4 h-4" />
           </button>
-          {carousel.generatedContentId && (
-            <button
-              onClick={async () => {
-                setIsDeleting(true);
-                try {
-                  await onDelete(carousel);
-                } finally {
-                  setIsDeleting(false);
-                }
-              }}
-              disabled={isDeleting}
-              className="flex items-center justify-center gap-2 bg-red-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Deletar carrossel"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
     </motion.div>
