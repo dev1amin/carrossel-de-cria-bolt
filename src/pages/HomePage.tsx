@@ -417,6 +417,51 @@ const HomePage: React.FC = () => {
           }}
         />
 
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: '15%',
+            left: '10%',
+            width: '300px',
+            height: '300px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.3,
+            filter: 'blur(80px)',
+            animation: 'float 8s ease-in-out infinite',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: '60%',
+            right: '15%',
+            width: '250px',
+            height: '250px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.25,
+            filter: 'blur(70px)',
+            animation: 'float 10s ease-in-out infinite reverse',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            bottom: '20%',
+            left: '25%',
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.2,
+            filter: 'blur(60px)',
+            animation: 'float 12s ease-in-out infinite',
+          }}
+        />
+
         <div className="max-w-7xl mx-auto px-6 py-12 relative">
           <div className="text-center mb-8">
             <h1
