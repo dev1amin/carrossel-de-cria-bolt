@@ -394,7 +394,7 @@ const ChatBotPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navigation currentPage="chatbot" />
       
       <div className="md:ml-16">

@@ -805,14 +805,14 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(carousel)}
-            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors border border-gray-200"
+            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
           >
             <Edit className="w-4 h-4" />
             Editar
           </button>
           <button
             onClick={() => onDownload(carousel)}
-            className="flex items-center justify-center gap-2 bg-zinc-800 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-700"
+            className="flex items-center justify-center gap-2 bg-blue text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-dark transition-colors border border-blue"
           >
             <Download className="w-4 h-4" />
           </button>
