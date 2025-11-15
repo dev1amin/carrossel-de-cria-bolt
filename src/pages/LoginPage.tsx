@@ -150,14 +150,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
-        {/* Bolas de Luz Coloridas */}
+        {/* Bolas de Luz Coloridas - Com posições variadas */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full animate-fall"
+              className="absolute w-2 h-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-500 rounded-full animate-fall"
               style={{
                 left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`, // Agora as bolas começam em posições variadas
                 animationDelay: `${Math.random() * 5}s`,
                 animationDuration: `${5 + Math.random() * 5}s`,
               }}
@@ -190,7 +191,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           ></div>
         </div>
 
-        {/* Instagram Icon */}
+        {/* Instagram Icon - Linear Gradient */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="instagram-icon-container group cursor-pointer"
@@ -214,13 +215,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className="transition-transform duration-500 group-hover:scale-110"
                 fill="none"
               >
+                <defs>
+                  <radialGradient id="instagramGradient" cx="30%" cy="107%">
+                    <stop offset="0%" stopColor="#fdf497" />
+                    <stop offset="5%" stopColor="#fdf497" />
+                    <stop offset="45%" stopColor="#fd5949" />
+                    <stop offset="60%" stopColor="#d6249f" />
+                    <stop offset="90%" stopColor="#285AEB" />
+                  </radialGradient>
+                </defs>
                 <rect
                   x="0"
                   y="0"
                   width="256"
                   height="256"
                   rx="55"
-                  fill="transparent"  // Transparent background for Instagram icon
+                  fill="url(#instagramGradient)"
                 />
                 <g transform="translate(38, 38)">
                   <rect
