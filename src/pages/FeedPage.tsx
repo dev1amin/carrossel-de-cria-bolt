@@ -51,20 +51,24 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
       const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
 
       if (cachedPosts && cachedPosts.length > 0) {
-        // Display cached data immediately
-        console.log('📦 Usando dados em cache do feed');
+        // Display cached data immediately (no loading state)
+        console.log('📦 Mostrando cache do feed enquanto busca dados frescos');
         setPosts(cachedPosts);
         setIsLoading(false);
-        return;
+      } else {
+        // No cache, show loading
+        setIsLoading(true);
       }
 
-      // No cache, show loading and fetch
-      setIsLoading(true);
+      // ALWAYS fetch fresh data from API
       setError(null);
       try {
-        console.log('📥 Carregando feed...');
-        const feedData = await getFeed();
-        console.log('✅ Feed carregado:', feedData.length, 'posts');
+        console.log('🔄 Buscando dados frescos da API para feed...');
+        const feedData = await getFeed(true); // Force update to always fetch
+        console.log('✅ Feed recebido da API:', feedData.length, 'posts');
+        
+        // Check if data has changed (getFeed already handles this internally)
+        // Just update the state with fresh data
         setPosts(feedData);
       } catch (err) {
         console.error('❌ Erro ao carregar feed:', err);
@@ -79,6 +83,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         } else {
           setError(errorMessage);
         }
+        // Keep cached data if fetch fails
       } finally {
         setIsLoading(false);
       }
@@ -179,6 +184,10 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
         CacheService.setItem(CACHE_KEYS.GALLERY, updated);
         window.dispatchEvent(new CustomEvent('gallery:updated', { detail: updated }));
+        
+        // Invalidar cache da HomePage para forçar atualização
+        CacheService.clearItem(`${CACHE_KEYS.GENERATED_CONTENT}_home`);
+        console.log('🔄 Cache da HomePage invalidado');
       } catch (err) {
         console.error('❌ Erro ao atualizar cache/dispatch da galeria:', err);
       }

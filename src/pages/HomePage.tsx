@@ -267,17 +267,18 @@ const HomePage: React.FC = () => {
       const cachedCarousels = CacheService.getItem<GalleryCarousel[]>(cacheKey);
 
       if (cachedCarousels && cachedCarousels.length > 0) {
-        // Display cached data immediately
-        console.log('📦 Usando dados em cache da HomePage');
+        // Display cached data immediately (no loading state)
+        console.log('📦 Mostrando cache da HomePage enquanto busca dados frescos');
         setCarousels(cachedCarousels);
         setIsLoading(false);
-        return;
+      } else {
+        // No cache, show loading
+        setIsLoading(true);
       }
 
-      // No cache, show loading and fetch
-      setIsLoading(true);
+      // ALWAYS fetch fresh data from API
       try {
-        console.log('🔄 Carregando carrosséis da API para HomePage...');
+        console.log('🔄 Buscando dados frescos da API para HomePage...');
 
         const response = await getGeneratedContent({ page: 1, limit: 100 });
 
@@ -289,14 +290,19 @@ const HomePage: React.FC = () => {
         const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
         const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
 
-        console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API (HomePage)`);
+        console.log(`✅ ${apiCarousels.length} carrosséis recebidos da API (HomePage)`);
 
-        setCarousels(apiCarousels);
-
-        // Cache the converted carousels
-        CacheService.setItem(cacheKey, apiCarousels);
+        // Check if data has changed
+        if (CacheService.hasDataChanged(cacheKey, apiCarousels)) {
+          console.log('🔄 Dados da HomePage mudaram, atualizando cache e UI');
+          CacheService.setItem(cacheKey, apiCarousels);
+          setCarousels(apiCarousels);
+        } else {
+          console.log('✅ Dados da HomePage não mudaram, mantendo cache');
+        }
       } catch (err) {
         console.error('❌ Erro ao carregar carrosséis da API:', err);
+        // Keep cached data if fetch fails
       } finally {
         setIsLoading(false);
       }

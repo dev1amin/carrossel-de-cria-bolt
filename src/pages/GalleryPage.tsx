@@ -276,21 +276,22 @@ const GalleryPage = () => {
     const cachedGallery = CacheService.getItem<GalleryCarousel[]>(CACHE_KEYS.GALLERY);
 
     if (cachedGallery && cachedGallery.length > 0) {
-      // Display cached data immediately
-      console.log('📦 Usando dados em cache da galeria');
+      // Display cached data immediately (no loading state)
+      console.log('📦 Mostrando cache da galeria enquanto busca dados frescos');
       setGalleryCarousels(cachedGallery);
       setIsLoadingFromAPI(false);
-      return;
+    } else {
+      // No cache, show loading
+      setIsLoadingFromAPI(true);
     }
 
-    // No cache, show loading and fetch
-    setIsLoadingFromAPI(true);
+    // ALWAYS fetch fresh data from API
     try {
-      console.log('🔄 Carregando galeria da API...');
+      console.log('🔄 Buscando dados frescos da API para galeria...');
 
       const response = await getGeneratedContent({ page: 1, limit: 100 });
       
-      console.log('✅ Resposta da API:', response);
+      console.log('✅ Resposta da API (galeria):', response);
       
       // Converte conteúdos da API para formato da galeria (com templates do MinIO)
       const apiCarouselsPromises = response.data.map(content => 
@@ -299,7 +300,7 @@ const GalleryPage = () => {
       const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
       const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
 
-      console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API`);
+      console.log(`✅ ${apiCarousels.length} carrosséis recebidos da API (galeria)`);
 
       // Carrega cache local
       const cachedLocal = CacheService.getItem<GalleryCarousel[]>(CACHE_KEYS.GALLERY) || [];
@@ -358,10 +359,14 @@ const GalleryPage = () => {
 
       console.log(`✅ Total de carrosséis únicos: ${uniqueCarousels.length}`);
       
-      setGalleryCarousels(uniqueCarousels);
-      
-      // Atualiza o cache com a lista mesclada e migrada
-      CacheService.setItem(CACHE_KEYS.GALLERY, uniqueCarousels);
+      // Check if data has changed before updating
+      if (CacheService.hasDataChanged(CACHE_KEYS.GALLERY, uniqueCarousels)) {
+        console.log('🔄 Dados da galeria mudaram, atualizando cache e UI');
+        CacheService.setItem(CACHE_KEYS.GALLERY, uniqueCarousels);
+        setGalleryCarousels(uniqueCarousels);
+      } else {
+        console.log('✅ Dados da galeria não mudaram, mantendo cache');
+      }
     } catch (err) {
       console.error('❌ Erro ao carregar galeria da API:', err);
       

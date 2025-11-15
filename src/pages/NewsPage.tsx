@@ -210,6 +210,10 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         
         window.dispatchEvent(new CustomEvent('gallery:updated', { detail: updated }));
         console.log('✅ Evento gallery:updated disparado com', updated.length, 'itens');
+        
+        // Invalidar cache da HomePage para forçar atualização
+        CacheService.clearItem(`${CACHE_KEYS.GENERATED_CONTENT}_home`);
+        console.log('🔄 Cache da HomePage invalidado');
       } catch (err) {
         console.error('❌ Erro ao atualizar cache/dispatch da galeria:', err);
       }
