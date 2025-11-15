@@ -150,7 +150,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
-        {/* Bolas de Luz Coloridas - Com posições variadas */}
+        {/* Bolas de Luz Coloridas - Com posições variadas e movimento contínuo */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div
@@ -159,39 +159,30 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`, // Agora as bolas começam em posições variadas
+                animation: `fall ${5 + Math.random() * 5}s linear infinite`,
                 animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${5 + Math.random() * 5}s`,
               }}
             />
           ))}
         </div>
 
-        {/* Bolas de Fundo com Efeito de Fluidez */}
+        {/* Bolas de Fundo com Efeito de Fluidez, sempre caindo e retornando */}
         <div className="absolute inset-0">
-          <div
-            className="absolute top-[15%] left-[20%] w-1 h-1 bg-white/30 rounded-full animate-fall"
-            style={{
-              animationDuration: '15s',
-              animationDelay: '2s',
-            }}
-          ></div>
-          <div
-            className="absolute top-[25%] right-[25%] w-1.5 h-1.5 bg-white/40 rounded-full animate-fall"
-            style={{
-              animationDuration: '20s',
-              animationDelay: '5s',
-            }}
-          ></div>
-          <div
-            className="absolute top-[45%] left-[15%] w-1 h-1 bg-white/25 rounded-full animate-fall"
-            style={{
-              animationDuration: '25s',
-              animationDelay: '7s',
-            }}
-          ></div>
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-500 rounded-full animate-fall"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: `fall ${8 + Math.random() * 8}s linear infinite`,
+                animationDelay: `${Math.random() * 5}s`,
+              }}
+            />
+          ))}
         </div>
 
-        {/* Instagram Icon - Linear Gradient */}
+        {/* Instagram Icon - Cor ajustada para #db2777 */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="instagram-icon-container group cursor-pointer"
@@ -215,22 +206,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 className="transition-transform duration-500 group-hover:scale-110"
                 fill="none"
               >
-                <defs>
-                  <radialGradient id="instagramGradient" cx="30%" cy="107%">
-                    <stop offset="0%" stopColor="#fdf497" />
-                    <stop offset="5%" stopColor="#fdf497" />
-                    <stop offset="45%" stopColor="#fd5949" />
-                    <stop offset="60%" stopColor="#d6249f" />
-                    <stop offset="90%" stopColor="#285AEB" />
-                  </radialGradient>
-                </defs>
                 <rect
                   x="0"
                   y="0"
                   width="256"
                   height="256"
                   rx="55"
-                  fill="url(#instagramGradient)"
+                  fill="#db2777" // Cor ajustada para #db2777
                 />
                 <g transform="translate(38, 38)">
                   <rect
