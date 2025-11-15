@@ -37,14 +37,14 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-4 items-center justify-center">
+    <div className="flex flex-wrap gap-4 items-center justify-center relative z-[60]">
       {/* Filtro de País */}
       <div className="flex-1 min-w-[200px]">
         <label className="block text-gray-dark text-sm mb-2">País</label>
         <select
           value={selectedCountry}
           onChange={(e) => onCountryChange(e.target.value)}
-          className="w-full bg-white border border-gray-light rounded-xl px-4 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue"
+          className="w-full bg-white border border-gray-light rounded-xl px-4 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue relative z-[61]"
         >
           <option value="">Todos os países</option>
           {filters.countries.map((country) => (
@@ -61,7 +61,7 @@ const NewsFilters: React.FC<NewsFiltersProps> = ({
         <select
           value={selectedLanguage}
           onChange={(e) => onLanguageChange(e.target.value)}
-          className="w-full bg-white border border-gray-light rounded-xl px-4 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue"
+          className="w-full bg-white border border-gray-light rounded-xl px-4 py-2 text-dark focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue relative z-[61]"
         >
           <option value="">Todos os idiomas</option>
           {filters.languages.map((lang) => (

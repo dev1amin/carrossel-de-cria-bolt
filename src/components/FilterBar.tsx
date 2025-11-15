@@ -35,10 +35,10 @@ const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-[60]"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full mt-2 w-full bg-white border-2 border-blue-500 rounded-lg shadow-lg overflow-hidden z-20">
+          <div className="absolute top-full mt-2 w-full bg-white border-2 border-blue-500 rounded-lg shadow-lg overflow-hidden z-[61]">
             {filters.map((filter) => {
               const Icon = filter.icon;
               const isActive = filter.value === activeSort;

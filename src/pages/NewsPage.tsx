@@ -279,7 +279,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="news" unviewedCount={unviewedCount} />, [unviewedCount]);
 
   return (
-    <div className="flex h-screen bg-light">
+    <div className="flex h-screen bg-white">
       {memoizedNavigation}
       <div className="flex-1">
         {shouldShowEditor && (
@@ -293,8 +293,8 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
-        <section className="relative pb-[2rem]">
+        <main className={`${generationQueue.length > 0 ? 'mt-20' : ''} bg-white`}>
+        <section className="relative pb-[5rem]">
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -331,7 +331,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
               }}
             />
 
-            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[2rem] space-y-6">
+            <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
               <div className="text-center">
                 <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
                   Separamos as melhores notícias pra você!
@@ -340,7 +340,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             </div>
           </section>
 
-          <section className="max-w-6xl mx-auto px-8">
+          <section className="max-w-6xl mx-auto px-8 -mt-[1rem]">
             <div className="mb-6 flex justify-between items-center">
               <p className="text-lg md:text-xl text-gray-dark font-medium">
                 Aqui está o seu feed de notícias!
