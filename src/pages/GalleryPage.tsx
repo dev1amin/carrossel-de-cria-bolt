@@ -493,16 +493,16 @@ const GalleryPage = () => {
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
-                background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
-                filter: "blur(70px)",
+                background: "radial-gradient(circle at 50% 30%, rgba(244, 114, 182, 0.3) 0%, rgba(96, 165, 250, 0.35) 35%, rgba(167, 243, 208, 0.25) 60%, rgba(255,255,255,0) 75%)",
+                filter: "blur(80px)",
                 animation: "glowDown 3s ease-in-out infinite"
               }}
             />
 
             <div
-              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
+              className="pointer-events-none absolute top-0 left-0 right-0 opacity-40"
               style={{
-                backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(rgba(96, 165, 250, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(167, 243, 208, 0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
                 height: "280px",
               }}
