@@ -5,7 +5,9 @@ import LoadingBar from '../components/LoadingBar';
 import NewsPostCard from '../components/NewsPostCard';
 import NewsFilters from '../components/NewsFilters';
 import Toast, { ToastMessage } from '../components/Toast';
+import { SkeletonGrid } from '../components/SkeletonLoader';
 import { getNews } from '../services/news';
+import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
 import type { GenerationQueueItem } from '../carousel';
 import { 
@@ -52,9 +54,25 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   }, [setShouldShowEditor]);
 
   const loadNews = async (page: number = 1) => {
+    const cacheKey = `${CACHE_KEYS.NEWS}_${JSON.stringify({ page, country: selectedCountry, lang: selectedLanguage })}`;
+
+    // Check if we have cached data first
+    const cachedData = CacheService.getItem<any>(cacheKey);
+
+    if (cachedData && cachedData.data && cachedData.data.length > 0) {
+      // Display cached data immediately
+      console.log('📦 Usando dados em cache de notícias');
+      setNews(cachedData.data);
+      setFilters(cachedData.filters || { countries: [], languages: [] });
+      setPagination(cachedData.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
+      setIsLoading(false);
+      return;
+    }
+
+    // No cache, show loading and fetch
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await getNews({
         page,
@@ -66,6 +84,9 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
       setNews(response.data);
       setFilters(response.filters);
       setPagination(response.pagination);
+
+      // Cache the entire response
+      CacheService.setItem(cacheKey, response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load news');
       console.error('Error loading news:', err);
@@ -400,7 +421,9 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                 />
               )}
             </div>
-            {news.length === 0 && !isLoading ? (
+            {isLoading && news.length === 0 ? (
+              <SkeletonGrid count={8} type="news" />
+            ) : news.length === 0 ? (
               <EmptyState />
             ) : (
               <>

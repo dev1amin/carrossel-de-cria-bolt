@@ -5,6 +5,8 @@ import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
 import FilterBar from '../components/FilterBar';
 import Toast, { ToastMessage } from '../components/Toast';
+import { SkeletonGrid } from '../components/SkeletonLoader';
+import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
 import { getFeed } from '../services/feed';
@@ -45,6 +47,18 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
   useEffect(() => {
     const loadFeed = async () => {
+      // Check if we have cached data first
+      const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+
+      if (cachedPosts && cachedPosts.length > 0) {
+        // Display cached data immediately
+        console.log('📦 Usando dados em cache do feed');
+        setPosts(cachedPosts);
+        setIsLoading(false);
+        return;
+      }
+
+      // No cache, show loading and fetch
       setIsLoading(true);
       setError(null);
       try {
@@ -346,7 +360,9 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
 
-            {posts.length === 0 && !isLoading ? (
+            {isLoading && posts.length === 0 ? (
+              <SkeletonGrid count={8} type="post" />
+            ) : posts.length === 0 ? (
               <EmptyState />
             ) : (
               <Feed

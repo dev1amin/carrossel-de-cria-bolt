@@ -4,6 +4,7 @@ import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
+import { SkeletonGrid } from '../components/SkeletonLoader';
 import { CarouselEditorTabs, type CarouselTab } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
@@ -271,14 +272,22 @@ const GalleryPage = () => {
 
   // Carrega carrosséis da API e mescla com cache local
   const loadGalleryFromAPI = async () => {
+    // Check if we have cached data first
+    const cachedGallery = CacheService.getItem<GalleryCarousel[]>(CACHE_KEYS.GALLERY);
+
+    if (cachedGallery && cachedGallery.length > 0) {
+      // Display cached data immediately
+      console.log('📦 Usando dados em cache da galeria');
+      setGalleryCarousels(cachedGallery);
+      setIsLoadingFromAPI(false);
+      return;
+    }
+
+    // No cache, show loading and fetch
     setIsLoadingFromAPI(true);
     try {
       console.log('🔄 Carregando galeria da API...');
-      
-      // TEMPORÁRIO: Limpa cache local para forçar uso da API
-      console.log('🗑️ Limpando cache local antigo...');
-      CacheService.clearItem(CACHE_KEYS.GALLERY);
-      
+
       const response = await getGeneratedContent({ page: 1, limit: 100 });
       
       console.log('✅ Resposta da API:', response);
@@ -588,12 +597,7 @@ const GalleryPage = () => {
               <GalleryFilters activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
             {isLoadingFromAPI && galleryCarousels.length === 0 ? (
-              <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue"></div>
-                  <p className="text-gray">Carregando galeria...</p>
-                </div>
-              </div>
+              <SkeletonGrid count={8} type="gallery" />
             ) : (
               <Gallery
                 carousels={galleryCarousels}

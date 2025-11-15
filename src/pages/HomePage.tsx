@@ -4,6 +4,7 @@ import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Downlo
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
+import { SkeletonGrid } from '../components/SkeletonLoader';
 import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import type { CarouselTab } from '../carousel';
@@ -11,6 +12,7 @@ import type { GeneratedContent } from '../types/generatedContent';
 import type { CarouselData } from '../carousel';
 import { templateService } from '../services/carousel/template.service';
 import { templateRenderer } from '../services/carousel/templateRenderer.service';
+import { CacheService, CACHE_KEYS } from '../services/cache';
 
 interface GalleryCarousel {
   id: string;
@@ -259,6 +261,20 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     const loadCarouselsFromAPI = async () => {
+      const cacheKey = `${CACHE_KEYS.GENERATED_CONTENT}_home`;
+
+      // Check if we have cached data first
+      const cachedCarousels = CacheService.getItem<GalleryCarousel[]>(cacheKey);
+
+      if (cachedCarousels && cachedCarousels.length > 0) {
+        // Display cached data immediately
+        console.log('📦 Usando dados em cache da HomePage');
+        setCarousels(cachedCarousels);
+        setIsLoading(false);
+        return;
+      }
+
+      // No cache, show loading and fetch
       setIsLoading(true);
       try {
         console.log('🔄 Carregando carrosséis da API para HomePage...');
@@ -276,6 +292,9 @@ const HomePage: React.FC = () => {
         console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API (HomePage)`);
 
         setCarousels(apiCarousels);
+
+        // Cache the converted carousels
+        CacheService.setItem(cacheKey, apiCarousels);
       } catch (err) {
         console.error('❌ Erro ao carregar carrosséis da API:', err);
       } finally {
@@ -612,10 +631,7 @@ const HomePage: React.FC = () => {
             </div>
 
             {isLoading ? (
-              <div className="text-center py-16 min-h-[420px] flex flex-col items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Carregando carrosséis...</p>
-              </div>
+              <SkeletonGrid count={4} type="home" />
             ) : carousels.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
