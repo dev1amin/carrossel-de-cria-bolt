@@ -364,7 +364,6 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                     {news.map((item, index) => (
                       <motion.div
                         key={item.id}
-                        layout
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
