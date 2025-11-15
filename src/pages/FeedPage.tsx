@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Feed from '../components/Feed';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
@@ -37,21 +38,6 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   } = useEditorTabs();
 
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
-
-  const getUserName = (): string => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.name || user.username || 'Usuário';
-      }
-    } catch (error) {
-      console.error('Erro ao obter nome do usuário:', error);
-    }
-    return 'Usuário';
-  };
-
-  const userName = getUserName();
 
   useEffect(() => {
     setShouldShowEditor(false);
@@ -201,6 +187,32 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
     }
   };
 
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-20 px-4">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="64"
+        height="64"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-gray-light mb-4"
+      >
+        <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+        <path d="M18 14h-8" />
+        <path d="M15 18h-5" />
+        <path d="M10 6h8v4h-8V6Z" />
+      </svg>
+      <h3 className="text-gray text-lg font-medium mb-2">Nenhum post encontrado</h3>
+      <p className="text-gray text-sm text-center max-w-md">
+        Não há posts disponíveis no feed no momento.
+      </p>
+    </div>
+  );
+
   if (error) {
     return (
       <div className="min-h-screen bg-light text-dark flex items-center justify-center p-4">
@@ -235,55 +247,65 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         <LoadingBar isLoading={isLoading} />
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
-          <section className="relative pb-20 md:pb-24">
-
-            {/* Fundo roxo de cima para baixo */}
+          <section className="relative pb-[7rem]">
             <div
-              className="absolute top-0 left-0 right-0 w-full h-[60vh] pointer-events-none"
+              className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
-                background: "linear-gradient(to bottom, rgba(122,95,255,0.4) 0%, rgba(122,95,255,0.2) 40%, rgba(255,255,255,0) 100%)",
+                background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
+                filter: "blur(70px)",
+                animation: "glowDown 3s ease-in-out infinite"
               }}
             />
 
-            {/* Quadrados azuis ocupando toda a tela */}
             <div
               className="pointer-events-none absolute inset-0 opacity-60"
               style={{
-                backgroundImage: `
-                  linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
-                `,
+                backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "100vh",
+                height: "50vh",
               }}
             />
 
-            {/* Conteúdo normal */}
+            <div
+              className="absolute inset-0 bottom-0 pointer-events-none"
+              style={{
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 50%, rgba(249,250,251,0.95) 100%)"
+              }}
+            />
+
             <div className="relative max-w-5xl mx-auto px-8 pt-[6rem] pb-[4.5rem] space-y-6">
               <div className="text-center">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3" style={{ fontFamily: '"Shadows Into Light", cursive' }}>
-                  Bem vindo de volta {userName}!
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
+                  Seu Feed Personalizado
                 </h1>
                 <p className="text-lg md:text-xl text-gray-dark">
                   Aqui está o seu feed de posts!
                 </p>
               </div>
-
-              <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
-
           </section>
 
-          {/* Feed logo em seguida */}
           <section className="max-w-6xl mx-auto px-8 -mt-[6.5rem]">
-            <div className="bg-white rounded-3xl shadow-lg p-8">
-              <Feed
-                posts={posts}
-                searchTerm=""
-                activeSort={activeSort}
-                onGenerateCarousel={handleGenerateCarousel}
-              />
+            <div className="mb-6 flex justify-center">
+              <div className="bg-white rounded-xl shadow-md p-4 inline-block">
+                <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
+              </div>
             </div>
+
+            {posts.length === 0 && !isLoading ? (
+              <EmptyState />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
+                <AnimatePresence>
+                  <Feed
+                    posts={posts}
+                    searchTerm=""
+                    activeSort={activeSort}
+                    onGenerateCarousel={handleGenerateCarousel}
+                  />
+                </AnimatePresence>
+              </div>
+            )}
           </section>
         </main>
       </div>
