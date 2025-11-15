@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
@@ -15,36 +15,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Inicia a animação das bolinhas assim que a página for carregada
-    const orbs = document.querySelectorAll('.animate-fall-orb');
-    orbs.forEach((orb, index) => {
-      orb.classList.add('start-falling');  // Isso faz com que as bolinhas comecem a cair imediatamente
-    });
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt with email:', email);
     setError('');
     setIsLoading(true);
 
     try {
       const response = await login({ email, password });
-      console.log('Login response:', response);
 
       if (onLoginSuccess) {
-        console.log('Calling onLoginSuccess callback');
         onLoginSuccess();
       }
 
-      if (response.needs_business_setup) {
-        console.log('🏢 Usuário precisa configurar business, redirecionando...');
+      if ((response as any).needs_business_setup) {
         navigate('/setup-business');
         return;
       }
 
-      console.log('Navigating to home page');
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
@@ -93,7 +80,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </label>
                 <button
                   type="button"
-                  className="text-sm text-gradient hover:text-gradient-dark transition-colors"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: '#ff65a3' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#db2777')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#ff65a3')}
                 >
                   Esqueceu a senha?
                 </button>
@@ -125,7 +115,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
+              className="w-full rounded-lg px-4 py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
+              style={{
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+              }}
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -134,7 +128,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-8 text-center">
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
-              <button className="text-gradient hover:text-gradient-dark font-medium hover:underline transition-colors">
+              <button
+                className="font-medium transition-colors"
+                style={{ color: '#ff65a3' }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#db2777')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#ff65a3')}
+              >
                 Criar conta
               </button>
             </p>
@@ -165,7 +164,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.3,
             filter: 'blur(80px)',
           }}
@@ -179,7 +179,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '250px',
             height: '250px',
             borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.25,
             filter: 'blur(70px)',
           }}
@@ -193,7 +194,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '280px',
             height: '280px',
             borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.2,
             filter: 'blur(75px)',
           }}
@@ -207,41 +209,73 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '220px',
             height: '220px',
             borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.28,
             filter: 'blur(65px)',
           }}
         />
 
-        {/* Falling Mini Orbs (Start Outside of Screen) */}
+        <div
+          className="absolute pointer-events-none animate-float-slow"
+          style={{
+            bottom: '15%',
+            left: '15%',
+            width: '260px',
+            height: '260px',
+            borderRadius: '50%',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.22,
+            filter: 'blur(70px)',
+          }}
+        />
+
+        <div
+          className="absolute pointer-events-none animate-float-reverse"
+          style={{
+            bottom: '20%',
+            right: '20%',
+            width: '240px',
+            height: '240px',
+            borderRadius: '50%',
+            background:
+              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.26,
+            filter: 'blur(68px)',
+          }}
+        />
+
+        {/* Falling Mini Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(15)].map((_, i) => (
             <div
               key={i}
               className="absolute rounded-full animate-fall-orb"
               style={{
+                top: '-10%',
                 left: `${Math.random() * 100}%`,
                 width: `${8 + Math.random() * 12}px`,
                 height: `${8 + Math.random() * 12}px`,
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.4 + Math.random() * 0.3,
+                background:
+                  'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.7,
                 filter: `blur(${2 + Math.random() * 4}px)`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${8 + Math.random() * 7}s`,
-                top: `${-100 + Math.random() * 20}%`, // Start above the screen
+                animationDuration: `${6 + Math.random() * 4}s`,
+                animationDelay: `${Math.random() * 1.5}s`,
               }}
             />
           ))}
         </div>
 
-        {/* Instagram Icon - White and full opacity */}
+        {/* Instagram Icon */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
           <div
             className="instagram-icon-container group cursor-pointer"
             style={{
               transform: 'rotate(-25deg)',
               transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              opacity: 1,  // Opacidade total
+              opacity: 1,
             }}
           >
             <div
@@ -256,25 +290,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   height="200"
                   viewBox="0 0 256 256"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="transition-transform duration-500 group-hover:scale-110 fill-white"
+                  className="transition-transform duration-500 group-hover:scale-110"
                 >
-                  <defs>
-                    <radialGradient id="instagramGradient" cx="30%" cy="107%">
-                      <stop offset="0%" stopColor="#fdf497" />
-                      <stop offset="5%" stopColor="#fdf497" />
-                      <stop offset="45%" stopColor="#fd5949" />
-                      <stop offset="60%" stopColor="#d6249f" />
-                      <stop offset="90%" stopColor="#285AEB" />
-                    </radialGradient>
-                  </defs>
-
                   <rect
                     x="0"
                     y="0"
                     width="256"
                     height="256"
                     rx="55"
-                    fill="url(#instagramGradient)"
+                    fill="#db2777"
                   />
 
                   <g transform="translate(38, 38)">
@@ -307,13 +331,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </g>
                 </svg>
 
-                {/* Rosa Bola de Luz Atrás do Ícone */}
                 <div
                   className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
                   style={{
-                    background: 'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
+                    background:
+                      'radial-gradient(circle, rgba(219,39,119,0.7) 0%, rgba(219,39,119,0.2) 55%, rgba(0,0,0,0) 100%)',
                   }}
-                ></div>
+                />
               </div>
             </div>
           </div>
@@ -321,25 +345,69 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       <style>{`
-        .animate-fall-orb.start-falling {
-          animation: fallOrb 8s linear infinite; /* Ajustando o tempo para que a animação comece de imediato */
+        @keyframes floatSlow {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px);
+          }
+          25% {
+            transform: translateY(-15px) translateX(10px);
+          }
+          50% {
+            transform: translateY(-25px) translateX(-5px);
+          }
+          75% {
+            transform: translateY(-10px) translateX(-15px);
+          }
+        }
+
+        @keyframes floatReverse {
+          0%, 100% {
+            transform: translateY(0px) translateX(0px);
+          }
+          25% {
+            transform: translateY(-10px) translateX(-15px);
+          }
+          50% {
+            transform: translateY(-20px) translateX(5px);
+          }
+          75% {
+            transform: translateY(-15px) translateX(10px);
+          }
         }
 
         @keyframes fallOrb {
           0% {
-            transform: translateY(-100px) scale(0.5);
+            transform: translateY(-120%);
             opacity: 0;
           }
-          10% {
+          15% {
             opacity: 0.7;
           }
-          90% {
+          85% {
             opacity: 0.7;
           }
           100% {
-            transform: translateY(calc(100vh + 100px)) scale(1);
+            transform: translateY(140%);
             opacity: 0;
           }
+        }
+
+        .animate-float-slow {
+          animation: floatSlow 8s ease-in-out infinite;
+        }
+
+        .animate-float-reverse {
+          animation: floatReverse 10s ease-in-out infinite;
+        }
+
+        .animate-fall-orb {
+          animation-name: fallOrb;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+
+        .instagram-icon-container:hover {
+          transform: rotate(-25deg) scale(1.05);
         }
       `}</style>
     </div>
