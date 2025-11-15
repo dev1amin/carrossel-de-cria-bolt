@@ -81,9 +81,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   className="text-sm font-medium transition-colors"
-                  style={{ color: '#ff65a3' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#db2777')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#ff65a3')}
+                  style={{ color: '#2563eb' }} // azul
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
                 >
                   Esqueceu a senha?
                 </button>
@@ -130,9 +130,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               Não tem uma conta?{' '}
               <button
                 className="font-medium transition-colors"
-                style={{ color: '#ff65a3' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#db2777')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#ff65a3')}
+                style={{ color: '#2563eb' }} // azul
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
               >
                 Criar conta
               </button>
@@ -248,7 +248,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
         {/* Falling Mini Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(15)].map((_, i) => (
+          {[...Array(18)].map((_, i) => (
             <div
               key={i}
               className="absolute rounded-full animate-fall-orb"
@@ -261,8 +261,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
                 opacity: 0.7,
                 filter: `blur(${2 + Math.random() * 4}px)`,
-                animationDuration: `${6 + Math.random() * 4}s`,
-                animationDelay: `${Math.random() * 1.5}s`,
+                animationDuration: `${6 + Math.random() * 4}s`,     // 6–10s
+                animationDelay: `${-Math.random() * 6}s`,           // atraso NEGATIVO => já começam no meio da animação
               }}
             />
           ))}
