@@ -117,7 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-blue hover:bg-blue-dark text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-pink-300 via-red-300 to-blue-300 hover:bg-gradient-to-r hover:from-pink-400 hover:via-red-400 hover:to-blue-400 text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -148,7 +148,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
-        {/* Floating Light Orbs - Same as Home Page */}
+        {/* Floating Light Orbs */}
         <div
           className="absolute pointer-events-none animate-float-slow"
           style={{
@@ -205,63 +205,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }}
         />
 
-        <div
-          className="absolute pointer-events-none animate-float-slow"
-          style={{
-            bottom: '15%',
-            left: '15%',
-            width: '260px',
-            height: '260px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.22,
-            filter: 'blur(70px)',
-          }}
-        />
-
-        <div
-          className="absolute pointer-events-none animate-float-reverse"
-          style={{
-            bottom: '20%',
-            right: '20%',
-            width: '240px',
-            height: '240px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.26,
-            filter: 'blur(68px)',
-          }}
-        />
-
-        <div
-          className="absolute pointer-events-none animate-float-slow"
-          style={{
-            top: '25%',
-            left: '45%',
-            width: '200px',
-            height: '200px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.18,
-            filter: 'blur(60px)',
-          }}
-        />
-
-        <div
-          className="absolute pointer-events-none animate-float-reverse"
-          style={{
-            top: '70%',
-            left: '35%',
-            width: '230px',
-            height: '230px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.24,
-            filter: 'blur(72px)',
-          }}
-        />
-
-        {/* Falling Mini Orbs */}
+        {/* Falling Mini Orbs (Start Outside of Screen) */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(15)].map((_, i) => (
             <div
@@ -276,12 +220,13 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 filter: `blur(${2 + Math.random() * 4}px)`,
                 animationDelay: `${Math.random() * 5}s`,
                 animationDuration: `${8 + Math.random() * 7}s`,
+                top: `${-100 + Math.random() * 20}%`, // Start above the screen
               }}
             />
           ))}
         </div>
 
-        {/* Instagram Icon - Official style with 0.6 opacity and white color */}
+        {/* Instagram Icon - White and full opacity */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
           <div
             className="instagram-icon-container group cursor-pointer"
