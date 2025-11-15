@@ -117,7 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               disabled={isLoading}
               className="w-full rounded-lg px-4 py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
               style={{
-                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', // adaptado, menos "paia"
+                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
               }}
             >
@@ -249,8 +249,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         {/* Falling Mini Orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(20)].map((_, i) => {
-            const duration = 4 + Math.random() * 3; // 4–7s
-            const delay = -Math.random() * duration; // delay negativo -> já começa no meio
+            const duration = 10 + Math.random() * 8; // 10–18s -> mais lento
+            const delay = -Math.random() * duration; // começa no meio da animação
 
             return (
               <div
@@ -259,12 +259,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 style={{
                   top: 0,
                   left: `${Math.random() * 100}%`,
-                  width: `${8 + Math.random() * 12}px`,
-                  height: `${8 + Math.random() * 12}px`,
+                  width: '12px',   // mesmo tamanho para todas
+                  height: '12px',  // mesmo tamanho para todas
                   background:
                     'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
                   opacity: 0.9,
-                  filter: `blur(${1 + Math.random() * 2}px)`,
+                  filter: 'blur(1.5px)',
                   animationDuration: `${duration}s`,
                   animationDelay: `${delay}s`,
                 }}
