@@ -251,16 +251,16 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
-                background: "radial-gradient(circle at 30% 20%, rgba(147, 197, 253, 0.4) 0%, rgba(196, 181, 253, 0.3) 40%, rgba(255,255,255,0) 70%)",
-                filter: "blur(80px)",
+                background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
+                filter: "blur(70px)",
                 animation: "glowDown 3s ease-in-out infinite"
               }}
             />
 
             <div
-              className="pointer-events-none absolute top-0 left-0 right-0 opacity-40"
+              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
               style={{
-                backgroundImage: `linear-gradient(rgba(147, 197, 253, 0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(147, 197, 253, 0.6) 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
                 height: "280px",
               }}

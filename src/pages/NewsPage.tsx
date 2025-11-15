@@ -298,16 +298,16 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
-                background: "radial-gradient(circle at 40% 30%, rgba(244, 114, 182, 0.35) 0%, rgba(168, 85, 247, 0.3) 30%, rgba(59, 130, 246, 0.25) 50%, rgba(255,255,255,0) 70%)",
-                filter: "blur(80px)",
+                background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
+                filter: "blur(70px)",
                 animation: "glowDown 3s ease-in-out infinite"
               }}
             />
 
             <div
-              className="pointer-events-none absolute top-0 left-0 right-0 opacity-40"
+              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
               style={{
-                backgroundImage: `linear-gradient(rgba(244, 114, 182, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(168, 85, 247, 0.5) 1px, transparent 1px)`,
+                backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
                 height: "280px",
               }}
