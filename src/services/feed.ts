@@ -64,52 +64,79 @@ const convertFeedItemToPost = (item: FeedItem): Post => {
 };
 
 export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => {
-  // Tentar obter do cache primeiro, a menos que forceUpdate seja true
-  if (!forceUpdate) {
-    const cachedFeed = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+  // Get cached data first (for immediate display)
+  const cachedFeed = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+
+  // Always try to fetch fresh data unless force update
+  try {
+    const response = await authenticatedFetch(API_ENDPOINTS.feed, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    // Se retornar 404 ou erro de "No feeds found", cria um novo feed automaticamente
+    if (!response.ok) {
+      const error = await response.json();
+
+      // Verifica se é erro de feed não encontrado
+      if (error.error && error.error.includes('No feeds found')) {
+        console.log('📭 Nenhum feed encontrado. Criando feed automaticamente...');
+
+        try {
+          // Tenta criar um novo feed
+          const posts = await createFeed();
+          console.log('✅ Feed criado com sucesso!');
+          return posts;
+        } catch (createError: any) {
+          console.error('❌ Erro ao criar feed automaticamente:', createError);
+
+          // Return cached data if available
+          if (cachedFeed) {
+            console.log('🔄 Using cached feed data');
+            return cachedFeed;
+          }
+
+          throw new Error(createError.message || 'Failed to create feed');
+        }
+      }
+
+      // If it's another type of error and we have cache, return it
+      if (cachedFeed) {
+        console.log('🔄 Using cached feed data (error)');
+        return cachedFeed;
+      }
+
+      throw new Error(error.error || 'Failed to fetch feed');
+    }
+
+    const data: FeedResponse = await response.json();
+
+    // Converter itens do feed para o formato Post
+    const posts = data.feed.map(convertFeedItemToPost);
+
+    // Check if data has changed
+    const hasChanged = CacheService.hasDataChanged(CACHE_KEYS.FEED, posts);
+
+    if (hasChanged || forceUpdate) {
+      // Update cache with new data
+      CacheService.setItem(CACHE_KEYS.FEED, posts);
+      console.log('📥 Feed data updated in cache');
+      return posts;
+    } else {
+      console.log('📥 Feed data unchanged, using cache');
+      return cachedFeed || posts;
+    }
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+
+    // Return cached data if available (offline mode)
     if (cachedFeed) {
+      console.log('📥 Using cached feed data (offline)');
       return cachedFeed;
     }
+
+    throw error;
   }
-
-  const response = await authenticatedFetch(API_ENDPOINTS.feed, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
-
-  // Se retornar 404 ou erro de "No feeds found", cria um novo feed automaticamente
-  if (!response.ok) {
-    const error = await response.json();
-    
-    // Verifica se é erro de feed não encontrado
-    if (error.error && error.error.includes('No feeds found')) {
-      console.log('📭 Nenhum feed encontrado. Criando feed automaticamente...');
-      
-      try {
-        // Tenta criar um novo feed
-        const posts = await createFeed();
-        console.log('✅ Feed criado com sucesso!');
-        return posts;
-      } catch (createError: any) {
-        console.error('❌ Erro ao criar feed automaticamente:', createError);
-        // Se falhar ao criar, joga o erro original
-        throw new Error(createError.message || 'Failed to create feed');
-      }
-    }
-    
-    // Se for outro tipo de erro, joga normalmente
-    throw new Error(error.error || 'Failed to fetch feed');
-  }
-
-  const data: FeedResponse = await response.json();
-  
-  // Converter itens do feed para o formato Post
-  const posts = data.feed.map(convertFeedItemToPost);
-  
-  // Salvar no cache
-  CacheService.setItem(CACHE_KEYS.FEED, posts);
-  
-  return posts;
 };
 
 export const createFeed = async (): Promise<Post[]> => {

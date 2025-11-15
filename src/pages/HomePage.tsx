@@ -606,13 +606,13 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200 min-h-[600px]">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
             </div>
 
             {isLoading ? (
-              <div className="text-center py-16">
+              <div className="text-center py-16 min-h-[420px] flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Carregando carrosséis...</p>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Newspaper, Bookmark } from 'lucide-react';
+import { Sparkles, Newspaper, Bookmark, Trophy, Medal } from 'lucide-react';
 import { TemplateSelectionModal } from '../carousel';
 import type { NewsItem } from '../types/news';
 import { motion } from 'framer-motion';
@@ -58,9 +58,22 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
     return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
   };
 
+  const getRankIcon = (index: number) => {
+    switch (index) {
+      case 0:
+        return <Trophy className="w-4 h-4 text-white" />;
+      case 1:
+        return <Medal className="w-4 h-4 text-gray-400" />;
+      case 2:
+        return <Medal className="w-4 h-4 text-amber-600" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <motion.div
-      className="relative w-full max-w-[300px] rounded-2xl overflow-hidden shadow-lg bg-white"
+      className="relative w-full max-w-[300px] rounded-2xl overflow-hidden shadow-lg bg-white flex flex-col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
@@ -143,42 +156,41 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
           </div>
         </div>
 
-        {/* Buttons Overlay */}
-        <div className="absolute bottom-4 left-4 right-4 z-50">
-          <div className="flex items-center justify-between">
-            <div className="bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
-              <Newspaper className="w-4 h-4 text-gray-900" />
-              <span>#{index + 1}</span>
+        {index < 3 && (
+          <div className="absolute bottom-4 right-4 z-50">
+            <div className="bg-gray-900/80 backdrop-blur-sm text-white p-2 rounded-full flex items-center justify-center">
+              {getRankIcon(index)}
             </div>
-            {onGenerateCarousel && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {}}
-                  className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
-                >
-                  <Bookmark className="w-4 h-4" />
-                  <span>Salvar</span>
-                </button>
-                <button
-                  onClick={handleOpenModal}
-                  className="bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-glow hover:shadow-xl"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Gerar</span>
-                </button>
-              </div>
-            )}
           </div>
-          {onGenerateCarousel && (
-            <TemplateSelectionModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSelectTemplate={handleSelectTemplate}
-              postCode={news.id}
-            />
-          )}
-        </div>
+        )}
       </div>
+
+      {onGenerateCarousel && (
+        <div className="p-3 bg-white border-t border-gray-100">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {}}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium"
+            >
+              <Bookmark className="w-4 h-4" />
+              <span>Salvar</span>
+            </button>
+            <button
+              onClick={handleOpenModal}
+              className="flex-1 bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium shadow-glow hover:shadow-xl"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Gerar</span>
+            </button>
+          </div>
+          <TemplateSelectionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSelectTemplate={handleSelectTemplate}
+            postCode={news.id}
+          />
+        </div>
+      )}
     </motion.div>
   );
 };

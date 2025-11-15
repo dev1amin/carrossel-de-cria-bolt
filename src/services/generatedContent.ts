@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../config/api';
 import { authenticatedFetch } from '../utils/apiClient';
+import { CacheService, CACHE_KEYS } from './cache';
 import type {
   GeneratedContentListResponse,
   GeneratedContentResponse,
@@ -16,12 +17,17 @@ import type {
 export const getGeneratedContent = async (
   params?: GeneratedContentQueryParams
 ): Promise<GeneratedContentListResponse> => {
+  const cacheKey = `${CACHE_KEYS.GENERATED_CONTENT}_${JSON.stringify(params || {})}`;
+
   try {
     const token = localStorage.getItem('access_token');
 
     if (!token) {
       throw new Error('No authentication token found');
     }
+
+    // Get cached data first (for immediate display)
+    const cachedData = CacheService.getItem<GeneratedContentListResponse>(cacheKey);
 
     // Constrói query string
     const queryParams = new URLSearchParams();
@@ -34,22 +40,46 @@ export const getGeneratedContent = async (
       ? `${API_ENDPOINTS.generatedContent}?${queryParams.toString()}`
       : API_ENDPOINTS.generatedContent;
 
-    const response = await authenticatedFetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await authenticatedFetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch generated content: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch generated content: ${response.statusText}`);
+      }
+
+      const freshData: GeneratedContentListResponse = await response.json();
+
+      // Check if data has changed
+      const hasChanged = CacheService.hasDataChanged(cacheKey, freshData);
+
+      if (hasChanged) {
+        // Update cache with new data
+        CacheService.setItem(cacheKey, freshData);
+        console.log('🎨 Generated content updated in cache');
+        return freshData;
+      } else {
+        console.log('🎨 Generated content unchanged, using cache');
+        return cachedData || freshData;
+      }
+    } catch (fetchError) {
+      console.error('Error fetching generated content:', fetchError);
+
+      // Return cached data if available (offline mode)
+      if (cachedData) {
+        console.log('🎨 Using cached generated content (offline)');
+        return cachedData;
+      }
+
+      throw fetchError;
     }
-
-    const data: GeneratedContentListResponse = await response.json();
-    return data;
   } catch (error) {
-    console.error('Error fetching generated content:', error);
+    console.error('Error in getGeneratedContent:', error);
     throw error;
   }
 };

@@ -58,7 +58,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel }) 
   };
 
   return (
-    <div className="relative w-full max-w-[300px] bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+    <div className="relative w-full max-w-[300px] bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col">
       <div className="px-4 py-3 flex items-center justify-between bg-white border-b border-gray-100">
         <div className="flex items-center space-x-4">
           <div className="flex items-center" style={{ color: 'rgb(255, 0, 0)' }}>
@@ -87,41 +87,41 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel }) 
             transformOrigin: 'top left'
           }}
         />
-        <div className="absolute bottom-4 left-4 right-4 z-50">
-          <div className="flex items-center justify-between">
-            <div className="bg-gray-900/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2">
+        {index < 3 && (
+          <div className="absolute bottom-4 right-4 z-50">
+            <div className="bg-gray-900/80 backdrop-blur-sm text-white p-2 rounded-full flex items-center justify-center">
               {getRankIcon(index)}
-              <span>#{index + 1}</span>
             </div>
-            {onGenerateCarousel && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {}}
-                  className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-900 px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
-                >
-                  <Bookmark className="w-4 h-4" />
-                  <span>Salvar</span>
-                </button>
-                <button
-                  onClick={handleOpenModal}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-3 py-1.5 rounded-full text-sm flex items-center space-x-2 transition-all shadow-lg hover:shadow-xl"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Gerar</span>
-                </button>
-              </div>
-            )}
           </div>
-          {onGenerateCarousel && (
-            <TemplateSelectionModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onSelectTemplate={handleSelectTemplate}
-              postCode={post.code}
-            />
-          )}
-        </div>
+        )}
       </div>
+
+      {onGenerateCarousel && (
+        <div className="p-3 bg-white border-t border-gray-100">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {}}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium"
+            >
+              <Bookmark className="w-4 h-4" />
+              <span>Salvar</span>
+            </button>
+            <button
+              onClick={handleOpenModal}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium shadow-lg hover:shadow-xl"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Gerar</span>
+            </button>
+          </div>
+          <TemplateSelectionModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSelectTemplate={handleSelectTemplate}
+            postCode={post.code}
+          />
+        </div>
+      )}
     </div>
   );
 }
