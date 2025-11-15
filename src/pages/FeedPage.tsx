@@ -287,23 +287,19 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
           <section className="max-w-6xl mx-auto px-8 -mt-[6.5rem]">
             <div className="mb-6 flex justify-center">
-              <div className="bg-white rounded-xl shadow-md p-4 inline-block">
-                <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
-              </div>
+              <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
 
             {posts.length === 0 && !isLoading ? (
               <EmptyState />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
-                <AnimatePresence>
-                  <Feed
-                    posts={posts}
-                    searchTerm=""
-                    activeSort={activeSort}
-                    onGenerateCarousel={handleGenerateCarousel}
-                  />
-                </AnimatePresence>
+              <div className="bg-white rounded-3xl shadow-lg p-8">
+                <Feed
+                  posts={posts}
+                  searchTerm=""
+                  activeSort={activeSort}
+                  onGenerateCarousel={handleGenerateCarousel}
+                />
               </div>
             )}
           </section>
