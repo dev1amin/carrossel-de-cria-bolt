@@ -281,14 +281,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           ))}
         </div>
 
-        {/* Instagram Icon - Official style with 0.6 opacity */}
+        {/* Instagram Icon - Official style with 0.6 opacity and white color */}
         <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
           <div
             className="instagram-icon-container group cursor-pointer"
             style={{
               transform: 'rotate(-25deg)',
               transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              opacity: 0.6,
+              opacity: 1,  // Opacidade total
             }}
           >
             <div
@@ -303,7 +303,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   height="200"
                   viewBox="0 0 256 256"
                   xmlns="http://www.w3.org/2000/svg"
-                  className="transition-transform duration-500 group-hover:scale-110"
+                  className="transition-transform duration-500 group-hover:scale-110 fill-white"
                 >
                   <defs>
                     <radialGradient id="instagramGradient" cx="30%" cy="107%">
@@ -354,6 +354,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   </g>
                 </svg>
 
+                {/* Rosa Bola de Luz Atrás do Ícone */}
                 <div
                   className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
                   style={{
