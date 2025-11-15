@@ -390,7 +390,7 @@ const HomePage: React.FC = () => {
 
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto bg-white relative ml-16"
+        className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-16"
       >
         <div
           className="absolute inset-0 pointer-events-none"
@@ -404,7 +404,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="absolute pointer-events-none overflow-hidden"
           style={{
             left: `${mousePosition.x}px`,
             top: `${mousePosition.y}px`,
@@ -420,14 +420,26 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-12 relative">
           <div className="text-center mb-8">
             <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-6"
+              className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-12"
               style={{ fontFamily: '"Shadows Into Light", cursive' }}
             >
               Bem vindo de volta {userName}!
             </h1>
 
-            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-8">
-              <div className="relative bg-white rounded-2xl border-2 border-gray-200 shadow-lg hover:border-blue-300 transition-colors">
+            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative">
+              <div
+                className="absolute -z-10 pointer-events-none"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '500px',
+                  height: '500px',
+                  background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 40%, rgba(255,255,255,0) 70%)',
+                  filter: 'blur(60px)',
+                }}
+              />
+              <div className="relative bg-white rounded-2xl border-2 border-gray-200 shadow-lg hover:border-blue-300 transition-colors z-10">
                 <div className="flex items-center gap-3 px-6 py-4">
                   <Sparkles className="w-6 h-6 text-blue-500 flex-shrink-0" />
                   <input
