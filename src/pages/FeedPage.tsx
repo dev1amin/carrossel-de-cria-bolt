@@ -272,11 +272,10 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
+              className="pointer-events-none fixed top-0 left-0 right-0 bottom-0 opacity-60"
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "280px",
               }}
             />
 
@@ -353,25 +352,27 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
           </section>
 
           <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
-            <div className="mb-6 flex justify-between items-center relative z-10">
-              <p className="text-lg md:text-xl text-gray-dark font-medium">
-                Aqui está o seu feed de posts!
-              </p>
-              <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
-            </div>
+            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg relative z-10">
+              <div className="mb-6 flex justify-between items-center">
+                <p className="text-lg md:text-xl text-gray-dark font-medium">
+                  Aqui está o seu feed de posts!
+                </p>
+                <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
+              </div>
 
-            {isLoading && posts.length === 0 ? (
-              <SkeletonGrid count={8} type="post" />
-            ) : posts.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <Feed
-                posts={posts}
-                searchTerm=""
-                activeSort={activeSort}
-                onGenerateCarousel={handleGenerateCarousel}
-              />
-            )}
+              {isLoading && posts.length === 0 ? (
+                <SkeletonGrid count={8} type="post" />
+              ) : posts.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <Feed
+                  posts={posts}
+                  searchTerm=""
+                  activeSort={activeSort}
+                  onGenerateCarousel={handleGenerateCarousel}
+                />
+              )}
+            </div>
           </section>
         </main>
       </div>

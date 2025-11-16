@@ -326,11 +326,10 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="pointer-events-none absolute top-0 left-0 right-0 opacity-60"
+              className="pointer-events-none fixed top-0 left-0 right-0 bottom-0 opacity-60"
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
-                height: "280px",
               }}
             />
 
@@ -407,73 +406,75 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
           </section>
 
           <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
-            <div className="mb-6 flex justify-between items-center relative z-10">
-              <p className="text-lg md:text-xl text-gray-dark font-medium">
-                Aqui está o seu feed de notícias!
-              </p>
-              {(filters.countries.length > 0 || filters.languages.length > 0) && (
-                <NewsFilters
-                  filters={filters}
-                  selectedCountry={selectedCountry}
-                  selectedLanguage={selectedLanguage}
-                  onCountryChange={setSelectedCountry}
-                  onLanguageChange={setSelectedLanguage}
-                />
+            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg relative z-10">
+              <div className="mb-6 flex justify-between items-center">
+                <p className="text-lg md:text-xl text-gray-dark font-medium">
+                  Aqui está o seu feed de notícias!
+                </p>
+                {(filters.countries.length > 0 || filters.languages.length > 0) && (
+                  <NewsFilters
+                    filters={filters}
+                    selectedCountry={selectedCountry}
+                    selectedLanguage={selectedLanguage}
+                    onCountryChange={setSelectedCountry}
+                    onLanguageChange={setSelectedLanguage}
+                  />
+                )}
+              </div>
+              {isLoading && news.length === 0 ? (
+                <SkeletonGrid count={8} type="news" />
+              ) : news.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
+                    <AnimatePresence>
+                      {news.map((item, index) => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 20 }}
+                          transition={{ duration: 0.3 }}
+                          className="w-full flex justify-center"
+                        >
+                          <NewsPostCard
+                            news={item}
+                            index={index}
+                            onGenerateCarousel={handleGenerateCarousel}
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Paginação */}
+                  {pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-4 mt-8 pb-8">
+                      <button
+                        onClick={handlePreviousPage}
+                        disabled={pagination.page === 1}
+                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
+                      >
+                        Anterior
+                      </button>
+
+                      <span className="text-gray">
+                        Página {pagination.page} de {pagination.totalPages}
+                      </span>
+
+                      <button
+                        onClick={handleNextPage}
+                        disabled={pagination.page === pagination.totalPages}
+                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
+                      >
+                        Próxima
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
-            {isLoading && news.length === 0 ? (
-              <SkeletonGrid count={8} type="news" />
-            ) : news.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
-                  <AnimatePresence>
-                    {news.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.3 }}
-                        className="w-full flex justify-center"
-                      >
-                        <NewsPostCard
-                          news={item}
-                          index={index}
-                          onGenerateCarousel={handleGenerateCarousel}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-
-                {/* Paginação */}
-                {pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-4 mt-8 pb-8">
-                    <button
-                      onClick={handlePreviousPage}
-                      disabled={pagination.page === 1}
-                      className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                    >
-                      Anterior
-                    </button>
-                    
-                    <span className="text-gray">
-                      Página {pagination.page} de {pagination.totalPages}
-                    </span>
-                    
-                    <button
-                      onClick={handleNextPage}
-                      disabled={pagination.page === pagination.totalPages}
-                      className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                    >
-                      Próxima
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
           </section>
         </main>
       </div>
