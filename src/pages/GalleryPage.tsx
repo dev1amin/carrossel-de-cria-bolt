@@ -5,6 +5,7 @@ import LoadingBar from '../components/LoadingBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
 import { SkeletonGrid } from '../components/SkeletonLoader';
+import SilkContainer from '../components/SilkContainer';
 import { CarouselEditorTabs, type CarouselTab } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
@@ -584,15 +585,26 @@ const GalleryPage = () => {
               </p>
               <GalleryFilters activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
-            {isLoadingFromAPI && galleryCarousels.length === 0 ? (
-              <SkeletonGrid count={8} type="gallery" />
-            ) : (
-              <Gallery
-                carousels={galleryCarousels}
-                onViewCarousel={addEditorTab}
-                onDeleteCarousel={handleDeleteCarousel}
-              />
-            )}
+            <SilkContainer
+              speed={2}
+              scale={1.5}
+              color="#e8eaf0"
+              noiseIntensity={0.8}
+              overlayColor="white"
+              overlayOpacity={0.88}
+              minHeight="auto"
+              className="rounded-2xl overflow-hidden"
+            >
+              {isLoadingFromAPI && galleryCarousels.length === 0 ? (
+                <SkeletonGrid count={8} type="gallery" />
+              ) : (
+                <Gallery
+                  carousels={galleryCarousels}
+                  onViewCarousel={addEditorTab}
+                  onDeleteCarousel={handleDeleteCarousel}
+                />
+              )}
+            </SilkContainer>
           </section>
         </main>
       </div>

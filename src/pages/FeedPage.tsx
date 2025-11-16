@@ -6,6 +6,7 @@ import LoadingBar from '../components/LoadingBar';
 import FilterBar from '../components/FilterBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
+import SilkContainer from '../components/SilkContainer';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
@@ -365,19 +366,30 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
 
-            {isLoading && posts.length === 0 ? (
-              <SkeletonGrid count={8} type="post" />
-            ) : posts.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <Feed
-                posts={posts}
-                searchTerm=""
-                activeSort={activeSort}
-                onGenerateCarousel={handleGenerateCarousel}
-                onShowToast={addToast}
-              />
-            )}
+            <SilkContainer
+              speed={2}
+              scale={1.5}
+              color="#e8eaf0"
+              noiseIntensity={0.8}
+              overlayColor="white"
+              overlayOpacity={0.88}
+              minHeight="auto"
+              className="rounded-2xl overflow-hidden"
+            >
+              {isLoading && posts.length === 0 ? (
+                <SkeletonGrid count={8} type="post" />
+              ) : posts.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <Feed
+                  posts={posts}
+                  searchTerm=""
+                  activeSort={activeSort}
+                  onGenerateCarousel={handleGenerateCarousel}
+                  onShowToast={addToast}
+                />
+              )}
+            </SilkContainer>
           </section>
         </main>
       </div>
