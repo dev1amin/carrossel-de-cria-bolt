@@ -76,7 +76,7 @@ function AppContent() {
   return (
     <>
       {/* Luz global que acompanha o mouse */}
-      <MouseFollowLight zIndex={9999} />
+      <MouseFollowLight zIndex={5} />
 
       {/* Fila global - renderizada fora das rotas */}
       <GenerationQueue 
