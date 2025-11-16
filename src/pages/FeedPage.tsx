@@ -285,12 +285,12 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               className="absolute pointer-events-none"
               style={{
                 top: '10%',
-                left: '8%',
+                left: '12%',
                 width: '300px',
                 height: '300px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.3,
+                opacity: 0.15,
                 filter: 'blur(80px)',
                 animation: 'float 8s ease-in-out infinite',
               }}
@@ -299,13 +299,13 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                top: '5%',
-                right: '12%',
+                top: '50%',
+                right: '10%',
                 width: '250px',
                 height: '250px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.25,
+                opacity: 0.12,
                 filter: 'blur(70px)',
                 animation: 'float 10s ease-in-out infinite reverse',
               }}
@@ -314,44 +314,14 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                top: '40%',
-                left: '5%',
-                width: '280px',
-                height: '280px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.2,
-                filter: 'blur(75px)',
-                animation: 'float 11s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                top: '45%',
-                right: '8%',
-                width: '220px',
-                height: '220px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.28,
-                filter: 'blur(65px)',
-                animation: 'float 9s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div
-              className="absolute pointer-events-none"
-              style={{
                 bottom: '15%',
-                left: '15%',
-                width: '260px',
-                height: '260px',
+                left: '20%',
+                width: '200px',
+                height: '200px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.22,
-                filter: 'blur(70px)',
+                opacity: 0.1,
+                filter: 'blur(60px)',
                 animation: 'float 12s ease-in-out infinite',
               }}
             />
@@ -359,45 +329,31 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '20%',
-                right: '20%',
-                width: '240px',
-                height: '240px',
+                top: '55%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '400px',
+                height: '400px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.26,
-                filter: 'blur(68px)',
-                animation: 'float 13s ease-in-out infinite reverse',
+                opacity: 0.5,
+                filter: 'blur(90px)',
+                animation: 'float 9s ease-in-out infinite',
               }}
             />
 
             <div
               className="absolute pointer-events-none"
               style={{
-                top: '25%',
-                left: '45%',
-                width: '200px',
-                height: '200px',
+                top: '55%',
+                right: '15%',
+                width: '350px',
+                height: '350px',
                 borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.18,
-                filter: 'blur(60px)',
-                animation: 'float 10s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                top: '70%',
-                left: '35%',
-                width: '230px',
-                height: '230px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.24,
-                filter: 'blur(72px)',
-                animation: 'float 14s ease-in-out infinite reverse',
+                background: 'linear-gradient(to top right, #6a82fb, #fc9d9a, #ff7eb9)',
+                opacity: 0.45,
+                filter: 'blur(85px)',
+                animation: 'float 11s ease-in-out infinite reverse',
               }}
             />
 
