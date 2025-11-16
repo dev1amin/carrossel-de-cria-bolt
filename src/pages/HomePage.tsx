@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
 import { SkeletonGrid } from '../components/SkeletonLoader';
+import SilkContainer from '../components/SilkContainer';
 import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import type { CarouselTab } from '../carousel';
@@ -631,7 +632,12 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200 min-h-[600px]">
+          <SilkContainer
+            minHeight="auto"
+            className="rounded-2xl shadow-lg"
+            withGrid={true}
+            padding="2rem"
+          >
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
             </div>
@@ -668,7 +674,7 @@ const HomePage: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </SilkContainer>
         </div>
       </div>
     </div>

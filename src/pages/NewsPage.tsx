@@ -410,14 +410,10 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
               )}
             </div>
             <SilkContainer
-              speed={2}
-              scale={1.5}
-              color="#e8eaf0"
-              noiseIntensity={0.8}
-              overlayColor="white"
-              overlayOpacity={0.88}
               minHeight="auto"
-              className="rounded-2xl overflow-hidden"
+              className="rounded-2xl"
+              withGrid={true}
+              padding="2rem"
             >
               {isLoading && news.length === 0 ? (
                 <SkeletonGrid count={8} type="news" />
