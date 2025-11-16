@@ -9,7 +9,7 @@ import { SkeletonGrid } from '../components/SkeletonLoader';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
-import { getFeed } from '../services/feed';
+import { getFeed, getSavedPosts } from '../services/feed';
 import {
   templateService,
   templateRenderer,
@@ -47,29 +47,38 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
   useEffect(() => {
     const loadFeed = async () => {
-      // Check if we have cached data first
-      const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+      // Check if we have cached data first (only for generated content)
+      if (activeSort !== 'saved') {
+        const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
 
-      if (cachedPosts && cachedPosts.length > 0) {
-        // Display cached data immediately (no loading state)
-        console.log('📦 Mostrando cache do feed enquanto busca dados frescos');
-        setPosts(cachedPosts);
-        setIsLoading(false);
+        if (cachedPosts && cachedPosts.length > 0) {
+          // Display cached data immediately (no loading state)
+          console.log('📦 Mostrando cache do feed enquanto busca dados frescos');
+          setPosts(cachedPosts);
+          setIsLoading(false);
+        } else {
+          // No cache, show loading
+          setIsLoading(true);
+        }
       } else {
-        // No cache, show loading
+        // For saved content, always show loading
         setIsLoading(true);
       }
 
-      // ALWAYS fetch fresh data from API
+      // Fetch data from API
       setError(null);
       try {
-        console.log('🔄 Buscando dados frescos da API para feed...');
-        const feedData = await getFeed(true); // Force update to always fetch
-        console.log('✅ Feed recebido da API:', feedData.length, 'posts');
-        
-        // Check if data has changed (getFeed already handles this internally)
-        // Just update the state with fresh data
-        setPosts(feedData);
+        if (activeSort === 'saved') {
+          console.log('🔄 Buscando posts salvos...');
+          const { posts: savedPosts } = await getSavedPosts(1, 20);
+          console.log('✅ Posts salvos recebidos:', savedPosts.length, 'posts');
+          setPosts(savedPosts);
+        } else {
+          console.log('🔄 Buscando dados frescos da API para feed...');
+          const feedData = await getFeed(true); // Force update to always fetch
+          console.log('✅ Feed recebido da API:', feedData.length, 'posts');
+          setPosts(feedData);
+        }
       } catch (err) {
         console.error('❌ Erro ao carregar feed:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load feed';
@@ -83,14 +92,18 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         } else {
           setError(errorMessage);
         }
-        // Keep cached data if fetch fails
+        // Keep cached data if fetch fails (only for generated)
+        if (activeSort !== 'saved') {
+          const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+          if (cachedPosts) setPosts(cachedPosts);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     loadFeed();
-  }, []);
+  }, [activeSort]);
 
   const addToast = (message: string, type: 'success' | 'error') => {
     const toast: ToastMessage = { id: `toast-${Date.now()}`, message, type };
@@ -362,6 +375,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
                 searchTerm=""
                 activeSort={activeSort}
                 onGenerateCarousel={handleGenerateCarousel}
+                onShowToast={addToast}
               />
             )}
           </section>

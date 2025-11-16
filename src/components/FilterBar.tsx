@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, Clock, Heart, MessageCircle, Share2, ChevronDown } from 'lucide-react';
+import { TrendingUp, Clock, Heart, MessageCircle, Share2, ChevronDown, Bookmark } from 'lucide-react';
 import { SortOption } from '../types';
 
 interface FilterBarProps {
@@ -16,6 +16,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ activeSort, onSortChange }) => {
     { label: 'Mais curtidos', value: 'likes', icon: Heart },
     { label: 'Mais comentados', value: 'comments', icon: MessageCircle },
     { label: 'Mais compartilhados', value: 'shares', icon: Share2 },
+    { label: 'Posts Salvos', value: 'saved', icon: Bookmark },
   ];
 
   const activeFilter = filters.find(f => f.value === activeSort);

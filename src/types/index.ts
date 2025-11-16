@@ -1,5 +1,6 @@
 export interface Post {
   id?: number; // ID do post da API
+  feedId?: string; // ID do feed (necessário para salvar)
   code: string;
   text: string;
   taken_at: number;
@@ -17,9 +18,11 @@ export interface Post {
   reshareScore: number;
   comment_count: number;
   reshare_count: number;
+  isSaved?: boolean; // Indica se o post está salvo
+  savedAt?: string; // Data de salvamento (para posts salvos)
 }
 
-export type SortOption = 'latest' | 'popular' | 'likes' | 'comments' | 'shares';
+export type SortOption = 'latest' | 'popular' | 'likes' | 'comments' | 'shares' | 'saved';
 
 // Re-export types from other modules
 export * from './generatedContent';
