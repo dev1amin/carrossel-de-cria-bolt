@@ -16,18 +16,20 @@ interface SilkContainerProps {
 
 const SilkContainer: React.FC<SilkContainerProps> = ({
   children,
-  speed = 2,
-  scale = 1.5,
-  color = '#e8eaf0',
-  noiseIntensity = 0.8,
+  // defaults mais decentes
+  speed = 5,
+  scale = 1,
+  color = '#7B7481',
+  noiseIntensity = 1.5,
   rotation = 0,
   overlayColor = 'white',
-  overlayOpacity = 0.85,
+  overlayOpacity = 0.4, // NÃO 0.85
   minHeight = '100vh',
   className = '',
 }) => {
   return (
-    <div className={`relative ${className}`} style={{ minHeight }}>
+    <div className={`relative overflow-hidden ${className}`} style={{ minHeight }}>
+      {/* background animado */}
       <div className="absolute inset-0 w-full h-full">
         <Silk
           speed={speed}
@@ -38,6 +40,7 @@ const SilkContainer: React.FC<SilkContainerProps> = ({
         />
       </div>
 
+      {/* overlay claro por cima, mas sem matar tudo */}
       <div
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{
@@ -46,6 +49,7 @@ const SilkContainer: React.FC<SilkContainerProps> = ({
         }}
       />
 
+      {/* conteúdo acima de tudo */}
       <div className="relative z-10">
         {children}
       </div>
