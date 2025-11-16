@@ -406,7 +406,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
           </section>
 
           <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
-            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-8 shadow-lg relative z-10">
+            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10">
               <div className="mb-6 flex justify-between items-center">
                 <p className="text-lg md:text-xl text-gray-dark font-medium">
                   Aqui está o seu feed de notícias!
