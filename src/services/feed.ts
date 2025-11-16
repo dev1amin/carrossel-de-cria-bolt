@@ -60,7 +60,6 @@ const convertFeedItemToPost = (item: FeedItem): Post => {
     reshareScore: content.reshare_score,
     recencyScore: content.recency_score,
     overallScore: content.overall_score,
-    isSaved: item.is_saved, // Incluir status de salvamento
   };
 };
 
@@ -112,11 +111,8 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => 
 
     const data: FeedResponse = await response.json();
 
-    // Converter itens do feed para o formato Post, incluindo feedId
-    const posts = data.feed.map(item => ({
-      ...convertFeedItemToPost(item),
-      feedId: data.feed_id || undefined,
-    }));
+    // Converter itens do feed para o formato Post
+    const posts = data.feed.map(convertFeedItemToPost);
 
     // Check if data has changed
     const hasChanged = CacheService.hasDataChanged(CACHE_KEYS.FEED, posts);
@@ -157,11 +153,8 @@ export const createFeed = async (): Promise<Post[]> => {
 
   const data: FeedResponse = await response.json();
   
-  // Converter itens do feed para o formato Post, incluindo feedId
-  const posts = data.feed.map(item => ({
-    ...convertFeedItemToPost(item),
-    feedId: data.feed_id || undefined,
-  }));
+  // Converter itens do feed para o formato Post
+  const posts = data.feed.map(convertFeedItemToPost);
   
   // Salvar no cache
   CacheService.setItem(CACHE_KEYS.FEED, posts);
@@ -169,14 +162,11 @@ export const createFeed = async (): Promise<Post[]> => {
   return posts;
 };
 
-export const saveContent = async (contentId: number, feedId: string): Promise<void> => {
+export const saveContent = async (contentId: number): Promise<void> => {
   const response = await authenticatedFetch(API_ENDPOINTS.feedSave, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ 
-      feed_id: feedId,
-      content_id: contentId 
-    }),
+    body: JSON.stringify({ content_id: contentId }),
   });
 
   if (!response.ok) {
@@ -202,98 +192,4 @@ export const unsaveContent = async (contentId: number): Promise<void> => {
 
   // Invalidar cache do feed
   CacheService.clearItem(CACHE_KEYS.FEED);
-};
-
-interface SavedContentItem {
-  saved_at: string;
-  id: number;
-  influencer_id: string;
-  content_url: string;
-  product_type: string;
-  text: string;
-  platform: string;
-  published_at: string;
-  like_count: number;
-  play_count: number;
-  comment_count: number;
-  overall_score: number;
-  influencer: {
-    id: string;
-    handle: string;
-    display_name: string;
-    profile_url: string;
-    platform: string;
-  };
-}
-
-interface SavedContentResponse {
-  success: boolean;
-  data: SavedContentItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-// Converter SavedContentItem para Post
-const convertSavedItemToPost = (item: SavedContentItem): Post => {
-  // Para posts salvos, usamos a URL direta da imagem
-  // Não tentamos extrair código porque content_url é a URL da imagem, não do post
-  const code = `saved-${item.id}`; // Código único para posts salvos
-  
-  // Determinar media_type baseado em product_type
-  // carousel_container, reels = 8 (video/carousel), outros = 1 (image)
-  const isVideoOrCarousel = item.product_type === 'reels' || item.product_type === 'carousel_container';
-  
-  return {
-    id: item.id,
-    code: code,
-    text: item.text,
-    taken_at: new Date(item.published_at).getTime() / 1000,
-    username: item.influencer?.handle || item.influencer_id,
-    image_url: item.content_url,
-    video_url: isVideoOrCarousel ? item.content_url : null,
-    media_type: isVideoOrCarousel ? 8 : 1,
-    like_count: item.like_count,
-    comment_count: item.comment_count,
-    play_count: item.play_count || 0,
-    reshare_count: 0, // Não disponível em saved items
-    likeScore: 0,
-    commentScore: 0,
-    playScore: 0,
-    reshareScore: 0,
-    recencyScore: 0,
-    overallScore: item.overall_score,
-    isSaved: true, // Posts salvos sempre marcados como salvos
-    savedAt: item.saved_at,
-  };
-};
-
-export const getSavedContent = async (page: number = 1, limit: number = 20): Promise<SavedContentResponse> => {
-  const response = await authenticatedFetch(
-    `${API_ENDPOINTS.feedSaved}?page=${page}&limit=${limit}`,
-    {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch saved content');
-  }
-
-  return await response.json();
-};
-
-// Função auxiliar para obter posts salvos no formato Post[]
-export const getSavedPosts = async (page: number = 1, limit: number = 20): Promise<{ posts: Post[]; pagination: SavedContentResponse['pagination'] }> => {
-  console.log('🔍 getSavedPosts: Iniciando requisição...');
-  const data = await getSavedContent(page, limit);
-  console.log('✅ getSavedPosts: Resposta recebida:', data);
-  const posts = data.data.map(convertSavedItemToPost);
-  console.log('✅ getSavedPosts: Posts convertidos:', posts);
-  return { posts, pagination: data.pagination };
 };

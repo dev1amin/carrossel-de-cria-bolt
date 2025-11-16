@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import SilkContainer from '../components/SilkContainer';
 import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import type { CarouselTab } from '../carousel';
@@ -268,18 +267,17 @@ const HomePage: React.FC = () => {
       const cachedCarousels = CacheService.getItem<GalleryCarousel[]>(cacheKey);
 
       if (cachedCarousels && cachedCarousels.length > 0) {
-        // Display cached data immediately (no loading state)
-        console.log('📦 Mostrando cache da HomePage enquanto busca dados frescos');
+        // Display cached data immediately
+        console.log('📦 Usando dados em cache da HomePage');
         setCarousels(cachedCarousels);
         setIsLoading(false);
-      } else {
-        // No cache, show loading
-        setIsLoading(true);
+        return;
       }
 
-      // ALWAYS fetch fresh data from API
+      // No cache, show loading and fetch
+      setIsLoading(true);
       try {
-        console.log('🔄 Buscando dados frescos da API para HomePage...');
+        console.log('🔄 Carregando carrosséis da API para HomePage...');
 
         const response = await getGeneratedContent({ page: 1, limit: 100 });
 
@@ -291,19 +289,14 @@ const HomePage: React.FC = () => {
         const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
         const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
 
-        console.log(`✅ ${apiCarousels.length} carrosséis recebidos da API (HomePage)`);
+        console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API (HomePage)`);
 
-        // Check if data has changed
-        if (CacheService.hasDataChanged(cacheKey, apiCarousels)) {
-          console.log('🔄 Dados da HomePage mudaram, atualizando cache e UI');
-          CacheService.setItem(cacheKey, apiCarousels);
-          setCarousels(apiCarousels);
-        } else {
-          console.log('✅ Dados da HomePage não mudaram, mantendo cache');
-        }
+        setCarousels(apiCarousels);
+
+        // Cache the converted carousels
+        CacheService.setItem(cacheKey, apiCarousels);
       } catch (err) {
         console.error('❌ Erro ao carregar carrosséis da API:', err);
-        // Keep cached data if fetch fails
       } finally {
         setIsLoading(false);
       }
@@ -632,12 +625,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <SilkContainer
-            minHeight="auto"
-            className="rounded-2xl shadow-lg"
-            withGrid={true}
-            padding="2rem"
-          >
+          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200 min-h-[600px]">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
             </div>
@@ -674,7 +662,7 @@ const HomePage: React.FC = () => {
                 ))}
               </div>
             )}
-          </SilkContainer>
+          </div>
         </div>
       </div>
     </div>
@@ -817,14 +805,14 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(carousel)}
-            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
+            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors border border-gray-200"
           >
             <Edit className="w-4 h-4" />
             Editar
           </button>
           <button
             onClick={() => onDownload(carousel)}
-            className="flex items-center justify-center gap-2 bg-blue text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-dark transition-colors border border-blue"
+            className="flex items-center justify-center gap-2 bg-zinc-800 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-700"
           >
             <Download className="w-4 h-4" />
           </button>

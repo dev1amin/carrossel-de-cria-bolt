@@ -34,7 +34,7 @@ const StatsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen bg-light">
         <Navigation currentPage="settings" />
         <div className="flex-1 ml-16 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -48,7 +48,7 @@ const StatsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen bg-light">
         <Navigation currentPage="settings" />
         <div className="flex-1 ml-16 flex items-center justify-center p-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
@@ -67,7 +67,7 @@ const StatsPage: React.FC = () => {
 
   if (!stats) {
     return (
-      <div className="flex h-screen bg-white">
+      <div className="flex h-screen bg-light">
         <Navigation currentPage="settings" />
         <div className="flex-1 ml-16 flex items-center justify-center">
           <p className="text-gray">Nenhuma estatística disponível</p>

@@ -6,11 +6,10 @@ import LoadingBar from '../components/LoadingBar';
 import FilterBar from '../components/FilterBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import SilkContainer from '../components/SilkContainer';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
-import { getFeed, getSavedPosts } from '../services/feed';
+import { getFeed } from '../services/feed';
 import {
   templateService,
   templateRenderer,
@@ -48,38 +47,25 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
   useEffect(() => {
     const loadFeed = async () => {
-      // Check if we have cached data first (only for generated content)
-      if (activeSort !== 'saved') {
-        const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
+      // Check if we have cached data first
+      const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
 
-        if (cachedPosts && cachedPosts.length > 0) {
-          // Display cached data immediately (no loading state)
-          console.log('📦 Mostrando cache do feed enquanto busca dados frescos');
-          setPosts(cachedPosts);
-          setIsLoading(false);
-        } else {
-          // No cache, show loading
-          setIsLoading(true);
-        }
-      } else {
-        // For saved content, always show loading
-        setIsLoading(true);
+      if (cachedPosts && cachedPosts.length > 0) {
+        // Display cached data immediately
+        console.log('📦 Usando dados em cache do feed');
+        setPosts(cachedPosts);
+        setIsLoading(false);
+        return;
       }
 
-      // Fetch data from API
+      // No cache, show loading and fetch
+      setIsLoading(true);
       setError(null);
       try {
-        if (activeSort === 'saved') {
-          console.log('🔄 Buscando posts salvos...');
-          const { posts: savedPosts } = await getSavedPosts(1, 20);
-          console.log('✅ Posts salvos recebidos:', savedPosts.length, 'posts');
-          setPosts(savedPosts);
-        } else {
-          console.log('🔄 Buscando dados frescos da API para feed...');
-          const feedData = await getFeed(true); // Force update to always fetch
-          console.log('✅ Feed recebido da API:', feedData.length, 'posts');
-          setPosts(feedData);
-        }
+        console.log('📥 Carregando feed...');
+        const feedData = await getFeed();
+        console.log('✅ Feed carregado:', feedData.length, 'posts');
+        setPosts(feedData);
       } catch (err) {
         console.error('❌ Erro ao carregar feed:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load feed';
@@ -93,18 +79,13 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         } else {
           setError(errorMessage);
         }
-        // Keep cached data if fetch fails (only for generated)
-        if (activeSort !== 'saved') {
-          const cachedPosts = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
-          if (cachedPosts) setPosts(cachedPosts);
-        }
       } finally {
         setIsLoading(false);
       }
     };
 
     loadFeed();
-  }, [activeSort]);
+  }, []);
 
   const addToast = (message: string, type: 'success' | 'error') => {
     const toast: ToastMessage = { id: `toast-${Date.now()}`, message, type };
@@ -198,10 +179,6 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
         CacheService.setItem(CACHE_KEYS.GALLERY, updated);
         window.dispatchEvent(new CustomEvent('gallery:updated', { detail: updated }));
-        
-        // Invalidar cache da HomePage para forçar atualização
-        CacheService.clearItem(`${CACHE_KEYS.GENERATED_CONTENT}_home`);
-        console.log('🔄 Cache da HomePage invalidado');
       } catch (err) {
         console.error('❌ Erro ao atualizar cache/dispatch da galeria:', err);
       }
@@ -269,7 +246,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="feed" unviewedCount={unviewedCount} />, [unviewedCount]);
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-light">
       {memoizedNavigation}
       <div className="flex-1">
         {shouldShowEditor && (
@@ -348,6 +325,23 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               }}
             />
 
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "280px",
+                height: "80px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
+
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "360px",
+                height: "60px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
 
             <div className="relative z-10 max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
               <div className="text-center">
@@ -366,26 +360,18 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
               <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
 
-            <SilkContainer
-              minHeight="auto"
-              className="rounded-2xl"
-              withGrid={true}
-              padding="2rem"
-            >
-              {isLoading && posts.length === 0 ? (
-                <SkeletonGrid count={8} type="post" />
-              ) : posts.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <Feed
-                  posts={posts}
-                  searchTerm=""
-                  activeSort={activeSort}
-                  onGenerateCarousel={handleGenerateCarousel}
-                  onShowToast={addToast}
-                />
-              )}
-            </SilkContainer>
+            {isLoading && posts.length === 0 ? (
+              <SkeletonGrid count={8} type="post" />
+            ) : posts.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <Feed
+                posts={posts}
+                searchTerm=""
+                activeSort={activeSort}
+                onGenerateCarousel={handleGenerateCarousel}
+              />
+            )}
           </section>
         </main>
       </div>

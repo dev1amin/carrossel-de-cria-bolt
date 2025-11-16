@@ -309,10 +309,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange, setIsLoading 
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('jwt_token');
     localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('token_expires_at');
     window.location.href = '/login';
   };
 

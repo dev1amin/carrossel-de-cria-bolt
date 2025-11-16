@@ -15,12 +15,11 @@ interface FeedProps {
   searchTerm: string;
   activeSort: SortOption;
   onGenerateCarousel?: (code: string, templateId: string, postId?: number) => void;
-  onShowToast?: (message: string, type: 'success' | 'error') => void;
 }
 
 type CarouselData = CarouselDataType;
 
-const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCarousel: onGenerateCarouselProp, onShowToast }) => {
+const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCarousel: onGenerateCarouselProp }) => {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>(posts);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [renderedSlides, setRenderedSlides] = useState<string[] | null>(null);
@@ -75,25 +74,22 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
       );
     }
     
-    // Posts salvos já vêm ordenados da API, não reordenar
-    if (activeSort !== 'saved') {
-      result.sort((a, b) => {
-        switch (activeSort) {
-          case 'latest':
-            return b.taken_at - a.taken_at;
-          case 'popular':
-            return b.overallScore - a.overallScore;
-          case 'likes':
-            return b.like_count - a.like_count;
-          case 'comments':
-            return b.comment_count - a.comment_count;
-          case 'shares':
-            return b.reshare_count - a.reshare_count;
-          default:
-            return 0;
-        }
-      });
-    }
+    result.sort((a, b) => {
+      switch (activeSort) {
+        case 'latest':
+          return b.taken_at - a.taken_at;
+        case 'popular':
+          return b.overallScore - a.overallScore;
+        case 'likes':
+          return b.like_count - a.like_count;
+        case 'comments':
+          return b.comment_count - a.comment_count;
+        case 'shares':
+          return b.reshare_count - a.reshare_count;
+        default:
+          return 0;
+      }
+    });
     
     console.log(`[Sort] New post order: ${result.map(p => p.code).join(', ')}`);
     setFilteredPosts(result);
@@ -194,7 +190,6 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                     post={post}
                     index={index}
                     onGenerateCarousel={handleGenerateCarousel}
-                    onShowToast={onShowToast}
                   />
                 </motion.div>
               ))}
@@ -216,7 +211,6 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                       post={post}
                       index={index}
                       onGenerateCarousel={handleGenerateCarousel}
-                      onShowToast={onShowToast}
                     />
                   </motion.div>
                 ))}

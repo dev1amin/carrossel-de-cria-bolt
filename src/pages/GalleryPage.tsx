@@ -5,7 +5,6 @@ import LoadingBar from '../components/LoadingBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import SilkContainer from '../components/SilkContainer';
 import { CarouselEditorTabs, type CarouselTab } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
@@ -277,22 +276,21 @@ const GalleryPage = () => {
     const cachedGallery = CacheService.getItem<GalleryCarousel[]>(CACHE_KEYS.GALLERY);
 
     if (cachedGallery && cachedGallery.length > 0) {
-      // Display cached data immediately (no loading state)
-      console.log('📦 Mostrando cache da galeria enquanto busca dados frescos');
+      // Display cached data immediately
+      console.log('📦 Usando dados em cache da galeria');
       setGalleryCarousels(cachedGallery);
       setIsLoadingFromAPI(false);
-    } else {
-      // No cache, show loading
-      setIsLoadingFromAPI(true);
+      return;
     }
 
-    // ALWAYS fetch fresh data from API
+    // No cache, show loading and fetch
+    setIsLoadingFromAPI(true);
     try {
-      console.log('🔄 Buscando dados frescos da API para galeria...');
+      console.log('🔄 Carregando galeria da API...');
 
       const response = await getGeneratedContent({ page: 1, limit: 100 });
       
-      console.log('✅ Resposta da API (galeria):', response);
+      console.log('✅ Resposta da API:', response);
       
       // Converte conteúdos da API para formato da galeria (com templates do MinIO)
       const apiCarouselsPromises = response.data.map(content => 
@@ -301,7 +299,7 @@ const GalleryPage = () => {
       const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
       const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
 
-      console.log(`✅ ${apiCarousels.length} carrosséis recebidos da API (galeria)`);
+      console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API`);
 
       // Carrega cache local
       const cachedLocal = CacheService.getItem<GalleryCarousel[]>(CACHE_KEYS.GALLERY) || [];
@@ -360,14 +358,10 @@ const GalleryPage = () => {
 
       console.log(`✅ Total de carrosséis únicos: ${uniqueCarousels.length}`);
       
-      // Check if data has changed before updating
-      if (CacheService.hasDataChanged(CACHE_KEYS.GALLERY, uniqueCarousels)) {
-        console.log('🔄 Dados da galeria mudaram, atualizando cache e UI');
-        CacheService.setItem(CACHE_KEYS.GALLERY, uniqueCarousels);
-        setGalleryCarousels(uniqueCarousels);
-      } else {
-        console.log('✅ Dados da galeria não mudaram, mantendo cache');
-      }
+      setGalleryCarousels(uniqueCarousels);
+      
+      // Atualiza o cache com a lista mesclada e migrada
+      CacheService.setItem(CACHE_KEYS.GALLERY, uniqueCarousels);
     } catch (err) {
       console.error('❌ Erro ao carregar galeria da API:', err);
       
@@ -488,7 +482,7 @@ const GalleryPage = () => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="gallery" />, []);
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen bg-light">
       {memoizedNavigation}
       <div className="flex-1">
         {shouldShowEditor && (
@@ -568,6 +562,23 @@ const GalleryPage = () => {
               }}
             />
 
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "280px",
+                height: "80px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
+
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "360px",
+                height: "60px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
 
             <div className="relative z-10 max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
               <div className="text-center">
@@ -585,22 +596,15 @@ const GalleryPage = () => {
               </p>
               <GalleryFilters activeSort={activeSort} onSortChange={setActiveSort} />
             </div>
-            <SilkContainer
-              minHeight="auto"
-              className="rounded-2xl"
-              withGrid={true}
-              padding="2rem"
-            >
-              {isLoadingFromAPI && galleryCarousels.length === 0 ? (
-                <SkeletonGrid count={8} type="gallery" />
-              ) : (
-                <Gallery
-                  carousels={galleryCarousels}
-                  onViewCarousel={addEditorTab}
-                  onDeleteCarousel={handleDeleteCarousel}
-                />
-              )}
-            </SilkContainer>
+            {isLoadingFromAPI && galleryCarousels.length === 0 ? (
+              <SkeletonGrid count={8} type="gallery" />
+            ) : (
+              <Gallery
+                carousels={galleryCarousels}
+                onViewCarousel={addEditorTab}
+                onDeleteCarousel={handleDeleteCarousel}
+              />
+            )}
           </section>
         </main>
       </div>

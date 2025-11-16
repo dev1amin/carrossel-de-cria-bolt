@@ -6,7 +6,6 @@ import NewsPostCard from '../components/NewsPostCard';
 import NewsFilters from '../components/NewsFilters';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import SilkContainer from '../components/SilkContainer';
 import { getNews } from '../services/news';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
@@ -211,10 +210,6 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         
         window.dispatchEvent(new CustomEvent('gallery:updated', { detail: updated }));
         console.log('✅ Evento gallery:updated disparado com', updated.length, 'itens');
-        
-        // Invalidar cache da HomePage para forçar atualização
-        CacheService.clearItem(`${CACHE_KEYS.GENERATED_CONTENT}_home`);
-        console.log('🔄 Cache da HomePage invalidado');
       } catch (err) {
         console.error('❌ Erro ao atualizar cache/dispatch da galeria:', err);
       }
@@ -384,6 +379,23 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
               }}
             />
 
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "280px",
+                height: "80px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
+
+            <div
+              className="absolute left-0 right-0 pointer-events-none"
+              style={{
+                top: "360px",
+                height: "60px",
+                background: "linear-gradient(to bottom, rgba(249,250,251,0.3) 0%, rgba(249,250,251,1) 100%)"
+              }}
+            />
 
             <div className="relative z-10 max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
               <div className="text-center">
@@ -409,66 +421,59 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                 />
               )}
             </div>
-            <SilkContainer
-              minHeight="auto"
-              className="rounded-2xl"
-              withGrid={true}
-              padding="2rem"
-            >
-              {isLoading && news.length === 0 ? (
-                <SkeletonGrid count={8} type="news" />
-              ) : news.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
-                    <AnimatePresence>
-                      {news.map((item, index) => (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
-                          transition={{ duration: 0.3 }}
-                          className="w-full flex justify-center"
-                        >
-                          <NewsPostCard
-                            news={item}
-                            index={index}
-                            onGenerateCarousel={handleGenerateCarousel}
-                          />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
+            {isLoading && news.length === 0 ? (
+              <SkeletonGrid count={8} type="news" />
+            ) : news.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
+                  <AnimatePresence>
+                    {news.map((item, index) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.3 }}
+                        className="w-full flex justify-center"
+                      >
+                        <NewsPostCard
+                          news={item}
+                          index={index}
+                          onGenerateCarousel={handleGenerateCarousel}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {/* Paginação */}
+                {pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-8 pb-8">
+                    <button
+                      onClick={handlePreviousPage}
+                      disabled={pagination.page === 1}
+                      className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    
+                    <span className="text-gray">
+                      Página {pagination.page} de {pagination.totalPages}
+                    </span>
+                    
+                    <button
+                      onClick={handleNextPage}
+                      disabled={pagination.page === pagination.totalPages}
+                      className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
+                    >
+                      Próxima
+                    </button>
                   </div>
-
-                  {/* Paginação */}
-                  {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 mt-8 pb-8">
-                      <button
-                        onClick={handlePreviousPage}
-                        disabled={pagination.page === 1}
-                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                      >
-                        Anterior
-                      </button>
-
-                      <span className="text-gray">
-                        Página {pagination.page} de {pagination.totalPages}
-                      </span>
-
-                      <button
-                        onClick={handleNextPage}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                      >
-                        Próxima
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </SilkContainer>
+                )}
+              </>
+            )}
           </section>
         </main>
       </div>

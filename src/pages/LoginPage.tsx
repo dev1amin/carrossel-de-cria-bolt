@@ -17,21 +17,26 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Login attempt with email:', email);
     setError('');
     setIsLoading(true);
 
     try {
       const response = await login({ email, password });
+      console.log('Login response:', response);
 
       if (onLoginSuccess) {
+        console.log('Calling onLoginSuccess callback');
         onLoginSuccess();
       }
 
-      if ((response as any).needs_business_setup) {
+      if (response.needs_business_setup) {
+        console.log('🏢 Usuário precisa configurar business, redirecionando...');
         navigate('/setup-business');
         return;
       }
 
+      console.log('Navigating to home page');
       navigate('/');
     } catch (err) {
       console.error('Login error:', err);
@@ -80,10 +85,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 </label>
                 <button
                   type="button"
-                  className="text-sm font-medium transition-colors"
-                  style={{ color: '#2563eb' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
+                  className="text-sm text-blue hover:text-blue-dark transition-colors"
                 >
                   Esqueceu a senha?
                 </button>
@@ -115,11 +117,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg px-4 py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 transition-all shadow-md hover:shadow-lg"
-              style={{
-                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-              }}
+              className="w-full bg-blue hover:bg-blue-dark text-white rounded-lg px-4 py-3 font-medium focus:outline-none focus:ring-2 focus:ring-blue focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -128,12 +126,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-8 text-center">
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
-              <button
-                className="font-medium transition-colors"
-                style={{ color: '#2563eb' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#1d4ed8')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#2563eb')}
-              >
+              <button className="text-blue hover:text-blue-dark font-medium hover:underline transition-colors">
                 Criar conta
               </button>
             </p>
@@ -142,20 +135,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       {/* Right Section - Decorative Area with Instagram Icon and Floating Orbs */}
-      <div className="flex-1 relative overflow-hidden bg-white min-h-[400px] lg:min-h-screen">
+      <div className="flex-1 relative overflow-hidden bg-gradient-to-tr from-[#ff7eb9] via-[#ff65a3] via-[#6a82fb] to-[#fc9d9a] min-h-[400px] lg:min-h-screen">
         {/* Grid Background */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
+              linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)
             `,
             backgroundSize: '40px 40px',
           }}
         />
 
-        {/* Floating Light Orbs */}
+        {/* Floating Light Orbs - Same as Home Page */}
         <div
           className="absolute pointer-events-none animate-float-slow"
           style={{
@@ -164,8 +157,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '300px',
             height: '300px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.3,
             filter: 'blur(80px)',
           }}
@@ -179,8 +171,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '250px',
             height: '250px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.25,
             filter: 'blur(70px)',
           }}
@@ -194,8 +185,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '280px',
             height: '280px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.2,
             filter: 'blur(75px)',
           }}
@@ -209,8 +199,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '220px',
             height: '220px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.28,
             filter: 'blur(65px)',
           }}
@@ -224,8 +213,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '260px',
             height: '260px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.22,
             filter: 'blur(70px)',
           }}
@@ -239,48 +227,48 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             width: '240px',
             height: '240px',
             borderRadius: '50%',
-            background:
-              'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
             opacity: 0.26,
             filter: 'blur(68px)',
           }}
         />
 
-        {/* Falling Mini Orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => {
-            const duration = 10 + Math.random() * 8; // 10–18s -> mais lento
-            const delay = -Math.random() * duration; // começa no meio da animação
+        <div
+          className="absolute pointer-events-none animate-float-slow"
+          style={{
+            top: '25%',
+            left: '45%',
+            width: '200px',
+            height: '200px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.18,
+            filter: 'blur(60px)',
+          }}
+        />
 
-            return (
-              <div
-                key={i}
-                className="absolute rounded-full animate-fall-orb"
-                style={{
-                  top: 0,
-                  left: `${Math.random() * 100}%`,
-                  width: '12px',   // mesmo tamanho para todas
-                  height: '12px',  // mesmo tamanho para todas
-                  background:
-                    'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                  opacity: 0.9,
-                  filter: 'blur(1.5px)',
-                  animationDuration: `${duration}s`,
-                  animationDelay: `${delay}s`,
-                }}
-              />
-            );
-          })}
-        </div>
+        <div
+          className="absolute pointer-events-none animate-float-reverse"
+          style={{
+            top: '70%',
+            left: '35%',
+            width: '230px',
+            height: '230px',
+            borderRadius: '50%',
+            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+            opacity: 0.24,
+            filter: 'blur(72px)',
+          }}
+        />
 
-        {/* Instagram Icon */}
-        <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+        {/* Instagram Icon - Official style with 0.6 opacity */}
+        <div className="absolute inset-0 flex items-center justify-center">
           <div
             className="instagram-icon-container group cursor-pointer"
             style={{
               transform: 'rotate(-25deg)',
               transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              opacity: 1,
+              opacity: 0.6,
             }}
           >
             <div
@@ -297,13 +285,23 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   xmlns="http://www.w3.org/2000/svg"
                   className="transition-transform duration-500 group-hover:scale-110"
                 >
+                  <defs>
+                    <radialGradient id="instagramGradient" cx="30%" cy="107%">
+                      <stop offset="0%" stopColor="#fdf497" />
+                      <stop offset="5%" stopColor="#fdf497" />
+                      <stop offset="45%" stopColor="#fd5949" />
+                      <stop offset="60%" stopColor="#d6249f" />
+                      <stop offset="90%" stopColor="#285AEB" />
+                    </radialGradient>
+                  </defs>
+
                   <rect
                     x="0"
                     y="0"
                     width="256"
                     height="256"
                     rx="55"
-                    fill="#db2777"
+                    fill="url(#instagramGradient)"
                   />
 
                   <g transform="translate(38, 38)">
@@ -339,10 +337,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div
                   className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
                   style={{
-                    background:
-                      'radial-gradient(circle, rgba(219,39,119,0.7) 0%, rgba(219,39,119,0.2) 55%, rgba(0,0,0,0) 100%)',
+                    background: 'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
                   }}
-                />
+                ></div>
               </div>
             </div>
           </div>
@@ -350,6 +347,15 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
+        }
+
         @keyframes floatSlow {
           0%, 100% {
             transform: translateY(0px) translateX(0px);
@@ -380,35 +386,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           }
         }
 
-        @keyframes fallOrb {
-          0% {
-            transform: translateY(-120vh);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.9;
-          }
-          90% {
-            opacity: 0.9;
-          }
-          100% {
-            transform: translateY(120vh);
-            opacity: 0;
-          }
-        }
-
         .animate-float-slow {
           animation: floatSlow 8s ease-in-out infinite;
         }
 
         .animate-float-reverse {
           animation: floatReverse 10s ease-in-out infinite;
-        }
-
-        .animate-fall-orb {
-          animation-name: fallOrb;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
         }
 
         .instagram-icon-container:hover {

@@ -3,19 +3,15 @@ import { Heart, Play, Trophy, Medal, Award, Sparkles, Bookmark } from 'lucide-re
 import { TemplateSelectionModal } from '../carousel';
 import { Post } from '../types';
 import { formatNumber } from '../utils/formatters';
-import { saveContent, unsaveContent } from '../services/feed';
 
 interface PostCardProps {
   post: Post;
   index: number;
   onGenerateCarousel?: (code: string, templateId: string, postId?: number) => void;
-  onShowToast?: (message: string, type: 'success' | 'error') => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel, onShowToast }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSaved, setIsSaved] = useState(post.isSaved || false);
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenModal = () => {
     if (!onGenerateCarousel) return;
@@ -25,37 +21,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel, on
   const handleSelectTemplate = (templateId: string) => {
     if (onGenerateCarousel) {
       onGenerateCarousel(post.code, templateId, post.id);
-    }
-  };
-
-  const handleToggleSave = async () => {
-    if (!post.id || isSaving) return;
-    
-    // Verificar se temos feedId necessário para salvar
-    if (!isSaved && !post.feedId) {
-      onShowToast?.('Erro: feed_id não disponível', 'error');
-      return;
-    }
-    
-    setIsSaving(true);
-    try {
-      if (isSaved) {
-        await unsaveContent(post.id);
-        setIsSaved(false);
-        onShowToast?.('Post removido dos salvos', 'success');
-      } else {
-        await saveContent(post.id, post.feedId!);
-        setIsSaved(true);
-        onShowToast?.('Post salvo com sucesso', 'success');
-      }
-    } catch (error) {
-      console.error('Erro ao salvar/remover post:', error);
-      onShowToast?.(
-        error instanceof Error ? error.message : 'Erro ao processar requisição',
-        'error'
-      );
-    } finally {
-      setIsSaving(false);
     }
   };
   const formatTimeAgo = (timestamp: number) => {
@@ -135,16 +100,11 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel, on
       <div className="p-3 bg-white border-t border-gray-100" style={{ zIndex: 99 }}>
           <div className="flex gap-2">
             <button
-              onClick={handleToggleSave}
-              disabled={isSaving || !post.id}
-              className={`flex-1 px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium ${
-                isSaved
-                  ? 'bg-purple-100 hover:bg-purple-200 text-purple-700'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              onClick={() => {}}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-lg text-sm flex items-center justify-center space-x-2 transition-all font-medium"
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-              <span>{isSaving ? 'Salvando...' : isSaved ? 'Salvo' : 'Salvar'}</span>
+              <Bookmark className="w-4 h-4" />
+              <span>Salvar</span>
             </button>
             <button
               onClick={handleOpenModal}
