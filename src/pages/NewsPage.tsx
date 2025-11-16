@@ -6,14 +6,15 @@ import NewsPostCard from '../components/NewsPostCard';
 import NewsFilters from '../components/NewsFilters';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import { getNews } from '../services/news';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
 import type { GenerationQueueItem } from '../carousel';
-import { 
-  templateService, 
-  templateRenderer, 
-  generateCarousel, 
+import {
+  templateService,
+  templateRenderer,
+  generateCarousel,
   AVAILABLE_TEMPLATES,
   CarouselEditorTabs
 } from '../carousel';
@@ -316,6 +317,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''} bg-white`}>
         <section className="relative pb-[5rem]">
+          <MouseFollowLight zIndex={5} />
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{

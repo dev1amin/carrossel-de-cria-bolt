@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, LogOut, Edit2, Check, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from './Navigation';
+import { MouseFollowLight } from './MouseFollowLight';
 import { getUserSettings, updateBusinessField } from '../services/settings';
 import { UserSettings } from '../types/settings';
 
@@ -533,7 +534,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ onPageChange, setIsLoading 
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-dark text-white">
+    <div className="flex flex-col h-screen bg-gradient-dark text-white relative">
+      <MouseFollowLight zIndex={5} />
       {/* Main Header */}
       <header className="fixed top-0 left-0 right-0 bg-navy-500/80 backdrop-blur-xl h-14 z-[100] border-b border-primary-500/20 shadow-lg">
         <div className="container mx-auto px-4">

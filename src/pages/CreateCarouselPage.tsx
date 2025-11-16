@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link2, MessageSquare, Instagram, ArrowRight, X } from 'lucide-react';
 import Navigation from '../components/Navigation';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import { TemplateSelectionModal } from '../components/carousel';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
 import { generateCarousel, AVAILABLE_TEMPLATES } from '../carousel';
@@ -186,6 +187,7 @@ const CreateCarouselPage: React.FC = () => {
       <Navigation currentPage="chatbot" />
 
       <div className="md:ml-16 relative flex-1 overflow-hidden">
+        <MouseFollowLight zIndex={5} />
         {/* Grid Background */}
         <div
           className="absolute inset-0 pointer-events-none"

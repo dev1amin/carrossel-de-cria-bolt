@@ -6,6 +6,7 @@ import LoadingBar from '../components/LoadingBar';
 import FilterBar from '../components/FilterBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
@@ -262,6 +263,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
           <section className="relative pb-[5rem]">
+            <MouseFollowLight zIndex={5} />
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
