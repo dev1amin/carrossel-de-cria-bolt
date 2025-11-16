@@ -38,6 +38,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const {
     editorTabs,
@@ -342,7 +343,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                 height: '300px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.3,
+                opacity: 0.15,
                 filter: 'blur(80px)',
                 animation: 'float 8s ease-in-out infinite',
               }}
@@ -357,7 +358,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                 height: '250px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.25,
+                opacity: 0.12,
                 filter: 'blur(70px)',
                 animation: 'float 10s ease-in-out infinite reverse',
               }}
@@ -372,9 +373,40 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                 height: '200px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.2,
+                opacity: 0.1,
                 filter: 'blur(60px)',
                 animation: 'float 12s ease-in-out infinite',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '55%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '400px',
+                height: '400px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.5,
+                filter: 'blur(90px)',
+                animation: 'float 9s ease-in-out infinite',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '55%',
+                right: '15%',
+                width: '350px',
+                height: '350px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #6a82fb, #fc9d9a, #ff7eb9)',
+                opacity: 0.45,
+                filter: 'blur(85px)',
+                animation: 'float 11s ease-in-out infinite reverse',
               }}
             />
 
@@ -388,7 +420,30 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
           </section>
 
           <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
-            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10">
+            <div
+              className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10 overflow-hidden"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setMousePosition({
+                  x: e.clientX - rect.left,
+                  y: e.clientY - rect.top
+                });
+              }}
+            >
+              <div
+                className="absolute pointer-events-none transition-all duration-300 ease-out"
+                style={{
+                  left: `${mousePosition.x}px`,
+                  top: `${mousePosition.y}px`,
+                  width: '300px',
+                  height: '300px',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(147,51,234,0.3) 40%, transparent 70%)',
+                  filter: 'blur(40px)',
+                  transform: 'translate(-50%, -50%)',
+                  opacity: mousePosition.x === 0 && mousePosition.y === 0 ? 0 : 1,
+                }}
+              />
               <div className="mb-6 flex justify-between items-center">
                 <p className="text-lg md:text-xl text-gray-dark font-medium">
                   Aqui está o seu feed de notícias!
