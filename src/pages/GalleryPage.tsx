@@ -31,7 +31,6 @@ const GalleryPage = () => {
   const [isLoadingFromAPI, setIsLoadingFromAPI] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeSort, setActiveSort] = useState<'recent' | 'template'>('recent');
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   
   // Usa o contexto compartilhado de abas
   const { editorTabs, addEditorTab: addTab, closeEditorTab, closeAllEditorTabs, shouldShowEditor, setShouldShowEditor } = useEditorTabs();
@@ -603,30 +602,7 @@ const GalleryPage = () => {
           </section>
 
           <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
-            <div
-              className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10 overflow-hidden"
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setMousePosition({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top
-                });
-              }}
-            >
-              <div
-                className="absolute pointer-events-none transition-all duration-300 ease-out"
-                style={{
-                  left: `${mousePosition.x}px`,
-                  top: `${mousePosition.y}px`,
-                  width: '300px',
-                  height: '300px',
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(59,130,246,0.4) 0%, rgba(147,51,234,0.3) 40%, transparent 70%)',
-                  filter: 'blur(40px)',
-                  transform: 'translate(-50%, -50%)',
-                  opacity: mousePosition.x === 0 && mousePosition.y === 0 ? 0 : 1,
-                }}
-              />
+            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10">
               <div className="mb-6 flex justify-between items-center">
                 <p className="text-lg md:text-xl text-gray-dark font-medium">
                   Galeria de carrosséis

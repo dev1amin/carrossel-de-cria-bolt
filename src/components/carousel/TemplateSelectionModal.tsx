@@ -375,7 +375,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         aria-labelledby="template-modal-title"
         onClick={handleBackdropClick}
         className="fixed inset-0 flex items-center justify-center p-4 md:pl-20 md:pt-16"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 9999999 }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 10000 }}
       >
 
         <motion.div
@@ -393,7 +393,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
             height: `min(85vh, ${MODAL_MAX_H_PX}px)`,
             display: "grid",
             gridTemplateRows: "auto 1fr auto",
-            zIndex: 10000000,
+            zIndex: 10001,
           }}
         >
           {/* Header */}

@@ -625,7 +625,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200 min-h-[600px]">
+          <div className="bg-white/40 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-white/50 min-h-[600px]">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
             </div>

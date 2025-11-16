@@ -242,7 +242,7 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
         aria-modal="true"
         onClick={handleBackdropClick}
         className="fixed inset-0 flex items-center justify-center p-4 md:pl-20 md:pt-16"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 9999999 }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 10000 }}
       >
         <motion.div
           key="carousel-preview-modal"
@@ -258,7 +258,7 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
             height: `min(85vh, ${MODAL_MAX_H_PX}px)`,
             display: "grid",
             gridTemplateRows: "auto 1fr auto",
-            zIndex: 10000000,
+            zIndex: 10001,
           }}
         >
           {/* Header */}
@@ -340,7 +340,7 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
                         <div
                           key={idx}
                           className="relative shadow-2xl rounded-lg overflow-hidden bg-white border border-zinc-800/20"
-                          style={{ width: SLIDE_W, height: SLIDE_H, zIndex: 10000001 }}
+                          style={{ width: SLIDE_W, height: SLIDE_H, zIndex: 10002 }}
                         >
                           <iframe
                             title={`Slide ${idx + 1}`}

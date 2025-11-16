@@ -5,6 +5,7 @@ import { EditorTabsProvider, useEditorTabs } from './contexts/EditorTabsContext'
 import { GenerationQueueProvider, useGenerationQueue } from './contexts/GenerationQueueContext';
 import { GenerationQueue } from './carousel';
 import type { GenerationQueueItem } from './carousel';
+import { MouseFollowLight } from './components/MouseFollowLight';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import FeedPage from './pages/FeedPage';
@@ -74,6 +75,9 @@ function AppContent() {
 
   return (
     <>
+      {/* Luz global que acompanha o mouse */}
+      <MouseFollowLight zIndex={9999} />
+
       {/* Fila global - renderizada fora das rotas */}
       <GenerationQueue 
         items={generationQueue}
