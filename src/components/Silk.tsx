@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { forwardRef, useRef, useMemo, useLayoutEffect } from 'react';
-import { Color } from 'three';
+import { Color, Mesh } from 'three';
 
 const hexToNormalizedRGB = (hex: string): [number, number, number] => {
   hex = hex.replace('#', '');
@@ -80,25 +80,30 @@ interface SilkPlaneProps {
   };
 }
 
-const SilkPlane = forwardRef<any, SilkPlaneProps>(function SilkPlane({ uniforms }, ref) {
+const SilkPlane = forwardRef<Mesh, SilkPlaneProps>(function SilkPlane({ uniforms }, ref) {
   const { viewport } = useThree();
 
   useLayoutEffect(() => {
-    if (ref && typeof ref === 'object' && 'current' in ref && ref.current) {
+    if (ref && 'current' in ref && ref.current) {
       ref.current.scale.set(viewport.width, viewport.height, 1);
     }
   }, [ref, viewport]);
 
   useFrame((_, delta) => {
-    if (ref && typeof ref === 'object' && 'current' in ref && ref.current) {
-      ref.current.material.uniforms.uTime.value += 0.1 * delta;
+    if (ref && 'current' in ref && ref.current) {
+      // animação
+      (ref.current.material as any).uniforms.uTime.value += 0.1 * delta;
     }
   });
 
   return (
     <mesh ref={ref}>
       <planeGeometry args={[1, 1, 1, 1]} />
-      <shaderMaterial uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} />
+      <shaderMaterial
+        uniforms={uniforms}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+      />
     </mesh>
   );
 });
@@ -118,7 +123,7 @@ const Silk: React.FC<SilkProps> = ({
   noiseIntensity = 1.5,
   rotation = 0
 }) => {
-  const meshRef = useRef<any>();
+  const meshRef = useRef<Mesh | null>(null);
 
   const uniforms = useMemo(
     () => ({
@@ -133,7 +138,11 @@ const Silk: React.FC<SilkProps> = ({
   );
 
   return (
-    <Canvas dpr={[1, 2]} frameloop="always">
+    <Canvas
+      dpr={[1, 2]}
+      frameloop="always"
+      className="w-full h-full" // IMPORTANTE: preencher o container
+    >
       <SilkPlane ref={meshRef} uniforms={uniforms} />
     </Canvas>
   );
