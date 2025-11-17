@@ -33,7 +33,7 @@ export const LayersSidebar: React.FC<LayersSidebarProps> = ({
         <button
           onClick={onToggleMinimize}
           className="h-14 w-full flex items-center justify-center hover:bg-neutral-900 border-b border-neutral-800 transition-colors"
-          title="Expandir Layers"
+          title="Expandir Camadas"
         >
           <LayersIcon className="w-5 h-5 text-neutral-400" />
         </button>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -48,6 +49,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
+      <MouseFollowLight />
       {/* Left Section - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white min-h-screen lg:min-h-0">
         <div className="w-full max-w-md">
@@ -337,7 +339,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <div
                   className="absolute inset-0 -z-10 blur-3xl opacity-60 rounded-full"
                   style={{
-                    background: 'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
+                    background:
+                      'radial-gradient(circle, rgba(253,244,151,0.4) 0%, rgba(253,89,73,0.4) 30%, rgba(214,36,159,0.4) 60%, rgba(40,90,235,0.3) 100%)',
                   }}
                 ></div>
               </div>

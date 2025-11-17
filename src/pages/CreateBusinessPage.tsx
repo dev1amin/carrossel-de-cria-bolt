@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { createBusiness } from '../services/business';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import type { CreateBusinessRequest, FormQuestion, BusinessValidationError } from '../types/business';
 
 const FORM_QUESTIONS: FormQuestion[] = [
@@ -320,6 +321,7 @@ const CreateBusinessPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-light to-light flex items-center justify-center p-4">
+      <MouseFollowLight />
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8">

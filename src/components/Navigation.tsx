@@ -9,6 +9,7 @@ import {
   Ghost,
   PlusCircle,
   Home,
+  ChevronDown,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -27,7 +28,7 @@ const Navigation: React.FC<NavigationProps> = ({
   unviewedCount = 0,
 }) => {
   const navigate = useNavigate();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const getUserName = (): string => {
     try {
@@ -79,7 +80,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: 'feed', label: 'Feed', icon: Grid, page: 'feed' },
     {
       id: 'tools',
-      label: 'Ferramentas',
+      label: 'Criar',
       icon: PlusCircle,
       onClick: () => navigate('/create-carousel'),
     },
@@ -89,20 +90,11 @@ const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <nav
-      onMouseEnter={() => setIsExpanded(true)}
-      onMouseLeave={() => setIsExpanded(false)}
-      className={`hidden md:flex fixed left-0 top-0 bottom-0 bg-white border-r border-gray-light z-50 flex-col transition-all duration-300 ${
-        isExpanded ? 'w-64' : 'w-16'
-      }`}
+      className="hidden md:flex fixed left-0 top-0 bottom-0 bg-white border-r border-gray-light z-50 flex-col w-20"
     >
-      {/* Topo: Logo e Nome */}
-      <div className="border-b border-gray-light p-4 flex items-center gap-3 justify-center">
+      {/* Topo: Logo */}
+      <div className="border-b border-gray-light p-4 flex items-center justify-center">
         <Ghost className="w-6 h-6 text-blue flex-shrink-0" />
-        {isExpanded && (
-          <span className="text-dark font-bold text-lg whitespace-nowrap">
-            Content Busters
-          </span>
-        )}
       </div>
 
       {/* Menu Items */}
@@ -125,16 +117,16 @@ const Navigation: React.FC<NavigationProps> = ({
             <button
               key={item.id}
               onClick={handleClick}
-              className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative ${
                 isActive
                   ? 'bg-blue-light text-blue'
                   : 'text-gray hover:text-dark hover:bg-light'
-              } ${!isExpanded ? 'justify-center' : ''}`}
+              }`}
             >
-              <Icon className="w-6 h-6 flex-shrink-0" />
-              {isExpanded && <span className="font-medium">{item.label}</span>}
+              <Icon className="w-5 h-5 flex-shrink-0" />
+              <span className="text-[10px] font-medium text-center">{item.label}</span>
               {item.id === 'gallery' && unviewedCount > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
                   {unviewedCount}
                 </span>
               )}
@@ -143,38 +135,53 @@ const Navigation: React.FC<NavigationProps> = ({
         })}
       </div>
 
-      {/* Rodapé: User e Actions */}
-      <div className="border-t border-gray-light p-4 space-y-3">
-        {/* User Info */}
-        <div className="flex items-center gap-3 justify-center">
-          <div className="w-10 h-10 rounded-full bg-light flex items-center justify-center flex-shrink-0">
-            <User className="w-5 h-5 text-blue" />
-          </div>
-          {isExpanded && (
-            <div className="flex-1 min-w-0">
-              <p className="text-dark text-sm font-medium truncate">
-                {userName}
-              </p>
+      {/* Rodapé: User Dropdown */}
+      <div className="border-t border-gray-light p-2">
+        <div className="relative">
+          <button
+            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-light transition-colors w-full"
+          >
+            <div className="w-8 h-8 rounded-full bg-light flex items-center justify-center">
+              <User className="w-4 h-4 text-blue" />
+            </div>
+            <span className="text-[10px] font-medium text-center">{userName.split(' ')[0]}</span>
+            <ChevronDown className={`w-3 h-3 text-gray transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isUserDropdownOpen && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-light rounded-lg shadow-lg z-50">
               <button
-                onClick={() => navigate('/settings')}
-                className="text-gray hover:text-dark text-xs flex items-center gap-1 transition-colors"
+                onClick={() => {
+                  navigate('/settings');
+                  setIsUserDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-xs hover:bg-light transition-colors rounded-t-lg"
               >
-                Configurações <ChevronRight className="w-3 h-3" />
+                Configurações
+              </button>
+              <button
+                onClick={() => {
+                  navigate('/create-business');
+                  setIsUserDropdownOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-xs hover:bg-light transition-colors"
+              >
+                Criar Business
+              </button>
+              <button
+                onClick={() => {
+                  localStorage.removeItem('access_token');
+                  localStorage.removeItem('user');
+                  navigate('/login');
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+              >
+                Sair
               </button>
             </div>
           )}
         </div>
-
-        {/* Create Carousel Button */}
-        {isExpanded && (
-          <button
-            onClick={() => navigate('/create-carousel')}
-            className="w-full bg-blue text-white py-2 px-4 rounded-lg font-medium flex items-center justify-between hover:bg-blue-dark transition-colors"
-          >
-            <span>Gerar carrossel</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        )}
       </div>
     </nav>
   );

@@ -190,15 +190,13 @@ const CreateCarouselPage: React.FC = () => {
         <MouseFollowLight zIndex={5} />
         {/* Grid Background */}
         <div
-          className="absolute inset-0 pointer-events-none"
+          className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
+              linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
             `,
-            backgroundSize: '40px 40px',
-            width: '100%',
-            height: '100%',
+            backgroundSize: '50px 50px',
           }}
         />
 
@@ -378,7 +376,14 @@ const CreateCarouselPage: React.FC = () => {
 
       {/* Modal de Input de Link */}
       {activeModal && (
-        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-gray-500/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+        >
           <div className="bg-white border border-gray-200 rounded-3xl max-w-lg w-full p-8 relative animate-in fade-in zoom-in duration-200">
             {/* Close Button */}
             <button

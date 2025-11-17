@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Edit, Send, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
@@ -30,8 +31,6 @@ const HomePage: React.FC = () => {
   const [carousels, setCarousels] = useState<GalleryCarousel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [aiMessage, setAiMessage] = useState('');
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
   const { addEditorTab, setShouldShowEditor } = useEditorTabs();
 
   const getUserName = (): string => {
@@ -48,24 +47,6 @@ const HomePage: React.FC = () => {
   };
 
   const userName = getUserName();
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePosition({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      }
-    };
-
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-      return () => container.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, []);
 
   const renderSlidesWithTemplate = async (
     conteudos: any[],
@@ -267,17 +248,18 @@ const HomePage: React.FC = () => {
       const cachedCarousels = CacheService.getItem<GalleryCarousel[]>(cacheKey);
 
       if (cachedCarousels && cachedCarousels.length > 0) {
-        // Display cached data immediately
-        console.log('📦 Usando dados em cache da HomePage');
+        // Display cached data immediately (no loading state)
+        console.log('📦 Mostrando cache da HomePage enquanto busca dados frescos');
         setCarousels(cachedCarousels);
         setIsLoading(false);
-        return;
+      } else {
+        // No cache, show loading
+        setIsLoading(true);
       }
 
-      // No cache, show loading and fetch
-      setIsLoading(true);
+      // ALWAYS fetch fresh data from API
       try {
-        console.log('🔄 Carregando carrosséis da API para HomePage...');
+        console.log('🔄 Buscando dados frescos da API para HomePage...');
 
         const response = await getGeneratedContent({ page: 1, limit: 100 });
 
@@ -289,14 +271,19 @@ const HomePage: React.FC = () => {
         const apiCarouselsResults = await Promise.all(apiCarouselsPromises);
         const apiCarousels = apiCarouselsResults.filter((c): c is GalleryCarousel => c !== null);
 
-        console.log(`✅ ${apiCarousels.length} carrosséis convertidos da API (HomePage)`);
+        console.log(`✅ ${apiCarousels.length} carrosséis recebidos da API (HomePage)`);
 
-        setCarousels(apiCarousels);
-
-        // Cache the converted carousels
-        CacheService.setItem(cacheKey, apiCarousels);
+        // Check if data has changed
+        if (CacheService.hasDataChanged(cacheKey, apiCarousels)) {
+          console.log('🔄 Dados da HomePage mudaram, atualizando cache e UI');
+          CacheService.setItem(cacheKey, apiCarousels);
+          setCarousels(apiCarousels);
+        } else {
+          console.log('✅ Dados da HomePage não mudaram, mantendo cache');
+        }
       } catch (err) {
         console.error('❌ Erro ao carregar carrosséis da API:', err);
+        // Keep cached data if fetch fails
       } finally {
         setIsLoading(false);
       }
@@ -322,7 +309,7 @@ const HomePage: React.FC = () => {
     },
     {
       id: 'tools',
-      label: 'Ferramentas',
+      label: 'Criar',
       icon: Wrench,
       color: 'from-pink-500 to-pink-600',
       route: '/create-carousel'
@@ -407,34 +394,17 @@ const HomePage: React.FC = () => {
     <div className="flex h-screen">
       <Navigation currentPage="home" />
 
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-16"
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(59,130,246,0.15) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,246,0.15) 1px, transparent 1px)
-            `,
-            backgroundSize: '40px 40px',
-            width: '100%',
-            height: '100%',
-          }}
-        />
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-16">
+        <MouseFollowLight zIndex={-1} />
 
         <div
-          className="absolute pointer-events-none overflow-hidden"
+          className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
           style={{
-            left: `${mousePosition.x}px`,
-            top: `${mousePosition.y}px`,
-            width: '600px',
-            height: '600px',
-            transform: 'translate(-50%, -50%)',
-            background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, rgba(59,130,246,0.15) 25%, rgba(59,130,246,0.05) 50%, rgba(255,255,255,0) 70%)',
-            filter: 'blur(50px)',
-            transition: 'left 0.15s ease-out, top 0.15s ease-out',
+            backgroundImage: `
+              linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
           }}
         />
 
@@ -625,7 +595,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white/40 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-white/50 min-h-[600px] relative z-10">
+          <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/50 min-h-[600px]">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
             </div>
@@ -651,7 +621,7 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
                 {carousels.map((carousel) => (
                   <GalleryItem
                     key={carousel.id}
@@ -805,14 +775,14 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
         <div className="flex gap-2">
           <button
             onClick={() => onEdit(carousel)}
-            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors border border-gray-200"
+            className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
           >
             <Edit className="w-4 h-4" />
             Editar
           </button>
           <button
             onClick={() => onDownload(carousel)}
-            className="flex items-center justify-center gap-2 bg-zinc-800 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-700"
+            className="flex items-center justify-center gap-2 bg-blue text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-dark transition-colors border border-blue"
           >
             <Download className="w-4 h-4" />
           </button>

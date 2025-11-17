@@ -328,7 +328,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="pointer-events-none fixed top-0 left-0 right-0 bottom-0 opacity-60"
+              className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
               style={{
                 backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
                 backgroundSize: "50px 50px",
@@ -339,12 +339,12 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
               className="absolute pointer-events-none"
               style={{
                 top: '10%',
-                left: '12%',
+                left: '8%',
                 width: '300px',
                 height: '300px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.15,
+                opacity: 0.3,
                 filter: 'blur(80px)',
                 animation: 'float 8s ease-in-out infinite',
               }}
@@ -353,13 +353,13 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                top: '50%',
-                right: '10%',
+                top: '5%',
+                right: '12%',
                 width: '250px',
                 height: '250px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.12,
+                opacity: 0.25,
                 filter: 'blur(70px)',
                 animation: 'float 10s ease-in-out infinite reverse',
               }}
@@ -368,14 +368,44 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                bottom: '15%',
-                left: '20%',
-                width: '200px',
-                height: '200px',
+                top: '40%',
+                left: '5%',
+                width: '280px',
+                height: '280px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.1,
-                filter: 'blur(60px)',
+                opacity: 0.2,
+                filter: 'blur(75px)',
+                animation: 'float 11s ease-in-out infinite',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '45%',
+                right: '8%',
+                width: '220px',
+                height: '220px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.28,
+                filter: 'blur(65px)',
+                animation: 'float 9s ease-in-out infinite reverse',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                bottom: '15%',
+                left: '15%',
+                width: '260px',
+                height: '260px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.22,
+                filter: 'blur(70px)',
                 animation: 'float 12s ease-in-out infinite',
               }}
             />
@@ -383,16 +413,45 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             <div
               className="absolute pointer-events-none"
               style={{
-                top: '55%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '400px',
-                height: '400px',
+                bottom: '20%',
+                right: '20%',
+                width: '240px',
+                height: '240px',
                 borderRadius: '50%',
                 background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.5,
-                filter: 'blur(90px)',
-                animation: 'float 9s ease-in-out infinite',
+                opacity: 0.26,
+                filter: 'blur(68px)',
+                animation: 'float 13s ease-in-out infinite reverse',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '25%',
+                left: '45%',
+                width: '200px',
+                height: '200px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.18,
+                filter: 'blur(60px)',
+                animation: 'float 10s ease-in-out infinite',
+              }}
+            />
+
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '70%',
+                left: '35%',
+                width: '230px',
+                height: '230px',
+                borderRadius: '50%',
+                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
+                opacity: 0.24,
+                filter: 'blur(72px)',
+                animation: 'float 14s ease-in-out infinite reverse',
               }}
             />
 
@@ -420,7 +479,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             </div>
           </section>
 
-          <section className="max-w-6xl mx-auto px-8" style={{ marginTop: '-90px' }}>
+          <section className="max-w-7xl mx-auto px-6" style={{ marginTop: '-90px' }}>
             <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10">
               <div className="mb-6 flex justify-between items-center">
                 <p className="text-lg md:text-xl text-gray-dark font-medium">

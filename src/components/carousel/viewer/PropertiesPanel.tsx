@@ -129,7 +129,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         <button
           onClick={onToggleMinimize}
           className="h-14 w-full flex items-center justify-center hover:bg-neutral-900 border-b border-neutral-800 transition-colors"
-          title="Expandir Properties"
+          title="Expandir Propriedades"
         >
           <Type className="w-5 h-5 text-neutral-400" />
         </button>
@@ -271,7 +271,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 ) : (
                   <>
                     <div className="flex items-center justify-between">
-                      <label className="text-neutral-400 text-xs mb-2 block font-medium">Background Image{canUseVideo ? '/Video' : ''}</label>
+                      <label className="text-neutral-400 text-xs mb-2 block font-medium">Imagem de Fundo{canUseVideo ? '/Vídeo' : ''}</label>
                       {!canUseVideo && (
                         <span className="text-xs text-yellow-500">Videos not supported</span>
                       )}
@@ -304,7 +304,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                                 {isVid && <Play className="w-3 h-3" />}
                               </div>
                               <div className="relative">
-                                <img src={displayUrl} alt="Background 1" className="w-full h-24 object-cover rounded" />
+                                <img src={displayUrl} alt="Fundo 1" className="w-full h-24 object-cover rounded" />
                                 {isVid && (
                                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded">
                                     <Play className="w-8 h-8 text-white" fill="white" />
@@ -339,7 +339,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
                               <div className="text-neutral-400 text-xs mb-1">{isVid ? 'Video 2' : 'Image 2'}</div>
-                              <img src={bgUrl} alt="Background 2" className="w-full h-24 object-cover rounded" />
+                              <img src={bgUrl} alt="Fundo 2" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
                         })()}
@@ -368,7 +368,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
                               <div className="text-neutral-400 text-xs mb-1">{isVid ? 'Video 3' : 'Image 3'}</div>
-                              <img src={bgUrl} alt="Background 3" className="w-full h-24 object-cover rounded" />
+                              <img src={bgUrl} alt="Fundo 3" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
                         })()}
@@ -397,7 +397,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
                               <div className="text-neutral-400 text-xs mb-1">Image 4 (Uploaded)</div>
-                              <img src={bgUrl} alt="Background 4 (Uploaded)" className="w-full h-24 object-cover rounded" />
+                              <img src={bgUrl} alt="Fundo 4 (Enviado)" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
                         })()}

@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 
 const NotFoundPage = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-light to-light flex items-center justify-center p-4">
+      <MouseFollowLight />
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="space-y-4">
           <h1 className="text-9xl font-bold text-dark">404</h1>

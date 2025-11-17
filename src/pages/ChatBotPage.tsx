@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Bot, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from '../components/Navigation';
+import { MouseFollowLight } from '../components/MouseFollowLight';
 import PageTitle from '../components/PageTitle';
 import { TemplateSelectionModal } from '../components/carousel';
 import { CarouselPreviewModal } from '../components/carousel/CarouselPreviewModal';
@@ -396,6 +397,7 @@ const ChatBotPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation currentPage="chatbot" />
+      <MouseFollowLight />
       
       <div className="md:ml-16">
         {/* Title with Back Button */}
