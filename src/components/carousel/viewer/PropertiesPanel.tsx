@@ -125,10 +125,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   // Se minimizado, mostra apenas um botão para expandir
   if (isMinimized) {
     return (
-      <div className="w-12 bg-neutral-950 border-l border-neutral-800 flex flex-col items-center shrink-0">
+      <div className="w-12 bg-gray-50 border-l border-gray-200 flex flex-col items-center shrink-0">
         <button
           onClick={onToggleMinimize}
-          className="h-14 w-full flex items-center justify-center hover:bg-neutral-900 border-b border-neutral-800 transition-colors"
+          className="h-14 w-full flex items-center justify-center hover:bg-gray-100 border-b border-gray-200 transition-colors"
           title="Expandir Propriedades"
         >
           <Type className="w-5 h-5 text-neutral-400" />
@@ -138,12 +138,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   }
 
   return (
-    <div className="w-80 bg-neutral-950 border-l border-neutral-800 flex flex-col shrink-0">
+    <div className="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0">
       <div className="h-14 border-b border-neutral-800 flex items-center justify-between px-4">
         <h3 className="text-white font-medium text-sm">Properties</h3>
         <button
           onClick={onToggleMinimize}
-          className="p-1 hover:bg-neutral-800 rounded transition-colors"
+          className="p-1 hover:bg-gray-100 rounded transition-colors"
           title="Minimizar"
         >
           <ChevronLeft className="w-4 h-4 text-neutral-400" />
@@ -152,7 +152,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
       <div className="flex-1 overflow-y-auto p-4">
         {selectedElement.element === null ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="w-16 h-16 bg-neutral-900 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Type className="w-8 h-8 text-neutral-700" />
             </div>
             <h4 className="text-white font-medium mb-2">No Element Selected</h4>
@@ -171,7 +171,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 <div>
                   <label className="text-neutral-400 text-xs mb-2 block font-medium">Text Content</label>
                   <textarea
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     rows={selectedElement.element === 'title' ? 4 : 3}
                     value={(() => {
                       const v = data.conteudos[selectedElement.slideIndex]?.[selectedElement.element] || '';
@@ -184,10 +184,10 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-neutral-400 text-xs mb-2 block font-medium">Font Size</label>
+                  <label className="text-gray-600 text-xs mb-2 block font-medium">Font Size</label>
                   <input
                     type="text"
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     value={getElementStyle(selectedElement.slideIndex, selectedElement.element).fontSize}
                     onChange={(e) =>
                       onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'fontSize', e.target.value)
@@ -197,9 +197,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-neutral-400 text-xs mb-2 block font-medium">Font Weight</label>
+                  <label className="text-gray-600 text-xs mb-2 block font-medium">Font Weight</label>
                   <select
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     value={getElementStyle(selectedElement.slideIndex, selectedElement.element).fontWeight}
                     onChange={(e) =>
                       onUpdateElementStyle(
@@ -221,9 +221,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-neutral-400 text-xs mb-2 block font-medium">Text Align</label>
+                  <label className="text-gray-600 text-xs mb-2 block font-medium">Text Align</label>
                   <select
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     value={getElementStyle(selectedElement.slideIndex, selectedElement.element).textAlign}
                     onChange={(e) =>
                       onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'textAlign', e.target.value)
@@ -241,7 +241,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <div className="flex space-x-2">
                     <input
                       type="color"
-                      className="w-12 h-10 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      className="w-12 h-10 bg-white border border-gray-300 rounded cursor-pointer"
                       value={getElementStyle(selectedElement.slideIndex, selectedElement.element).color}
                       onChange={(e) =>
                         onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'color', e.target.value)
@@ -249,7 +249,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     />
                     <input
                       type="text"
-                      className="flex-1 bg-neutral-900 border border-neutral-800 rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                      className="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       value={getElementStyle(selectedElement.slideIndex, selectedElement.element).color}
                       onChange={(e) =>
                         onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'color', e.target.value)
@@ -294,12 +294,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           const currentBg = getEditedValue(selectedElement.slideIndex, 'background', bgUrl);
                           return (
                             <div
-                              className={`bg-neutral-900 border rounded p-2 cursor-pointer transition-all ${
-                                currentBg === bgUrl ? 'border-blue-500' : 'border-neutral-800 hover:border-blue-400'
+                              className={`bg-white border rounded p-2 cursor-pointer transition-all ${
+                                currentBg === bgUrl ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-blue-400'
                               }`}
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
-                              <div className="text-neutral-400 text-xs mb-1 flex items-center justify-between">
+                              <div className="text-gray-700 text-xs mb-1 flex items-center justify-between">
                                 <span>{isVid ? 'Video 1' : 'Image 1'}</span>
                                 {isVid && <Play className="w-3 h-3" />}
                               </div>
@@ -333,12 +333,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           );
                           return (
                             <div
-                              className={`bg-neutral-900 border rounded p-2 cursor-pointer transition-all ${
-                                currentBg === bgUrl ? 'border-blue-500' : 'border-neutral-800 hover:border-blue-400'
+                              className={`bg-white border rounded p-2 cursor-pointer transition-all ${
+                                currentBg === bgUrl ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-blue-400'
                               }`}
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
-                              <div className="text-neutral-400 text-xs mb-1">{isVid ? 'Video 2' : 'Image 2'}</div>
+                              <div className="text-gray-700 text-xs mb-1">{isVid ? 'Video 2' : 'Image 2'}</div>
                               <img src={bgUrl} alt="Fundo 2" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
@@ -362,12 +362,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           );
                           return (
                             <div
-                              className={`bg-neutral-900 border rounded p-2 cursor-pointer transition-all ${
-                                currentBg === bgUrl ? 'border-blue-500' : 'border-neutral-800 hover:border-blue-400'
+                              className={`bg-white border rounded p-2 cursor-pointer transition-all ${
+                                currentBg === bgUrl ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-blue-400'
                               }`}
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
-                              <div className="text-neutral-400 text-xs mb-1">{isVid ? 'Video 3' : 'Image 3'}</div>
+                              <div className="text-gray-700 text-xs mb-1">{isVid ? 'Video 3' : 'Image 3'}</div>
                               <img src={bgUrl} alt="Fundo 3" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
@@ -391,12 +391,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           );
                           return (
                             <div
-                              className={`bg-neutral-900 border rounded p-2 cursor-pointer transition-all ${
-                                currentBg === bgUrl ? 'border-blue-500' : 'border-neutral-800 hover:border-blue-400'
+                              className={`bg-white border rounded p-2 cursor-pointer transition-all ${
+                                currentBg === bgUrl ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-blue-400'
                               }`}
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, bgUrl)}
                             >
-                              <div className="text-neutral-400 text-xs mb-1">Image 4 (Uploaded)</div>
+                              <div className="text-gray-700 text-xs mb-1">Image 4 (Uploaded)</div>
                               <img src={bgUrl} alt="Fundo 4 (Enviado)" className="w-full h-24 object-cover rounded" />
                             </div>
                           );
@@ -404,11 +404,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </div>
 
                     <div className="mt-3">
-                      <label className="text-neutral-400 text-xs mb-2 block font-medium">Search Images</label>
+                      <label className="text-gray-600 text-xs mb-2 block font-medium">Search Images</label>
                       <div className="relative">
                         <input
                           type="text"
-                          className="w-full bg-neutral-900 border border-neutral-800 rounded pl-10 pr-20 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                          className="w-full bg-white border border-gray-300 rounded pl-10 pr-20 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                           placeholder="Search for images..."
                           value={searchKeyword}
                           onChange={(e) => onSearchKeywordChange(e.target.value)}
@@ -416,7 +416,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                             if (e.key === 'Enter') onSearchImages();
                           }}
                         />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                         <button
                           onClick={onSearchImages}
                           disabled={isSearching || !searchKeyword.trim()}
@@ -431,7 +431,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                           {searchResults.map((url, idx) => (
                             <div
                               key={idx}
-                              className="bg-neutral-900 border border-neutral-800 hover:border-blue-400 rounded p-2 cursor-pointer transition-all"
+                              className="bg-white border border-gray-300 hover:border-blue-400 rounded p-2 cursor-pointer transition-all"
                               onClick={() => onBackgroundImageChange(selectedElement.slideIndex, url)}
                             >
                               <img src={url} alt={`Search result ${idx + 1}`} className="w-full h-24 object-cover rounded" />
@@ -442,12 +442,12 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                     </div>
 
                     <div className="mt-3">
-                      <label className="text-neutral-400 text-xs mb-2 block font-medium">Upload Image</label>
-                      <label className="flex items-center justify-center w-full h-32 px-4 border-2 border-neutral-800 border-dashed rounded-lg cursor-pointer bg-neutral-900 hover:bg-neutral-800 transition-colors">
+                      <label className="text-gray-600 text-xs mb-2 block font-medium">Upload Image</label>
+                      <label className="flex items-center justify-center w-full h-32 px-4 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <Upload className="w-8 h-8 text-neutral-500 mb-2" />
-                          <p className="text-xs text-neutral-500">Click to upload</p>
-                          <p className="text-xs text-neutral-600 mt-1">PNG, JPG or GIF</p>
+                          <Upload className="w-8 h-8 text-gray-500 mb-2" />
+                          <p className="text-xs text-gray-600">Click to upload</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG or GIF</p>
                         </div>
                         <input
                           type="file"

@@ -21,12 +21,19 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
   }
 
   // Nova API retorna: { message, user, access_token, refresh_token, expires_at }
+  // needs_tone_setup vem dentro de user
   if (data.user && data.access_token) {
     console.log('Storing user data in localStorage');
     localStorage.setItem('user', JSON.stringify(data.user));
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
     localStorage.setItem('token_expires_at', data.expires_at.toString());
+    
+    // Store needs_tone_setup flag from user object
+    if (data.user.needs_tone_setup !== undefined) {
+      console.log('📝 Salvando needs_tone_setup:', data.user.needs_tone_setup);
+      localStorage.setItem('needs_tone_setup', String(data.user.needs_tone_setup));
+    }
   }
 
   return {
@@ -34,6 +41,7 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
     message: data.message || 'Login successful',
     user: data.user,
     jwt_token: data.access_token, // Manter compatibilidade com código existente
+    needs_tone_setup: data.user.needs_tone_setup,
   };
 };
 

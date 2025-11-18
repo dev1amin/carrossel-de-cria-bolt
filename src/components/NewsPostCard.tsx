@@ -8,12 +8,17 @@ interface NewsPostCardProps {
   news: NewsItem;
   index: number;
   onGenerateCarousel?: (newsData: NewsItem, templateId: string) => void;
+  onGenerateClick?: () => void;
 }
 
-const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCarousel }) => {
+const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCarousel, onGenerateClick }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
+    if (onGenerateClick) {
+      onGenerateClick();
+      return;
+    }
     if (!onGenerateCarousel) return;
     setIsModalOpen(true);
   };

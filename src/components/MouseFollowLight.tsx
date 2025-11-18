@@ -4,7 +4,7 @@ interface MouseFollowLightProps {
   zIndex?: number;
 }
 
-export const MouseFollowLight: React.FC<MouseFollowLightProps> = ({ zIndex = 1 }) => {
+export const MouseFollowLight: React.FC<MouseFollowLightProps> = ({ zIndex = -1 }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {

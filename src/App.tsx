@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { configureCarousel, CarouselEditorTabs, type CarouselTab } from './carousel';
 import { EditorTabsProvider, useEditorTabs } from './contexts/EditorTabsContext';
 import { GenerationQueueProvider, useGenerationQueue } from './contexts/GenerationQueueContext';
@@ -73,10 +73,13 @@ function AppContent() {
     setShouldShowEditor(false);
   };
 
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
   return (
     <>
-      {/* Luz global que acompanha o mouse */}
-      <MouseFollowLight zIndex={5} />
+      {/* Luz global que acompanha o mouse - não aparece no login */}
+      {!isLoginPage && <MouseFollowLight zIndex={5} />}
 
       {/* Fila global - renderizada fora das rotas */}
       <GenerationQueue 

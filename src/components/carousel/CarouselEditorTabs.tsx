@@ -114,17 +114,16 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
 
   return (
     <div 
-      className="fixed inset-0 bg-neutral-900 flex flex-col" 
+      className="fixed top-0 bottom-0 right-0 bg-white flex flex-col" 
       style={{ 
         zIndex: 1000, 
-        marginTop: '56px', 
-        marginLeft: window.innerWidth >= 768 ? '64px' : '0',
+        left: window.innerWidth >= 768 ? '81px' : '0',
         pointerEvents: 'auto'
       }}
     >
       {/* Barra de abas */}
       <div 
-        className="bg-neutral-950 border-b border-neutral-800 flex items-center overflow-x-auto" 
+        className="bg-gray-50 border-b border-gray-200 flex items-center overflow-x-auto" 
         style={{ 
           minHeight: '40px',
           zIndex: 1001,
@@ -137,10 +136,10 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab.id)}
-              className={`group flex items-center gap-2 px-4 py-2 border-r border-neutral-800 transition-colors ${
+              className={`group flex items-center gap-2 px-4 py-2 border-r border-gray-200 transition-colors ${
                 activeTabId === tab.id
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-neutral-950 text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                  ? 'bg-white text-gray-900 font-medium'
+                  : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'
               }`}
               style={{ pointerEvents: 'auto', cursor: 'pointer' }}
             >
@@ -149,7 +148,7 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
               </span>
               <button
                 onClick={(e) => handleCloseTab(tab.id, e)}
-                className={`p-0.5 rounded hover:bg-neutral-800 transition-colors ${
+                className={`p-0.5 rounded hover:bg-gray-200 transition-colors ${
                   activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
                 aria-label="Fechar aba"
@@ -165,7 +164,7 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
         {tabs.length > 1 && (
           <button
             onClick={onCloseAll}
-            className="ml-auto px-4 py-2 text-neutral-400 hover:text-white text-xs transition-colors"
+            className="ml-auto px-4 py-2 text-gray-600 hover:text-gray-900 text-xs transition-colors"
             style={{ pointerEvents: 'auto', cursor: 'pointer' }}
           >
             Fechar todas

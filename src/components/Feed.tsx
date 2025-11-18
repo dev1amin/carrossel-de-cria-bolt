@@ -15,11 +15,13 @@ interface FeedProps {
   searchTerm: string;
   activeSort: SortOption;
   onGenerateCarousel?: (code: string, templateId: string, postId?: number) => void;
+  onGenerateClick?: () => void;
+  feedId?: string | null;
 }
 
 type CarouselData = CarouselDataType;
 
-const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCarousel: onGenerateCarouselProp }) => {
+const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCarousel: onGenerateCarouselProp, onGenerateClick, feedId }) => {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>(posts);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [renderedSlides, setRenderedSlides] = useState<string[] | null>(null);
@@ -62,9 +64,10 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
 
   useEffect(() => {
     console.log(`[Sort] Applying sort: ${activeSort}`);
+    console.log(`[Sort] Total posts before filter:`, posts.length);
     let result = [...posts];
 
-        result = result.filter(post => post.media_type === 8);
+    // Removido filtro de media_type para mostrar todos os posts
     
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -72,25 +75,48 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
         post.username.toLowerCase().includes(term) || 
         post.text.toLowerCase().includes(term)
       );
+      console.log(`[Sort] After search filter:`, result.length);
     }
     
-    result.sort((a, b) => {
-      switch (activeSort) {
-        case 'latest':
-          return b.taken_at - a.taken_at;
-        case 'popular':
-          return b.overallScore - a.overallScore;
-        case 'likes':
-          return b.like_count - a.like_count;
-        case 'comments':
-          return b.comment_count - a.comment_count;
-        case 'shares':
-          return b.reshare_count - a.reshare_count;
-        default:
-          return 0;
-      }
-    });
+    // Filter for saved posts if 'saved' sort is active
+    if (activeSort === 'saved') {
+      result = result.filter(post => post.is_saved === true);
+      console.log(`[Sort] After saved filter:`, result.length);
+    } else {
+      // Apply sorting for other options
+      console.log(`[Sort] Sorting by:`, activeSort);
+      result.sort((a, b) => {
+        let comparison = 0;
+        switch (activeSort) {
+          case 'latest':
+            comparison = b.taken_at - a.taken_at;
+            break;
+          case 'popular':
+            comparison = b.overallScore - a.overallScore;
+            break;
+          case 'likes':
+            comparison = b.like_count - a.like_count;
+            break;
+          case 'comments':
+            comparison = b.comment_count - a.comment_count;
+            break;
+          case 'shares':
+            comparison = b.reshare_count - a.reshare_count;
+            break;
+          default:
+            comparison = 0;
+        }
+        return comparison;
+      });
+      console.log(`[Sort] First 4 posts after sort:`, result.slice(0, 4).map(p => ({ 
+        code: p.code, 
+        likes: p.like_count, 
+        overall: p.overallScore,
+        taken_at: p.taken_at 
+      })));
+    }
     
+    console.log(`[Sort] Final count:`, result.length);
     console.log(`[Sort] New post order: ${result.map(p => p.code).join(', ')}`);
     setFilteredPosts(result);
     
@@ -190,6 +216,8 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                     post={post}
                     index={index}
                     onGenerateCarousel={handleGenerateCarousel}
+                    onGenerateClick={onGenerateClick}
+                    feedId={feedId}
                   />
                 </motion.div>
               ))}
@@ -211,6 +239,8 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                       post={post}
                       index={index}
                       onGenerateCarousel={handleGenerateCarousel}
+                      onGenerateClick={onGenerateClick}
+                      feedId={feedId}
                     />
                   </motion.div>
                 ))}
@@ -219,13 +249,39 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
           )}
         </div>
       ) : (
-        <div className="container mx-auto px-4 py-6 flex flex-col items-center justify-center min-h-[60vh] text-white">
-          
-          <h2 className="text-2xl font-semibold mb-2">No posts found :(</h2>
-          <p className="text-gray-400 text-center max-w-md">
-            {searchTerm 
-              ? `No posts match your search for "${searchTerm}".` 
-              : `No posts match the selected filters.`}
+        <div className="container mx-auto px-4 py-6 flex flex-col items-center justify-center min-h-[60vh]">
+          <svg
+            width="100"
+            height="100"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-gray-400 mb-4"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M7 3v18" />
+            <path d="M3 7.5h4" />
+            <path d="M3 12h18" />
+            <path d="M3 16.5h4" />
+            <path d="M17 3v18" />
+            <path d="M17 7.5h4" />
+            <path d="M17 16.5h4" />
+          </svg>
+          <h2 className="text-2xl font-semibold mb-2 text-gray-900">
+            {posts.length === 0 ? 'Nenhum post disponível' : 'Nenhum post encontrado'}
+          </h2>
+          <p className="text-gray-600 text-center max-w-md">
+            {posts.length === 0 
+              ? 'Você ainda não tem posts no seu feed. Configure seus interesses nas configurações para começar a ver conteúdo.'
+              : searchTerm 
+                ? `Nenhum post corresponde à sua busca por "${searchTerm}".` 
+                : activeSort === 'saved'
+                  ? 'Você ainda não salvou nenhum post. Clique no botão "Salvar" em um post para adicioná-lo aos seus salvos.'
+                  : 'Nenhum post corresponde aos filtros selecionados.'
+            }
           </p>
         </div>
       )}

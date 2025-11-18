@@ -7,6 +7,7 @@ import NewsFilters from '../components/NewsFilters';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
+import { ToneSetupModal } from '../components/ToneSetupModal';
 import { getNews } from '../services/news';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
@@ -20,6 +21,7 @@ import {
 } from '../carousel';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
+import { useToneSetupAutoShow as useToneSetup } from '../hooks/useToneSetupVariants';
 
 interface NewsPageProps {
   unviewedCount?: number;
@@ -47,6 +49,8 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
     shouldShowEditor,
     setShouldShowEditor
   } = useEditorTabs();
+  
+  const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
   
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
 
@@ -105,7 +109,24 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const handleGenerateClick = () => {
+    // Check if tone setup is needed before showing template modal
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+    // If tone setup is not needed, the modal will be opened by the NewsPostCard component
+  };
+
   const handleGenerateCarousel = async (newsData: NewsItem, templateId: string) => {
+    // Check if tone setup is needed before generating carousel
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+
     console.log('🚀 NewsPage: handleGenerateCarousel iniciado', { newsData, templateId });
     
     const template = AVAILABLE_TEMPLATES.find(t => t.id === templateId);
@@ -317,7 +338,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''} bg-white`}>
         <section className="relative pb-[5rem]">
-          <MouseFollowLight zIndex={5} />
+          <MouseFollowLight zIndex={-1} />
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -516,6 +537,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
                             news={item}
                             index={index}
                             onGenerateCarousel={handleGenerateCarousel}
+                            onGenerateClick={handleGenerateClick}
                           />
                         </motion.div>
                       ))}
@@ -552,6 +574,12 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
           </section>
         </main>
       </div>
+      
+      <ToneSetupModal
+        isOpen={showToneModal}
+        onClose={closeToneModal}
+        onComplete={completeToneSetup}
+      />
     </div>
   );
 };

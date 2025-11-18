@@ -408,6 +408,15 @@ const GalleryPage = () => {
       generatedContentId: carousel.generatedContentId,
     });
     
+    // Check if tab already exists - if so, skip API call and just activate it
+    const existingTab = editorTabs.find(t => t.id === tabId);
+    if (existingTab) {
+      console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
+      addTab(existingTab);
+      setShouldShowEditor(true);
+      return;
+    }
+    
     // Se tem generatedContentId, buscar dados frescos da API
     let carouselData = carousel.carouselData;
     let slides = carousel.slides;
@@ -500,7 +509,7 @@ const GalleryPage = () => {
 
         <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
           <section className="relative pb-[5rem]">
-            <MouseFollowLight zIndex={5} />
+            <MouseFollowLight zIndex={-1} />
             <div
               className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{

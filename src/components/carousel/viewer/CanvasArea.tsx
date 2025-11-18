@@ -150,7 +150,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     <div className="flex-1 flex flex-col min-w-0">
       <div
         ref={containerRef}
-        className="flex-1 overflow-hidden relative bg-zinc-950 min-h-0"
+        className="flex-1 overflow-hidden relative bg-gray-100 min-h-0"
         style={{
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none', // Impede o comportamento padrão de gestos
@@ -167,7 +167,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       >
         {/* BG grid pattern */}
         <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:20px_20px]" />
+          <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.05)_1px,transparent_1px)] [background-size:20px_20px]" />
         </div>
 
         {/* Container com slides */}
@@ -218,7 +218,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         </div>
 
         {/* HUD de zoom */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-neutral-950/90 backdrop-blur-sm text-neutral-400 px-3 py-1.5 rounded text-xs z-[2]">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm text-gray-700 px-3 py-1.5 rounded shadow-lg border border-gray-200 text-xs z-[2]">
           Zoom: {Math.round(zoom * 100)}%
         </div>
       </div>

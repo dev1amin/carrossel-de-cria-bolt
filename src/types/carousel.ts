@@ -40,6 +40,7 @@ export interface ElementStyles {
   objectPosition?: string; // Para imagens e vídeos
   backgroundPositionX?: string; // Para backgrounds CSS
   backgroundPositionY?: string; // Para backgrounds CSS
+  height?: string; // Para container height
 }
 
 // ==================== Template Types ====================

@@ -3,10 +3,12 @@ import { Send, Loader2, Bot, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import { MouseFollowLight } from '../components/MouseFollowLight';
+import { ToneSetupModal } from '../components/ToneSetupModal';
 import PageTitle from '../components/PageTitle';
 import { TemplateSelectionModal } from '../components/carousel';
 import { CarouselPreviewModal } from '../components/carousel/CarouselPreviewModal';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
+import { useToneSetupOnDemand as useToneSetup } from '../hooks/useToneSetupVariants';
 import type { CarouselData } from '../types/carousel';
 import {
   sendChatMessage,
@@ -43,6 +45,8 @@ const ChatBotPage: React.FC = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
+  
+  const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
 
   // Auto scroll para a última mensagem
   const scrollToBottom = () => {
@@ -613,6 +617,12 @@ const ChatBotPage: React.FC = () => {
         onEdit={handleEditCarousel}
         onSave={handleSaveCarousel}
         onContinue={handleContinueChat}
+      />
+      
+      <ToneSetupModal
+        isOpen={showToneModal}
+        onClose={closeToneModal}
+        onComplete={completeToneSetup}
       />
     </div>
   );

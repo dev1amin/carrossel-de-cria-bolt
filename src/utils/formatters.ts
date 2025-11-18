@@ -22,6 +22,31 @@ export function formatTimestamp(timestamp: number): string {
 }
 
 /**
+ * Format time ago for posts (alias for formatTimestamp)
+ */
+export function formatTimeAgo(timestamp: number): string {
+  try {
+    // Check if timestamp is in seconds or milliseconds
+    // If timestamp > 1e10, it's likely in milliseconds, otherwise in seconds
+    const isMilliseconds = timestamp > 1e10;
+    const timestampMs = isMilliseconds ? timestamp : timestamp * 1000;
+    
+    const date = new Date(timestampMs);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid timestamp for formatTimeAgo:', timestamp);
+      return 'Data inválida';
+    }
+    
+    return formatDistanceToNow(date, { addSuffix: true });
+  } catch (error) {
+    console.error('Error formatting time ago:', error, timestamp);
+    return 'Erro na data';
+  }
+}
+
+/**
  * Format post text to display hashtags in a special style
  */
 export function formatPostText(text: string): { parts: Array<{ text: string; isHashtag: boolean }> } {
@@ -61,10 +86,27 @@ export function formatPostText(text: string): { parts: Array<{ text: string; isH
 }
 
 /**
- * Truncates text to a specified length
+ * Get the number of days ago a post was published
  */
-export function truncateText(text: string, maxLength: number = 150): string {
-  if (text.length <= maxLength) return text;
-  
-  return text.substring(0, maxLength) + '...';
+export function getDaysAgo(timestamp: number): number {
+  try {
+    // Check if timestamp is in seconds or milliseconds
+    const isMilliseconds = timestamp > 1e10;
+    const timestampMs = isMilliseconds ? timestamp : timestamp * 1000;
+    
+    const postDate = new Date(timestampMs);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - postDate.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  } catch (error) {
+    console.error('Error calculating days ago:', error, timestamp);
+    return 0;
+  }
+}
+
+/**
+ * Check if a post is older than 15 days
+ */
+export function isPostOld(timestamp: number): boolean {
+  return getDaysAgo(timestamp) > 15;
 }

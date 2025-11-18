@@ -112,6 +112,35 @@ export const updateBusinessField = async (field: keyof Business, value: string |
   return { saved: true };
 };
 
+/**
+ * Seleciona um business para o usuário
+ */
+export const selectBusiness = async (businessId: string): Promise<{ saved: boolean }> => {
+  const response = await authenticatedFetch(API_ENDPOINTS.profile, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ selected_business_id: businessId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to select business');
+  }
+
+  // Limpar cache para forçar reload
+  CacheService.clearItem(CACHE_KEYS.SETTINGS);
+
+  // Atualizar localStorage com o novo selected_business_id
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    const user = JSON.parse(userData);
+    user.selected_business_id = businessId;
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  return { saved: true };
+};
+
 // Manter compatibilidade com o código antigo (deprecated)
 export const updateUserSetting = async (field: string, value: string): Promise<{ saved: boolean }> => {
   // Mapear campos antigos para nova estrutura

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { login } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
-import { MouseFollowLight } from '../components/MouseFollowLight';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -49,7 +48,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <MouseFollowLight />
       {/* Left Section - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white min-h-screen lg:min-h-0">
         <div className="w-full max-w-md">

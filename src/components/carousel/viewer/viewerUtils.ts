@@ -247,12 +247,15 @@ export const safeUserPlay = (video: HTMLVideoElement) => {
 };
 
 export const attachPlayOverlay = (doc: Document, host: HTMLElement, video: HTMLVideoElement) => {
+  // Primeiro, limpa qualquer overlay existente para este vídeo
   const existing = playOverlayMap.get(video);
-  if (existing?.btn?.isConnected) {
-    existing.btn.style.display = video.paused ? 'flex' : 'none';
-    return;
+  if (existing) {
+    try { existing.abort.abort(); } catch {}
+    try { existing.btn.remove(); } catch {}
+    playOverlayMap.delete(video);
   }
 
+  // Remove overlays órfãos do host
   host.querySelectorAll(':scope > .cv-play-overlay').forEach(n => n.remove());
 
   const btn = doc.createElement('div');
@@ -470,7 +473,11 @@ export const disposePinchersInDoc = (doc: Document) => {
 };
 
 /** ========= Pinças (overlay fixo) ========= */
-export const attachResizePinchers = (doc: Document, host: HTMLElement) => {
+export const attachResizePinchers = (
+  doc: Document, 
+  host: HTMLElement, 
+  onHeightChange?: (height: number) => void
+) => {
   if ((doc as any).__cvActivePinchersHost === host && (host as any).__cvPinchers) return;
 
   disposePinchersInDoc(doc);
@@ -561,6 +568,11 @@ export const attachResizePinchers = (doc: Document, host: HTMLElement) => {
     
     // Força reflow para garantir que as mudanças sejam aplicadas
     host.offsetHeight;
+    
+    // Callback para persistir altura em elementStyles
+    if (onHeightChange) {
+      onHeightChange(next);
+    }
     
     update();
   };

@@ -80,12 +80,10 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -100, opacity: 0 }}
-      className="fixed left-0 right-0 bg-black/95 backdrop-blur-md border-b border-zinc-800 shadow-2xl"
+      className="relative bg-white/95 backdrop-blur-md border-b border-gray-300 shadow-lg"
       style={{ 
         zIndex: 70, // Acima da navegação (z-50), abaixo do header (z-100)
-        top: '56px', // 14 * 4 = 56px (altura do header)
-        left: '0', // Mobile: começa do início
-        marginLeft: window.innerWidth >= 768 ? '64px' : '0' // Desktop: 64px offset (largura da navegação)
+        marginLeft: window.innerWidth >= 768 ? '81px' : '0',
       }}
     >
       {/* Container com flex para separar conteúdo (80%) e toggle (20%) */}
@@ -94,12 +92,12 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
         <div className="flex-1" style={{ width: '80%' }}>
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center space-x-3">
-              <h3 className="text-white font-semibold text-lg">Fila de Geração</h3>
+              <h3 className="text-gray-900 font-semibold text-lg">Fila de Geração</h3>
               <span className="bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                 {items.length}
               </span>
               {hasActiveItems && (
-                <span className="text-blue-400 text-sm">
+                <span className="text-blue-600 text-sm font-medium">
                   {activeItems.length} em progresso
                 </span>
               )}
@@ -127,12 +125,12 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
                         <div className="flex items-center space-x-3">
                           {getStatusIcon(item.status)}
                           <div>
-                            <p className="text-white font-medium">{item.templateName}</p>
-                            <p className="text-gray-400 text-sm">Post: {item.postCode}</p>
+                            <p className="text-gray-900 font-medium">{item.templateName}</p>
+                            <p className="text-gray-600 text-sm">Post: {item.postCode}</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <span className="text-sm font-medium text-white">
+                          <span className="text-sm font-medium text-gray-900">
                             {getStatusText(item.status)}
                           </span>
                           {item.status === 'generating' && (
@@ -188,7 +186,7 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
 
         {/* Toggle minimizar - 20% */}
         <div 
-          className="flex items-center justify-center bg-zinc-900/50 border-l border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+          className="flex items-center justify-center bg-gray-100 border-l border-gray-300 cursor-pointer hover:bg-gray-200 transition-colors"
           style={{ width: '20%', minWidth: '60px', maxWidth: '100px' }}
           onClick={toggleMinimize}
         >
@@ -197,9 +195,9 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
             aria-label={isMinimized ? "Expandir fila" : "Minimizar fila"}
           >
             {isMinimized ? (
-              <ChevronDown className="w-6 h-6 text-white" />
+              <ChevronDown className="w-6 h-6 text-gray-900" />
             ) : (
-              <ChevronUp className="w-6 h-6 text-white" />
+              <ChevronUp className="w-6 h-6 text-gray-900" />
             )}
           </button>
         </div>

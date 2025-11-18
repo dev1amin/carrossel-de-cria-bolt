@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Link2, MessageSquare, Instagram, ArrowRight, X } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import { MouseFollowLight } from '../components/MouseFollowLight';
+import { ToneSetupModal } from '../components/ToneSetupModal';
 import { TemplateSelectionModal } from '../components/carousel';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
+import { useToneSetupOnDemand as useToneSetup } from '../hooks/useToneSetupVariants';
 import { generateCarousel, AVAILABLE_TEMPLATES } from '../carousel';
 import { templateService } from '../services/carousel';
 import type { GenerationQueueItem } from '../carousel';
@@ -17,8 +19,16 @@ const CreateCarouselPage: React.FC = () => {
   const [pendingWebsiteLink, setPendingWebsiteLink] = useState<string | null>(null);
   const navigate = useNavigate();
   const { addToQueue, updateQueueItem, removeFromQueue } = useGenerationQueue();
+  const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
 
   const handleOpenModal = (type: 'instagram' | 'website') => {
+    // Check tone setup before opening modal
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+
     setActiveModal(type);
     setLinkInput('');
   };
@@ -40,6 +50,14 @@ const CreateCarouselPage: React.FC = () => {
 
   const handleSubmitLink = () => {
     if (!linkInput.trim()) return;
+
+    // Check tone setup before proceeding
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      handleCloseModal();
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
 
     if (activeModal === 'instagram') {
       const code = extractInstagramCode(linkInput);
@@ -149,6 +167,13 @@ const CreateCarouselPage: React.FC = () => {
   };
 
   const handleGoToChat = () => {
+    // Check tone setup before going to chat
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+    
     navigate('/chatbot');
   };
 
@@ -187,7 +212,7 @@ const CreateCarouselPage: React.FC = () => {
       <Navigation currentPage="chatbot" />
 
       <div className="md:ml-16 relative flex-1 overflow-hidden">
-        <MouseFollowLight zIndex={5} />
+        <MouseFollowLight zIndex={-1} />
         {/* Grid Background */}
         <div
           className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
@@ -465,6 +490,12 @@ const CreateCarouselPage: React.FC = () => {
         }}
         onSelectTemplate={handleTemplateSelect}
         postCode={pendingInstagramCode || pendingWebsiteLink || ''}
+      />
+      
+      <ToneSetupModal
+        isOpen={showToneModal}
+        onClose={closeToneModal}
+        onComplete={completeToneSetup}
       />
     </div>
   );

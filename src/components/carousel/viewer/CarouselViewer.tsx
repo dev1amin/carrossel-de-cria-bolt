@@ -997,7 +997,9 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
             host.classList.add('selected');
             (host as HTMLElement).style.zIndex = '1000';
             host.setAttribute('data-cv-selected', '1');
-            attachResizePinchers(doc, host);
+            attachResizePinchers(doc, host, (height) => {
+              updateElementStyle(slideIndex, 'background', 'height', `${height}px`);
+            });
             ensureHostResizeObserver(host);
             normFill(host);
           }
@@ -1019,7 +1021,9 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
         if (clickedImg) {
           const { wrapper: w } = ensureImgCropWrapper(doc, clickedImg);
           w.setAttribute('data-cv-selected', '1');
-          attachResizePinchers(doc, w);
+          attachResizePinchers(doc, w, (height) => {
+            updateElementStyle(slideIndex, 'background', 'height', `${height}px`);
+          });
           ensureHostResizeObserver(w);
           normFill(w);
           
@@ -1383,6 +1387,18 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
               }
             });
           }
+          
+          // Aplica altura do container se salva
+          if (sty.height) {
+            const imgWrapper = doc.querySelector('.img-crop-wrapper') as HTMLElement | null;
+            const videoContainer = doc.querySelector('.video-container') as HTMLElement | null;
+            const container = imgWrapper || videoContainer;
+            if (container) {
+              container.setAttribute('data-cv-height', sty.height.replace('px', ''));
+              container.style.setProperty('height', sty.height, 'important');
+              console.log(`📏 Aplicada altura do container: ${sty.height}`);
+            }
+          }
         }
       });
     };
@@ -1489,9 +1505,19 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
       if (target) {
         target.classList.add('selected');
         (target as HTMLElement).style.zIndex = '1000';
+        
+        // Scroll element into view in the iframe
+        try {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        } catch {}
       } else if (element === 'background') {
         doc.body.classList.add('selected');
         (doc.body as HTMLElement).style.zIndex = '1000';
+        
+        // For background, scroll to top of iframe
+        try {
+          doc.body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch {}
       }
 
       if (element === 'title' || element === 'subtitle') {
@@ -1505,6 +1531,11 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
         } catch {}
       }
     }
+    
+    // Center the slide in the canvas
+    const totalWidth = slideWidth * slides.length + gap * (slides.length - 1);
+    const slidePosition = slideIndex * (slideWidth + gap) - totalWidth / 2 + slideWidth / 2;
+    setPan({ x: -slidePosition * zoom, y: 0 });
 
     setSelectedElement({ slideIndex, element });
     setFocusedSlide(slideIndex);
@@ -1677,7 +1708,9 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
           selectedVideoContainer!.setAttribute('data-cv-selected', '1');
           
           // Re-aplica pinças de redimensionamento
-          attachResizePinchers(d, selectedVideoContainer!);
+          attachResizePinchers(d, selectedVideoContainer!, (height) => {
+            updateElementStyle(slideIndex, 'background', 'height', `${height}px`);
+          });
           
           // Força reflow completo
           selectedVideoContainer!.offsetHeight;

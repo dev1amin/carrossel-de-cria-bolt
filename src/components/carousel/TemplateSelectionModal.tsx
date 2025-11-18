@@ -59,17 +59,17 @@ function ZoomControls({
   compact?: boolean;
 }) {
   const btnCls =
-    "p-2 rounded-lg border border-zinc-800/50 hover:bg-zinc-800/30 focus:outline-none focus:ring-2 ring-white/10 transition-colors pointer-events-auto";
+    "p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors pointer-events-auto";
   return (
     <div className={`flex items-center gap-2 mr-2 ${compact ? "" : "mr-2"}`}>
       <button onClick={onZoomOut} className={btnCls} aria-label="Diminuir zoom">
-        <ZoomOut className="w-4 h-4" />
+        <ZoomOut className="w-4 h-4 text-gray-700" />
       </button>
-      <span className="text-xs font-medium tabular-nums w-12 text-center select-none text-zinc-400">
+      <span className="text-xs font-medium tabular-nums w-12 text-center select-none text-gray-700">
         {Math.round(zoom * 100)}%
       </span>
       <button onClick={onZoomIn} className={btnCls} aria-label="Aumentar zoom">
-        <ZoomIn className="w-4 h-4 mr-[20px]" />
+        <ZoomIn className="w-4 h-4 text-gray-700 mr-[20px]" />
       </button>
     </div>
   );
@@ -375,7 +375,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         aria-labelledby="template-modal-title"
         onClick={handleBackdropClick}
         className="fixed inset-0 flex items-center justify-center p-4 md:pl-20 md:pt-16"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 10000 }}
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.50)', zIndex: 10000 }}
       >
 
         <motion.div
@@ -387,7 +387,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           exit={{ y: 8, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-black text-white shadow-2xl rounded-2xl border border-zinc-700/50 overflow-hidden relative w-full"
+          className="bg-white text-gray-900 shadow-2xl rounded-2xl border border-gray-300 overflow-hidden relative w-full"
           style={{
             maxWidth: `${MODAL_MAX_W_PX}px`,
             height: `min(85vh, ${MODAL_MAX_H_PX}px)`,
@@ -397,16 +397,16 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-zinc-800/50 bg-black/40 backdrop-blur-sm relative z-20 pointer-events-auto">
+          <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm relative z-20 pointer-events-auto">
             <div className="flex items-center gap-2">
               <button
-                className="md:hidden p-2 rounded-lg border border-zinc-800/50 hover:bg-zinc-800/30 focus:outline-none focus:ring-2 ring-white/10 transition-colors"
+                className="md:hidden p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors"
                 onClick={() => setShowSidebar((s) => !s)}
                 aria-label="Alternar lista de templates"
               >
-                <PanelsTopLeft className="w-5 h-5" />
+                <PanelsTopLeft className="w-5 h-5 text-gray-700" />
               </button>
-              <h2 id="template-modal-title" className="text-lg md:text-xl font-semibold tracking-tight">
+              <h2 id="template-modal-title" className="text-lg md:text-xl font-semibold tracking-tight text-gray-900">
                 Selecionar Template
               </h2>
             </div>
@@ -414,9 +414,9 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
               ref={closeBtnRef}
               onClick={onClose}
               aria-label="Fechar"
-              className="p-2 rounded-lg border border-zinc-800/50 hover:bg-zinc-800/30 focus:outline-none focus:ring-2 ring-white/10 transition-colors"
+              className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-gray-700" />
             </button>
           </div>
 
@@ -432,7 +432,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
             <aside
               className={`${
                 showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-              } transition-transform duration-200 ease-out bg-zinc-950 border-r border-zinc-800/50 overflow-y-auto pointer-events-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-800`}
+              } transition-transform duration-200 ease-out bg-gray-50 border-r border-gray-200 overflow-y-auto pointer-events-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300`}
               style={{ gridColumn: "1 / 2" }}
             >
               <div className="p-3 md:p-4 space-y-2">
@@ -443,23 +443,23 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                       key={template.id}
                       ref={idx === 0 ? firstFocusableRef : undefined}
                       onClick={() => setSelectedTemplate(template)}
-                      className={`group w-full text-left rounded-lg border transition-all focus:outline-none focus:ring-2 ring-white/10 ${
+                      className={`group w-full text-left rounded-lg border transition-all focus:outline-none focus:ring-2 ring-blue-500/30 ${
                         isActive 
-                          ? "bg-white/5 border-white/30 shadow-lg shadow-white/5" 
-                          : "bg-zinc-900/30 border-zinc-800/50 hover:bg-zinc-800/30 hover:border-zinc-700/50"
+                          ? "bg-blue-50 border-blue-400 shadow-md shadow-blue-100" 
+                          : "bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                       }`}
                     >
                       <div className="flex items-center gap-3 p-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-medium text-sm truncate">{template.name}</h3>
+                            <h3 className="font-medium text-sm truncate text-gray-900">{template.name}</h3>
                             {isActive && (
-                              <span className="ml-2 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium bg-white text-black">
+                              <span className="ml-2 inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium bg-blue-600 text-white">
                                 ATIVO
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-zinc-400 line-clamp-2">
+                          <p className="text-xs text-gray-600 line-clamp-2">
                             {template.description}
                           </p>
                           {/* Badge de compatibilidade */}
@@ -483,10 +483,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
             </aside>
 
             {/* Canvas */}
-            <section className="relative bg-zinc-950" style={{ gridColumn: "2 / -1" }}>
+            <section className="relative bg-gray-100" style={{ gridColumn: "2 / -1" }}>
               {/* BG grid pattern mais sutil */}
               <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.02)_1px,transparent_1px)] [background-size:20px_20px]" />
+                <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.03)_1px,transparent_1px)] [background-size:20px_20px]" />
               </div>
 
               {/* Viewport absoluto */}
@@ -502,7 +502,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
               >
                 {/* Loader: não bloqueia botões */}
                 {isLoadingPreview && (
-                  <div className="absolute inset-0 flex items-center justify-center text-zinc-300 z-20 pointer-events-none">
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-700 z-20 pointer-events-none">
                     <div className="flex flex-col items-center gap-4">
                       <Loader2 className="w-10 h-10 animate-spin" />
                       <p className="text-sm font-medium">Carregando slides…</p>
@@ -541,7 +541,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                         {slidesHtml.map((html, idx) => (
                           <div
                             key={idx}
-                            className="relative shadow-2xl rounded-lg overflow-hidden bg-white border border-zinc-800/20"
+                            className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-gray-300"
                             style={{ width: SLIDE_W, height: SLIDE_H, zIndex: 10000001 }}
                           >
                             <iframe
@@ -557,12 +557,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                     ) : (
                       !isLoadingPreview && (
                         <div
-                          className="flex items-center justify-center text-zinc-500"
+                          className="flex items-center justify-center text-gray-600"
                           style={{ width: SLIDE_W, height: SLIDE_H }}
                         >
                           <div className="text-center">
                             <p className="text-sm font-medium">Preview não disponível</p>
-                            <p className="text-xs mt-1 text-zinc-600">Selecione um template para visualizar</p>
+                            <p className="text-xs mt-1 text-gray-500">Selecione um template para visualizar</p>
                           </div>
                         </div>
                       )
@@ -574,10 +574,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-4 md:px-6 py-3 md:py-4 border-t border-zinc-800/50 bg-black/40 backdrop-blur-sm">
+          <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white/95 backdrop-blur-sm">
             <button
               onClick={handleGenerate}
-              className="w-full inline-flex items-center justify-center gap-2 font-semibold text-sm py-3 px-4 rounded-lg shadow-lg transition-all active:scale-[0.98] bg-white text-black hover:bg-zinc-100 focus:outline-none focus:ring-2 ring-white/20"
+              className="w-full inline-flex items-center justify-center gap-2 font-semibold text-sm py-3 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 ring-purple-500/50"
             >
               <span>Gerar {selectedTemplate.name}</span>
             </button>

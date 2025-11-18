@@ -7,6 +7,7 @@ import FilterBar from '../components/FilterBar';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
+import { ToneSetupModal } from '../components/ToneSetupModal';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
@@ -20,6 +21,7 @@ import {
 } from '../carousel';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
+import { useToneSetupAutoShow as useToneSetup } from '../hooks/useToneSetupVariants';
 
 interface FeedPageProps {
   unviewedCount?: number;
@@ -30,6 +32,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [feedId, setFeedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -41,10 +44,31 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   } = useEditorTabs();
 
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
+  const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
 
   useEffect(() => {
     setShouldShowEditor(false);
   }, [setShouldShowEditor]);
+
+  const handleRefreshFeed = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log('🔄 Atualizando feed...');
+      const feedData = await getFeed(true); // Force update bypasses cache
+      console.log('✅ Feed atualizado:', feedData.posts.length, 'posts');
+      setPosts(feedData.posts);
+      setFeedId(feedData.feed_id);
+      addToast('Feed atualizado com sucesso!', 'success');
+    } catch (err) {
+      console.error('❌ Erro ao atualizar feed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh feed';
+      addToast('Erro ao atualizar feed', 'error');
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadFeed = async () => {
@@ -56,6 +80,15 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         console.log('📦 Usando dados em cache do feed');
         setPosts(cachedPosts);
         setIsLoading(false);
+        
+        // Fetch feed_id in background even when using cache
+        try {
+          const feedData = await getFeed();
+          setFeedId(feedData.feed_id);
+          console.log('📥 Feed ID atualizado:', feedData.feed_id);
+        } catch (err) {
+          console.error('⚠️ Erro ao buscar feed_id:', err);
+        }
         return;
       }
 
@@ -65,8 +98,9 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
       try {
         console.log('📥 Carregando feed...');
         const feedData = await getFeed();
-        console.log('✅ Feed carregado:', feedData.length, 'posts');
-        setPosts(feedData);
+        console.log('✅ Feed carregado:', feedData.posts.length, 'posts', 'feed_id:', feedData.feed_id);
+        setPosts(feedData.posts);
+        setFeedId(feedData.feed_id);
       } catch (err) {
         console.error('❌ Erro ao carregar feed:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load feed';
@@ -97,7 +131,24 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const handleGenerateClick = () => {
+    // Check if tone setup is needed before showing template modal
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+    // If tone setup is not needed, the modal will be opened by the PostCard component
+  };
+
   const handleGenerateCarousel = async (code: string, templateId: string, postId?: number) => {
+    // Check if tone setup is needed before generating carousel
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      checkToneSetupBeforeAction(() => {});
+      return;
+    }
+
     console.log('🚀 FeedPage: handleGenerateCarousel iniciado', { code, templateId, postId });
 
     const template = AVAILABLE_TEMPLATES.find((t) => t.id === templateId);
@@ -261,7 +312,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
+        <main>
           <section className="relative pb-[5rem]">
             <MouseFollowLight zIndex={5} />
             <div
@@ -416,7 +467,31 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
                 <p className="text-lg md:text-xl text-gray-dark font-medium">
                   Aqui está o seu feed de posts!
                 </p>
-                <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
+                <div className="flex gap-3 items-center">
+                  <button
+                    onClick={handleRefreshFeed}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 bg-white border-2 border-green-500 rounded-lg px-4 py-2.5 font-medium text-gray-800 hover:bg-green-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`text-green-500 ${isLoading ? 'animate-spin' : ''}`}
+                    >
+                      <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                      <path d="M21 3v5h-5" />
+                    </svg>
+                    <span>Atualizar</span>
+                  </button>
+                  <FilterBar activeSort={activeSort} onSortChange={setActiveSort} />
+                </div>
               </div>
 
               {isLoading && posts.length === 0 ? (
@@ -429,12 +504,20 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
                   searchTerm=""
                   activeSort={activeSort}
                   onGenerateCarousel={handleGenerateCarousel}
+                  onGenerateClick={handleGenerateClick}
+                  feedId={feedId}
                 />
               )}
             </div>
           </section>
         </main>
       </div>
+      
+      <ToneSetupModal
+        isOpen={showToneModal}
+        onClose={closeToneModal}
+        onComplete={completeToneSetup}
+      />
     </div>
   );
 };

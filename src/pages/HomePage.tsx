@@ -5,8 +5,9 @@ import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
 import { MouseFollowLight } from '../components/MouseFollowLight';
+import { ToneSetupModal } from '../components/ToneSetupModal';
 import { SkeletonGrid } from '../components/SkeletonLoader';
-import { deleteGeneratedContent, getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
+import { getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import type { CarouselTab } from '../carousel';
 import type { GeneratedContent } from '../types/generatedContent';
@@ -31,7 +32,7 @@ const HomePage: React.FC = () => {
   const [carousels, setCarousels] = useState<GalleryCarousel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [aiMessage, setAiMessage] = useState('');
-  const { addEditorTab, setShouldShowEditor } = useEditorTabs();
+  const { editorTabs, addEditorTab, setShouldShowEditor } = useEditorTabs();
 
   const getUserName = (): string => {
     try {
@@ -73,13 +74,13 @@ const HomePage: React.FC = () => {
     } catch (error) {
       console.error(`❌ Erro ao renderizar template "${templateId}":`, error);
 
-      return conteudos.map((slideData: any, index: number) =>
-        convertSlideToHTML(slideData, index)
+      return conteudos.map((slideData: any) =>
+        convertSlideToHTML(slideData)
       );
     }
   };
 
-  const convertSlideToHTML = (slideData: any, index: number): string => {
+  const convertSlideToHTML = (slideData: any): string => {
     const { title = '', subtitle = '', imagem_fundo = '', thumbnail_url = '' } = slideData;
 
     const isVideo = imagem_fundo?.includes('.mp4');
@@ -333,6 +334,17 @@ const HomePage: React.FC = () => {
       return;
     }
 
+    const tabId = `home-${carousel.id}`;
+    
+    // Check if tab already exists - if so, skip API call and just activate it
+    const existingTab = editorTabs.find(t => t.id === tabId);
+    if (existingTab) {
+      console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
+      addEditorTab(existingTab);
+      setShouldShowEditor(true);
+      return;
+    }
+
     let carouselData = carousel.carouselData;
     let slides = carousel.slides;
 
@@ -367,7 +379,7 @@ const HomePage: React.FC = () => {
     }
 
     const newTab: CarouselTab = {
-      id: `home-${carousel.id}`,
+      id: tabId,
       slides: slides,
       carouselData: carouselData,
       title: carousel.templateName,
@@ -537,7 +549,7 @@ const HomePage: React.FC = () => {
               Bem vindo de volta {userName}!
             </h1>
 
-            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative">
+            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative z-10">
               <div
                 className="absolute -z-10 pointer-events-none"
                 style={{
@@ -572,7 +584,7 @@ const HomePage: React.FC = () => {
               </div>
             </form>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 mb-12">
+            <div className="flex flex-wrap items-center justify-center gap-6 mb-12 relative z-10">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -595,9 +607,17 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/50 min-h-[600px]">
-            <div className="mb-6">
+          <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/50 min-h-[600px] relative z-10">
+            <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
+              {carousels.length > 0 && (
+                <button
+                  onClick={() => navigate('/gallery')}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  Ver todos
+                </button>
+              )}
             </div>
 
             {isLoading ? (
@@ -621,16 +641,11 @@ const HomePage: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
-                {carousels.map((carousel) => (
-                  <GalleryItem
-                    key={carousel.id}
-                    carousel={carousel}
-                    onEdit={handleViewCarousel}
-                    onDownload={handleDownload}
-                  />
-                ))}
-              </div>
+              <CarouselSlider
+                carousels={carousels}
+                onEdit={handleViewCarousel}
+                onDownload={handleDownload}
+              />
             )}
           </div>
         </div>
@@ -644,6 +659,74 @@ interface GalleryItemProps {
   onEdit: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
 }
+
+interface CarouselSliderProps {
+  carousels: GalleryCarousel[];
+  onEdit: (carousel: GalleryCarousel) => void;
+  onDownload: (carousel: GalleryCarousel) => void;
+}
+
+const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDownload }) => {
+  const [startIndex, setStartIndex] = useState(0);
+  const itemsPerPage = 4;
+  const visibleCarousels = carousels.slice(startIndex, startIndex + itemsPerPage);
+  const canGoNext = startIndex + itemsPerPage < carousels.length;
+  const canGoPrev = startIndex > 0;
+
+  const handleNext = () => {
+    if (canGoNext) {
+      setStartIndex(prev => prev + itemsPerPage);
+    }
+  };
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      setStartIndex(prev => Math.max(0, prev - itemsPerPage));
+    }
+  };
+
+  return (
+    <div className="relative">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
+        {visibleCarousels.map((carousel) => (
+          <GalleryItem
+            key={carousel.id}
+            carousel={carousel}
+            onEdit={onEdit}
+            onDownload={onDownload}
+          />
+        ))}
+      </div>
+      
+      {carousels.length > itemsPerPage && (
+        <div className="flex justify-center gap-2 mt-6">
+          <button
+            onClick={handlePrev}
+            disabled={!canGoPrev}
+            className={`p-2 rounded-full transition-all ${
+              canGoPrev
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={!canGoNext}
+            className={`p-2 rounded-full transition-all ${
+              canGoNext
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -687,7 +770,7 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
 
   return (
     <motion.div
-      className="w-full bg-white rounded-lg overflow-hidden border border-gray-light shadow-md"
+      className="w-full bg-white rounded-lg overflow-hidden border border-gray-light shadow-md relative z-10"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -792,4 +875,31 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
   );
 };
 
-export default HomePage;
+const HomePageWrapper: React.FC = () => {
+  // Use useState directly instead of useToneSetup to avoid automatic popup on home
+  const [showToneModal, setShowToneModal] = useState(false);
+  
+  const closeToneModal = () => {
+    localStorage.setItem('tone_setup_postponed', 'true');
+    setShowToneModal(false);
+  };
+  
+  const completeToneSetup = () => {
+    localStorage.setItem('needs_tone_setup', 'false');
+    localStorage.removeItem('tone_setup_postponed');
+    setShowToneModal(false);
+  };
+  
+  return (
+    <>
+      <HomePage />
+      <ToneSetupModal
+        isOpen={showToneModal}
+        onClose={closeToneModal}
+        onComplete={completeToneSetup}
+      />
+    </>
+  );
+};
+
+export default HomePageWrapper;

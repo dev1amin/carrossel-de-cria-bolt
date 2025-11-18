@@ -17,9 +17,11 @@ export interface Post {
   reshareScore: number;
   comment_count: number;
   reshare_count: number;
+  recommend?: boolean; // Recomendado pela IA
+  is_saved?: boolean; // Post salvo pelo usuário
 }
 
-export type SortOption = 'latest' | 'popular' | 'likes' | 'comments' | 'shares';
+export type SortOption = 'latest' | 'popular' | 'likes' | 'comments' | 'shares' | 'saved';
 
 // Re-export types from other modules
 export * from './generatedContent';

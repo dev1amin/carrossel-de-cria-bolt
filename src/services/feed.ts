@@ -60,10 +60,12 @@ const convertFeedItemToPost = (item: FeedItem): Post => {
     reshareScore: content.reshare_score,
     recencyScore: content.recency_score,
     overallScore: content.overall_score,
+    recommend: item.recommend,
+    is_saved: item.is_saved,
   };
 };
 
-export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => {
+export const getFeed = async (forceUpdate: boolean = false): Promise<{ posts: Post[], feed_id: string | null }> => {
   // Get cached data first (for immediate display)
   const cachedFeed = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
 
@@ -84,16 +86,16 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => 
 
         try {
           // Tenta criar um novo feed
-          const posts = await createFeed();
+          const result = await createFeed();
           console.log('✅ Feed criado com sucesso!');
-          return posts;
+          return result;
         } catch (createError: any) {
           console.error('❌ Erro ao criar feed automaticamente:', createError);
 
           // Return cached data if available
           if (cachedFeed) {
             console.log('🔄 Using cached feed data');
-            return cachedFeed;
+            return { posts: cachedFeed, feed_id: null };
           }
 
           throw new Error(createError.message || 'Failed to create feed');
@@ -103,7 +105,7 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => 
       // If it's another type of error and we have cache, return it
       if (cachedFeed) {
         console.log('🔄 Using cached feed data (error)');
-        return cachedFeed;
+        return { posts: cachedFeed, feed_id: null };
       }
 
       throw new Error(error.error || 'Failed to fetch feed');
@@ -121,10 +123,10 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => 
       // Update cache with new data
       CacheService.setItem(CACHE_KEYS.FEED, posts);
       console.log('📥 Feed data updated in cache');
-      return posts;
+      return { posts, feed_id: data.feed_id };
     } else {
       console.log('📥 Feed data unchanged, using cache');
-      return cachedFeed || posts;
+      return { posts: cachedFeed || posts, feed_id: data.feed_id };
     }
   } catch (error) {
     console.error('Error fetching feed:', error);
@@ -132,14 +134,14 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<Post[]> => 
     // Return cached data if available (offline mode)
     if (cachedFeed) {
       console.log('📥 Using cached feed data (offline)');
-      return cachedFeed;
+      return { posts: cachedFeed, feed_id: null };
     }
 
     throw error;
   }
 };
 
-export const createFeed = async (): Promise<Post[]> => {
+export const createFeed = async (): Promise<{ posts: Post[], feed_id: string | null }> => {
   const response = await authenticatedFetch(API_ENDPOINTS.feed, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -159,14 +161,14 @@ export const createFeed = async (): Promise<Post[]> => {
   // Salvar no cache
   CacheService.setItem(CACHE_KEYS.FEED, posts);
   
-  return posts;
+  return { posts, feed_id: data.feed_id };
 };
 
-export const saveContent = async (contentId: number): Promise<void> => {
+export const saveContent = async (contentId: number, feedId: string): Promise<void> => {
   const response = await authenticatedFetch(API_ENDPOINTS.feedSave, {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ content_id: contentId }),
+    body: JSON.stringify({ content_id: contentId, feed_id: feedId }),
   });
 
   if (!response.ok) {
@@ -178,11 +180,11 @@ export const saveContent = async (contentId: number): Promise<void> => {
   CacheService.clearItem(CACHE_KEYS.FEED);
 };
 
-export const unsaveContent = async (contentId: number): Promise<void> => {
+export const unsaveContent = async (contentId: number, feedId: string): Promise<void> => {
   const response = await authenticatedFetch(API_ENDPOINTS.feedSave, {
     method: 'DELETE',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ content_id: contentId }),
+    body: JSON.stringify({ content_id: contentId, feed_id: feedId }),
   });
 
   if (!response.ok) {
