@@ -39,6 +39,11 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   onMouseLeave,
   onBackgroundClick,
 }) => {
+  console.log('🎨 CanvasArea renderizado:', {
+    renderedSlidesLength: renderedSlides.length,
+    slidesLength: slides.length,
+    iframeRefsLength: iframeRefs.current.length
+  });
   const [currentPan, setPan] = useState(pan); // Estado para pan
   const containerRef = useRef<HTMLDivElement>(null);
   const isMouseDown = useRef(false); // Flag para detectar mouseDown
@@ -196,7 +201,12 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                 style={{ width: `${slideWidth}px`, height: `${slideHeight}px` }}
               >
                 <iframe
-                  ref={(el) => (iframeRefs.current[i] = el)}
+                  ref={(el) => {
+                    iframeRefs.current[i] = el;
+                    if (el) {
+                      console.log(`🎬 Iframe ${i} criado com srcDoc de ${el.srcdoc?.length || 0} caracteres`);
+                    }
+                  }}
                   srcDoc={slide}
                   className="w-full h-full border-0"
                   title={`Slide ${i + 1}`}

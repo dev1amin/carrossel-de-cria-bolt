@@ -1,3 +1,105 @@
+// Função para aplicar estilos salvos aos elementos do slide
+function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, editedContent: Record<string, any>, elementStyles: Record<string, any>) {
+  const doc = ifr.contentDocument || ifr.contentWindow?.document;
+  if (!doc) return;
+
+  // Aplica estilos de texto editado
+  Object.entries(editedContent).forEach(([k, val]) => {
+    const [slideStr, field] = k.split('-');
+    const idx = Number(slideStr);
+    if (idx !== slideIndex || Number.isNaN(idx)) return;
+    if (field !== 'title' && field !== 'subtitle') return;
+
+    const el = doc.getElementById(`slide-${slideIndex}-${field}`);
+    if (el && typeof val === 'string') {
+      el.textContent = val;
+    }
+  });
+
+  // Aplica estilos CSS salvos
+  Object.entries(elementStyles).forEach(([k, sty]) => {
+    const [slideStr, field] = k.split('-');
+    const idx = Number(slideStr);
+    if (idx !== slideIndex || Number.isNaN(idx)) return;
+
+    // Aplicar estilos de texto
+    if (field === 'title' || field === 'subtitle') {
+      const el = doc.getElementById(`slide-${slideIndex}-${field}`) as HTMLElement | null;
+      if (!el) {
+        console.warn(`⚠️ Elemento não encontrado: slide-${slideIndex}-${field}`);
+        return;
+      }
+
+      if (sty.fontSize) el.style.fontSize = sty.fontSize;
+      if (sty.fontWeight) el.style.fontWeight = String(sty.fontWeight);
+      if (sty.textAlign) el.style.textAlign = sty.textAlign as any;
+      if (sty.color) el.style.color = sty.color;
+    }
+
+    // Aplicar estilos de posição da imagem/vídeo/background
+    if (field === 'background') {
+      // Imagem
+      const img = doc.querySelector('img[data-editable="image"]') as HTMLImageElement | null;
+      if (img && sty.objectPosition) {
+        img.style.setProperty('object-position', sty.objectPosition, 'important');
+      }
+
+      // Vídeo
+      const video = doc.querySelector('video[data-editable="video"]') as HTMLVideoElement | null;
+      const videoContainer = doc.querySelector('.video-container') as HTMLElement | null;
+      if (video) {
+        // Sempre garantir object-fit: cover e 100%
+        video.style.setProperty('object-fit', 'cover', 'important');
+        video.style.setProperty('width', '100%', 'important');
+        video.style.setProperty('height', '100%', 'important');
+        video.style.setProperty('position', 'absolute', 'important');
+        (video.style as any).inset = '0';
+        // Aplica object-position se houver
+        if (sty.objectPosition) {
+          video.style.setProperty('object-position', sty.objectPosition, 'important');
+        }
+        // Aplica border-radius igual ao container
+        let borderRadius = '';
+        if (videoContainer) {
+          // Garante overflow e pega border-radius
+          videoContainer.style.setProperty('overflow', 'hidden', 'important');
+          borderRadius = videoContainer.style.borderRadius || window.getComputedStyle(videoContainer).borderRadius;
+          if (borderRadius) {
+            video.style.setProperty('border-radius', borderRadius, 'important');
+            videoContainer.style.setProperty('border-radius', borderRadius, 'important');
+          }
+        }
+      }
+
+      // Aplica em backgrounds CSS
+      if (sty.backgroundPositionX || sty.backgroundPositionY) {
+        const bgElements = doc.querySelectorAll('[data-editable="background"], body, div, section, header, main, figure, article');
+        bgElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          const cs = doc.defaultView?.getComputedStyle(htmlEl);
+          if (cs?.backgroundImage?.includes('url(')) {
+            if (sty.backgroundPositionX) {
+              htmlEl.style.setProperty('background-position-x', sty.backgroundPositionX, 'important');
+            }
+            if (sty.backgroundPositionY) {
+              htmlEl.style.setProperty('background-position-y', sty.backgroundPositionY, 'important');
+            }
+          }
+        });
+      }
+
+      // Aplica altura do container se salva
+      if (sty.height) {
+        const imgWrapper = doc.querySelector('.img-crop-wrapper') as HTMLElement | null;
+        const container = imgWrapper || videoContainer;
+        if (container) {
+          container.setAttribute('data-cv-height', sty.height.replace('px', ''));
+          container.style.setProperty('height', sty.height, 'important');
+        }
+      }
+    }
+  });
+}
 // CarouselViewer.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { CarouselData, ElementType, ElementStyles } from '../../../types/carousel';
@@ -34,6 +136,7 @@ interface CarouselViewerProps {
   onClose: () => void;
   generatedContentId?: number; // ID do GeneratedContent na API
   onSaveSuccess?: () => void; // Callback chamado após salvar com sucesso
+  autoDownload?: boolean; // Se true, faz download automático ao carregar
 }
 
 /** ========= Drag State (module-level) ========= */
@@ -41,12 +144,13 @@ const imgDragState = { current: null as ImgDragState | null };
 const videoCropState = { current: null as VideoCropState | null };
 
 /** ========= Componente ========= */
-const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, onClose, generatedContentId, onSaveSuccess }) => {
+const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, onClose, generatedContentId, onSaveSuccess, autoDownload = false }) => {
   console.log('🎨 CarouselViewer montado:', { 
     slidesLength: slides?.length, 
     hasCarouselData: !!carouselData,
     carouselData,
-    generatedContentId 
+    generatedContentId,
+    firstSlideLength: slides?.[0]?.length || 0
   });
 
   // Migração automática: se tem 'slides' mas não tem 'conteudos', faz a migração
@@ -214,10 +318,12 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
   // Estados para salvar mudanças
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [autoDownloadExecuted, setAutoDownloadExecuted] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [contentId, setContentId] = useState<number | undefined>(generatedContentId);
 
-  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>([]);
+  // Inicializa o array de refs com o tamanho correto
+  const iframeRefs = useRef<(HTMLIFrameElement | null)[]>(new Array(slides.length).fill(null));
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedImageRefs = useRef<Record<number, HTMLImageElement | null>>({});
   const lastSearchId = useRef(0);
@@ -554,7 +660,13 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
   };
 
   useEffect(() => {
-    setRenderedSlides(slides.map((s, i) => injectEditableIds(stripAltGarbage(s), i)));
+    const processedSlides = slides.map((s, i) => injectEditableIds(stripAltGarbage(s), i));
+    console.log('🔄 Processando slides:', {
+      originalSlides: slides.length,
+      processedSlides: processedSlides.length,
+      firstSlideLength: processedSlides[0]?.length || 0
+    });
+    setRenderedSlides(processedSlides);
     
     // Limpa todas as seleções e reseta estados ao trocar de aba/slides
     setSelectedElement({ slideIndex: 0, element: null });
@@ -1313,96 +1425,97 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
       logb('delegation wired', { slideIndex });
     };
 
-    // Função para aplicar estilos salvos aos elementos do slide
-    const applyStylesFromState = (ifr: HTMLIFrameElement, slideIndex: number) => {
-      const doc = ifr.contentDocument || ifr.contentWindow?.document;
-      if (!doc) return;
 
-      // Aplica estilos de texto editado
-      Object.entries(editedContent).forEach(([k, val]) => {
-        const [slideStr, field] = k.split('-');
-        const idx = Number(slideStr);
-        if (idx !== slideIndex || Number.isNaN(idx)) return;
-        if (field !== 'title' && field !== 'subtitle') return;
+// Função para aplicar estilos salvos aos elementos do slide
+function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, editedContent: Record<string, any>, elementStyles: Record<string, any>) {
+  const doc = ifr.contentDocument || ifr.contentWindow?.document;
+  if (!doc) return;
 
-        const el = doc.getElementById(`slide-${slideIndex}-${field}`);
-        if (el && typeof val === 'string') {
-          el.textContent = val;
-        }
-      });
+  // Aplica estilos de texto editado
+  Object.entries(editedContent).forEach(([k, val]) => {
+    const [slideStr, field] = k.split('-');
+    const idx = Number(slideStr);
+    if (idx !== slideIndex || Number.isNaN(idx)) return;
+    if (field !== 'title' && field !== 'subtitle') return;
 
-      // Aplica estilos CSS salvos
-      Object.entries(elementStyles).forEach(([k, sty]) => {
-        const [slideStr, field] = k.split('-');
-        const idx = Number(slideStr);
-        if (idx !== slideIndex || Number.isNaN(idx)) return;
+    const el = doc.getElementById(`slide-${slideIndex}-${field}`);
+    if (el && typeof val === 'string') {
+      el.textContent = val;
+    }
+  });
 
-        // Aplicar estilos de texto
-        if (field === 'title' || field === 'subtitle') {
-          const el = doc.getElementById(`slide-${slideIndex}-${field}`) as HTMLElement | null;
-          if (!el) {
-            console.warn(`⚠️ Elemento não encontrado: slide-${slideIndex}-${field}`);
-            return;
-          }
+  // Aplica estilos CSS salvos
+  Object.entries(elementStyles).forEach(([k, sty]) => {
+    const [slideStr, field] = k.split('-');
+    const idx = Number(slideStr);
+    if (idx !== slideIndex || Number.isNaN(idx)) return;
 
-          console.log(`🎨 Aplicando estilos ao slide ${slideIndex}, campo ${field}:`, sty);
-          
-          if (sty.fontSize) el.style.fontSize = sty.fontSize;
-          if (sty.fontWeight) el.style.fontWeight = String(sty.fontWeight);
-          if (sty.textAlign) el.style.textAlign = sty.textAlign as any;
-          if (sty.color) el.style.color = sty.color;
-        }
+    // Aplicar estilos de texto
+    if (field === 'title' || field === 'subtitle') {
+      const el = doc.getElementById(`slide-${slideIndex}-${field}`) as HTMLElement | null;
+      if (!el) {
+        console.warn(`⚠️ Elemento não encontrado: slide-${slideIndex}-${field}`);
+        return;
+      }
 
-        // Aplicar estilos de posição da imagem/vídeo/background
-        if (field === 'background') {
-          console.log(`🎨 Aplicando estilos de posição ao slide ${slideIndex}:`, sty);
-          
-          // Aplica em imagens
-          const img = doc.querySelector('img[data-editable="image"]') as HTMLImageElement | null;
-          if (img && sty.objectPosition) {
-            img.style.setProperty('object-position', sty.objectPosition, 'important');
-            console.log(`📐 Aplicada posição da imagem: ${sty.objectPosition}`);
-          }
-          
-          // Aplica em vídeos
-          const video = doc.querySelector('video[data-editable="video"]') as HTMLVideoElement | null;
-          if (video && sty.objectPosition) {
-            video.style.setProperty('object-position', sty.objectPosition, 'important');
-            console.log(`📐 Aplicada posição do vídeo: ${sty.objectPosition}`);
-          }
-          
-          // Aplica em backgrounds CSS
-          if (sty.backgroundPositionX || sty.backgroundPositionY) {
-            const bgElements = doc.querySelectorAll('[data-editable="background"], body, div, section, header, main, figure, article');
-            bgElements.forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              const cs = doc.defaultView?.getComputedStyle(htmlEl);
-              if (cs?.backgroundImage?.includes('url(')) {
-                if (sty.backgroundPositionX) {
-                  htmlEl.style.setProperty('background-position-x', sty.backgroundPositionX, 'important');
-                }
-                if (sty.backgroundPositionY) {
-                  htmlEl.style.setProperty('background-position-y', sty.backgroundPositionY, 'important');
-                }
-                console.log(`📐 Aplicada posição do background: ${sty.backgroundPositionX} ${sty.backgroundPositionY}`);
-              }
-            });
-          }
-          
-          // Aplica altura do container se salva
-          if (sty.height) {
-            const imgWrapper = doc.querySelector('.img-crop-wrapper') as HTMLElement | null;
-            const videoContainer = doc.querySelector('.video-container') as HTMLElement | null;
-            const container = imgWrapper || videoContainer;
-            if (container) {
-              container.setAttribute('data-cv-height', sty.height.replace('px', ''));
-              container.style.setProperty('height', sty.height, 'important');
-              console.log(`📏 Aplicada altura do container: ${sty.height}`);
+      console.log(`🎨 Aplicando estilos ao slide ${slideIndex}, campo ${field}:`, sty);
+      
+      if (sty.fontSize) el.style.fontSize = sty.fontSize;
+      if (sty.fontWeight) el.style.fontWeight = String(sty.fontWeight);
+      if (sty.textAlign) el.style.textAlign = sty.textAlign as any;
+      if (sty.color) el.style.color = sty.color;
+    }
+
+    // Aplicar estilos de posição da imagem/vídeo/background
+    if (field === 'background') {
+      console.log(`🎨 Aplicando estilos de posição ao slide ${slideIndex}:`, sty);
+      
+      // Aplica em imagens
+      const img = doc.querySelector('img[data-editable="image"]') as HTMLImageElement | null;
+      if (img && sty.objectPosition) {
+        img.style.setProperty('object-position', sty.objectPosition, 'important');
+        console.log(`📐 Aplicada posição da imagem: ${sty.objectPosition}`);
+      }
+      
+      // Aplica em vídeos
+      const video = doc.querySelector('video[data-editable="video"]') as HTMLVideoElement | null;
+      if (video && sty.objectPosition) {
+        video.style.setProperty('object-position', sty.objectPosition, 'important');
+        console.log(`📐 Aplicada posição do vídeo: ${sty.objectPosition}`);
+      }
+      
+      // Aplica em backgrounds CSS
+      if (sty.backgroundPositionX || sty.backgroundPositionY) {
+        const bgElements = doc.querySelectorAll('[data-editable="background"], body, div, section, header, main, figure, article');
+        bgElements.forEach((el) => {
+          const htmlEl = el as HTMLElement;
+          const cs = doc.defaultView?.getComputedStyle(htmlEl);
+          if (cs?.backgroundImage?.includes('url(')) {
+            if (sty.backgroundPositionX) {
+              htmlEl.style.setProperty('background-position-x', sty.backgroundPositionX, 'important');
             }
+            if (sty.backgroundPositionY) {
+              htmlEl.style.setProperty('background-position-y', sty.backgroundPositionY, 'important');
+            }
+            console.log(`📐 Aplicada posição do background: ${sty.backgroundPositionX} ${sty.backgroundPositionY}`);
           }
+        });
+      }
+      
+      // Aplica altura do container se salva
+      if (sty.height) {
+        const imgWrapper = doc.querySelector('.img-crop-wrapper') as HTMLElement | null;
+        const videoContainer = doc.querySelector('.video-container') as HTMLElement | null;
+        const container = imgWrapper || videoContainer;
+        if (container) {
+          container.setAttribute('data-cv-height', sty.height.replace('px', ''));
+          container.style.setProperty('height', sty.height, 'important');
+          console.log(`📏 Aplicada altura do container: ${sty.height}`);
         }
-      });
-    };
+      }
+    }
+  });
+}
 
     // Limpa disposers anteriores se existirem
     disposers.forEach(d => d());
@@ -1419,7 +1532,7 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
           setupIframe(ifr, idx);
           
           // Aplica estilos salvos após o setup
-          applyStylesFromState(ifr, idx);
+          applyStylesFromState(ifr, idx, editedContent, elementStyles);
           
           // Reaplicar estilos de posição após as imagens carregarem completamente
           const docForImgs = ifr.contentDocument || ifr.contentWindow?.document;
@@ -1429,11 +1542,11 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
               const imgEl = img as HTMLImageElement;
               if (imgEl.complete) {
                 // Imagem já carregada, reaplicar estilos imediatamente
-                setTimeout(() => applyStylesFromState(ifr, idx), 100);
+                setTimeout(() => applyStylesFromState(ifr, idx, editedContent, elementStyles), 100);
               } else {
                 // Aguardar carregamento da imagem
                 imgEl.addEventListener('load', () => {
-                  setTimeout(() => applyStylesFromState(ifr, idx), 100);
+                  setTimeout(() => applyStylesFromState(ifr, idx, editedContent, elementStyles), 100);
                 }, { once: true });
               }
             });
@@ -2215,30 +2328,102 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
   /** ===== Download ===== */
 
   const handleDownloadAll = async () => {
+    console.log('🎯 handleDownloadAll chamado - iniciando processo de download');
     try {
-      // Captura o srcDoc completo de cada iframe, preservando todas as marcações de edição
+      console.log('📥 Iniciando download...');
+      console.log('📊 Número de slides originais:', slides.length);
+      console.log('📊 Número de renderedSlides:', renderedSlides.length);
+      console.log('📊 Conteúdo dos renderedSlides:', renderedSlides.map((s, i) => ({
+        index: i,
+        length: s.length,
+        hasVideo: s.includes('<video'),
+        hasStyle: s.includes('<style')
+      })));
+      console.log('📊 Número de iframes:', iframeRefs.current.length);
+      console.log('📊 Estado dos iframes:', iframeRefs.current.map((ifr, i) => ({
+        index: i,
+        exists: !!ifr,
+        hasSrcDoc: !!(ifr?.srcdoc),
+        srcDocLength: ifr?.srcdoc?.length || 0
+      })));
+
+      // 1. Aplica todos os estilos salvos em todos os iframes antes de capturar o srcdoc
+      iframeRefs.current.forEach((ifr, idx) => {
+        if (ifr) {
+          applyStylesFromState(ifr, idx, editedContent, elementStyles);
+        }
+      });
+
+      // 2. Atualiza o srcdoc de cada iframe com o HTML atual do DOM (após aplicar estilos)
+      iframeRefs.current.forEach((ifr, idx) => {
+        if (ifr && ifr.contentDocument) {
+          // Serializa o DOM do iframe para HTML
+          const doc = ifr.contentDocument;
+          const html = doc.documentElement.outerHTML;
+          ifr.srcdoc = html;
+        }
+      });
+
+      // 3. Captura o srcDoc de cada iframe (HTML exato que está sendo renderizado no editor)
       const capturedSlides: string[] = [];
-      
+
       for (let i = 0; i < iframeRefs.current.length; i++) {
         const ifr = iframeRefs.current[i];
-        if (!ifr?.srcDoc) {
-          console.warn(`⚠️ Iframe ${i} não possui srcDoc disponível`);
+        if (!ifr) {
+          console.warn(`⚠️ Iframe ${i} não encontrado`);
           continue;
         }
+
+        // Usa o srcDoc atualizado
+        const srcDocHTML = ifr.srcdoc;
         
-        // Captura o srcDoc diretamente (HTML completo com todas as features do editor)
-        const editorHTML = ifr.srcDoc;
+        if (!srcDocHTML) {
+          console.warn(`⚠️ srcDoc não disponível para o slide ${i + 1}, tentando usar renderedSlides`);
+          // Fallback: usa o renderedSlides diretamente se o iframe não tem srcdoc
+          if (renderedSlides[i]) {
+            capturedSlides.push(renderedSlides[i]);
+            console.log(`✅ Usando renderedSlides para slide ${i + 1} (${renderedSlides[i].length} bytes)`);
+            continue;
+          } else {
+            console.warn(`⚠️ renderedSlides também não disponível para slide ${i + 1}`);
+            continue;
+          }
+        }
+        // Monta o iframe completo exatamente como está no editor
+        const iframeHTML = `<iframe srcdoc="${srcDocHTML.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
         
-        capturedSlides.push(editorHTML);
-        console.log(`✅ Capturado srcDoc completo do slide ${i + 1} (${editorHTML.length} bytes)`);
+        capturedSlides.push(iframeHTML);
+        console.log(`✅ Capturado iframe completo do slide ${i + 1} (${iframeHTML.length} bytes)`);
+
+        // Debug: verifica se há vídeos e estilos no srcDoc
+        const videoMatch = srcDocHTML.match(/<video[^>]*>/i);
+        if (videoMatch) {
+          console.log('🎬 Video tag no slide:', videoMatch[0].substring(0, 150));
+        }
+        const containerMatch = srcDocHTML.match(/\.video-container\s*\{([^}]+)\}/i);
+        if (containerMatch) {
+          console.log('📦 Video container CSS:', containerMatch[1].substring(0, 100));
+        }
       }
-      
+
+      console.log('📊 Slides capturados:', capturedSlides.length);
+
+      // Se nenhum slide foi capturado dos iframes, tenta criar iframes dos renderedSlides
+      if (capturedSlides.length === 0 && renderedSlides.length > 0) {
+        console.log('🔄 Nenhum slide capturado dos iframes, criando iframes dos renderedSlides');
+        renderedSlides.forEach((slide, i) => {
+          const iframeHTML = `<iframe srcdoc="${slide.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
+          capturedSlides.push(iframeHTML);
+        });
+        console.log('📊 Iframes criados dos renderedSlides:', capturedSlides.length);
+      }
+
       if (capturedSlides.length === 0) {
         throw new Error('Nenhum slide capturado para download');
       }
       
-      // Usa o serviço de download que detecta vídeos automaticamente
-      console.log('📥 Iniciando download de', capturedSlides.length, 'slides (HTML completo do editor com todas as marcações)...');
+      // Usa o serviço de download que detecta vídeos automaticamente e limpa o HTML
+      console.log('📥 Iniciando download de', capturedSlides.length, 'slides (HTML atual do editor com todos os estilos)...');
       await downloadSlidesAsPNG(capturedSlides, (current, total) => {
         console.log(`📊 Progresso: ${current}/${total}`);
       });
@@ -2250,6 +2435,39 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
       addToast(`Erro ao baixar slides: ${errorMessage}`, 'error');
     }
   };
+
+  // AUTO-DOWNLOAD: se autoDownload=true, aciona download automático após carregar estilos
+  useEffect(() => {
+    console.log('🔍 Verificando auto-download:', { 
+      autoDownload, 
+      hasStyles: !!data.styles, 
+      renderedSlidesLength: renderedSlides.length,
+      iframesReady: iframeRefs.current.some(ifr => ifr !== null),
+      autoDownloadExecuted
+    });
+    
+    if (autoDownload && !autoDownloadExecuted && renderedSlides.length > 0 && iframeRefs.current.some(ifr => ifr !== null)) {
+      console.log('🚀 Iniciando download automático...');
+      setAutoDownloadExecuted(true);
+      // Pequeno delay para garantir que tudo está carregado
+      const timer = setTimeout(async () => {
+        console.log('⏰ Timer do auto-download executado, chamando handleDownloadAll');
+        try {
+          await handleDownloadAll();
+          console.log('✅ Download automático concluído, fechando editor');
+          onClose();
+        } catch (error) {
+          console.error('❌ Erro no auto-download:', error);
+          // Mesmo com erro, fecha o editor
+          onClose();
+        }
+      }, 1500); // 1.5 segundos
+      
+      return () => clearTimeout(timer);
+    } else if (autoDownload && !autoDownloadExecuted) {
+      console.log('⏳ Aguardando slides e iframes carregarem para auto-download...');
+    }
+  }, [autoDownload, autoDownloadExecuted, renderedSlides.length, handleDownloadAll, onClose]);
 
   /** ===== Render ===== */
   return (

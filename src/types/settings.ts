@@ -16,6 +16,13 @@ export interface Business {
   id: string;
   name?: string;
   website?: string;
+  linkedin?: string;
+  instagram?: string;
+  objective?: string;
+  voice_tone?: string;
+  social_type?: string;
+  target_audience?: string;
+  brand_positioning?: string;
   instagram_username?: string;
   main_objective?: string;
   mission_short?: string;
@@ -36,7 +43,9 @@ export interface UserSettings {
   created_at: string;
   selected_business_id: string;
   business: Business;
-  niche: string | null;
-  niches: string[];
+  forbidden_topics: string[];
+  forbidden_words: string[];
+  preferred_words: string[];
+  niches: Niche[];
   influencers: Influencer[];
 }

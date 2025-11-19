@@ -406,10 +406,10 @@ const ChatBotPage: React.FC = () => {
       <div className="md:ml-16">
         {/* Title with Back Button */}
         <div className="relative">
-          <PageTitle title="Chat de Criação" />
+          <PageTitle title="" />
           <button
             onClick={() => navigate('/create-carousel')}
-            className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-white/60 hover:text-white transition-colors group"
+            className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Voltar</span>
@@ -432,8 +432,8 @@ const ChatBotPage: React.FC = () => {
                   }`}
                 >
                   {message.role === 'assistant' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                      <Bot className="w-5 h-5 text-white" />
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                      <Bot className="w-5 h-5 text-gray-700" />
                     </div>
                   )}
                   
@@ -441,7 +441,7 @@ const ChatBotPage: React.FC = () => {
                     className={`max-w-[70%] rounded-lg px-4 py-3 ${
                       message.role === 'user'
                         ? 'bg-white text-black'
-                        : 'bg-white/5 text-white border border-white/10'
+                        : 'bg-gray-100 text-gray-900 border border-gray-200'
                     }`}
                   >
                     {/* Modo de edição */}
@@ -460,14 +460,14 @@ const ChatBotPage: React.FC = () => {
                               handleCancelEdit();
                             }
                           }}
-                          className="w-full glass-card text-white placeholder-white/40 rounded-lg px-2 py-1 border border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm"
+                          className="w-full bg-white text-gray-900 placeholder-gray-400 rounded-lg px-2 py-1 border border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm"
                           rows={1}
                           style={{ minHeight: '48px', maxHeight: '128px' }}
                         />
                         <div className="flex gap-2 justify-end">
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-1 text-xs glass-card hover:bg-primary-500/20 rounded-lg transition-colors text-white"
+                            className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-900"
                           >
                             Cancelar (Esc)
                           </button>
@@ -487,7 +487,7 @@ const ChatBotPage: React.FC = () => {
                         </p>
                         <div className="flex items-center justify-between mt-1">
                           <span className={`text-xs ${
-                            message.role === 'user' ? 'text-black/60' : 'text-white/60'
+                            message.role === 'user' ? 'text-black/60' : 'text-gray-500'
                           }`}>
                             {message.timestamp.toLocaleTimeString('pt-BR', {
                               hour: '2-digit',
@@ -519,13 +519,13 @@ const ChatBotPage: React.FC = () => {
 
               {isLoading && (
                 <div className="flex gap-4 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                    <Bot className="w-5 h-5 text-gray-700" />
                   </div>
-                  <div className="bg-white/5 rounded-lg px-4 py-3 border border-white/10">
+                  <div className="bg-gray-100 rounded-lg px-4 py-3 border border-gray-200">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      <span className="text-sm text-white/60">Pensando...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
+                      <span className="text-sm text-gray-600">Pensando...</span>
                     </div>
                   </div>
                 </div>
@@ -534,8 +534,8 @@ const ChatBotPage: React.FC = () => {
               {/* Botão de escolher template quando esperando */}
               {waitingForTemplate && !isLoading && (
                 <div className="flex gap-4 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                    <Bot className="w-5 h-5 text-gray-700" />
                   </div>
                   <button
                     onClick={() => setIsTemplateModalOpen(true)}
@@ -550,7 +550,7 @@ const ChatBotPage: React.FC = () => {
             </div>
 
             {/* Input Area - Fixed at bottom */}
-            <div className="flex-shrink-0 border-t border-primary-500/20 px-4 py-4 glass-card">
+            <div className="flex-shrink-0 border-t border-gray-200 px-4 py-4 bg-white">
               <div className="flex gap-2 items-end mb-2">
                 <div className="flex-1 relative">
                   <textarea
@@ -561,7 +561,7 @@ const ChatBotPage: React.FC = () => {
                     placeholder={waitingForTemplate ? "Aguardando seleção de template..." : "Digite sua mensagem..."}
                     disabled={isLoading || waitingForTemplate}
                     rows={1}
-                    className="w-full glass-card text-white placeholder-white/40 rounded-xl px-4 py-3 border border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-white text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       height: '48px',
                       maxHeight: '128px',
@@ -583,7 +583,7 @@ const ChatBotPage: React.FC = () => {
               </div>
               
               {/* Disclaimer text */}
-              <p className="text-xs text-white/40 text-center">
+              <p className="text-xs text-gray-500 text-center">
                 As suas mensagens não são salvas
               </p>
             </div>

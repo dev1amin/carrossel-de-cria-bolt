@@ -9,6 +9,7 @@ export interface CarouselTab {
   carouselData: CarouselData;
   title: string;
   generatedContentId?: number; // ID do GeneratedContent na API
+  autoDownload?: boolean; // Se deve fazer download automático ao abrir
 }
 
 interface CarouselEditorTabsProps {
@@ -133,19 +134,24 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
       >
         <div className="flex items-center">
           {tabs.map((tab) => (
-            <button
+            <div
               key={tab.id}
-              onClick={() => handleTabClick(tab.id)}
-              className={`group flex items-center gap-2 px-4 py-2 border-r border-gray-200 transition-colors ${
+              className={`group flex items-center gap-2 px-4 py-2 border-r border-gray-200 transition-colors relative ${
                 activeTabId === tab.id
                   ? 'bg-white text-gray-900 font-medium'
                   : 'bg-gray-50 text-gray-600 hover:bg-white hover:text-gray-900'
               }`}
               style={{ pointerEvents: 'auto', cursor: 'pointer' }}
             >
-              <span className="text-sm font-medium truncate max-w-[150px]">
-                {tab.title}
-              </span>
+              <button
+                onClick={() => handleTabClick(tab.id)}
+                className="flex-1 text-left"
+                style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+              >
+                <span className="text-sm font-medium truncate max-w-[150px]">
+                  {tab.title}
+                </span>
+              </button>
               <button
                 onClick={(e) => handleCloseTab(tab.id, e)}
                 className={`p-0.5 rounded hover:bg-gray-200 transition-colors ${
@@ -156,7 +162,7 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
               >
                 <X className="w-3.5 h-3.5" />
               </button>
-            </button>
+            </div>
           ))}
         </div>
         
@@ -181,6 +187,7 @@ const CarouselEditorTabs: React.FC<CarouselEditorTabsProps> = ({ tabs, onCloseTa
             onClose={handleCloseEditor}
             generatedContentId={activeTab.generatedContentId}
             onSaveSuccess={onSaveSuccess}
+            autoDownload={activeTab.autoDownload}
           />
         )}
       </div>

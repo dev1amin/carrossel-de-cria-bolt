@@ -7,7 +7,7 @@ export const API_ENDPOINTS = {
   register: `${API_BASE_URL}/auth/register`,
   refresh: `${API_BASE_URL}/auth/refresh`,
   // Users
-  profile: `${API_BASE_URL}/user/profile`,
+  profile: `${API_BASE_URL}/profile`,
   influencers: `${API_BASE_URL}/users/influencers`,
   // Feed
   feed: `${API_BASE_URL}/feed`,
