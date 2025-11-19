@@ -38,7 +38,6 @@ const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.05;
 
 const MODAL_MAX_W_PX = 1200;
-const MODAL_MAX_H_PX = 860;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const round2 = (v: number) => Number(v.toFixed(2));
@@ -219,7 +218,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     return { x: clamp(nx, minX, 0), y: clamp(ny, minY, 0) };
   }, [getContentDims]);
 
-    // Fit-to-height + pan(0,0)
+  // Fit-to-height + pan(0,0)
   const fitToHeight = useCallback(() => {
     const vp = viewportRef.current;
     if (!vp) return;
@@ -244,11 +243,9 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     const vpW = vp.clientWidth;
     const vpH = vp.clientHeight;
     
-    // Centraliza horizontalmente e verticalmente
     const centerX = Math.max(0, (vpW - scaledW) / 2);
     const centerY = Math.max(0, (vpH - scaledH) / 2);
     
-    // Force set para garantir centralização imediata
     const clamped = clampPan(centerX, centerY);
     setPan(clamped);
   }, [zoom, slidesHtml.length, clampPan]);
@@ -258,7 +255,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     const vp = viewportRef.current;
     if (!vp) return;
     const ro = new ResizeObserver(() => {
-      // Apenas reclamp o pan atual sem mudar o zoom
       setPan((p) => clampPan(p.x, p.y));
     });
     ro.observe(vp);
@@ -277,7 +273,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   // Centraliza os slides quando forem carregados pela primeira vez
   useEffect(() => {
     if (slidesHtml.length > 0 && isInitialMount) {
-      // Aguarda um pouco mais para o DOM estar pronto
       const timer = setTimeout(() => {
         centerSlides();
         setIsInitialMount(false);
@@ -290,11 +285,11 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   const zoomIn = useCallback(() => {
     setZoom((z) => {
       const nz = round2(clamp(z + ZOOM_STEP, ZOOM_MIN, ZOOM_MAX));
-      // re-clamp pan após mudar zoom
       setPan((p) => clampPan(p.x, p.y));
       return nz;
     });
   }, [clampPan]);
+
   const zoomOut = useCallback(() => {
     setZoom((z) => {
       const nz = round2(clamp(z - ZOOM_STEP, ZOOM_MIN, ZOOM_MAX));
@@ -302,6 +297,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
       return nz;
     });
   }, [clampPan]);
+
   const resetZoom = useCallback(() => fitToHeight(), [fitToHeight]);
 
   // Pan (canvas)
@@ -339,11 +335,9 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         return nz;
       });
     } else if (e.shiftKey) {
-      // Pan horizontal com Shift
       e.preventDefault();
       setPan((p) => clampPan(p.x - e.deltaY, p.y));
     } else {
-      // Pan vertical e horizontal (dois dedos no trackpad)
       e.preventDefault();
       setPan((p) => clampPan(p.x - e.deltaX, p.y - e.deltaY));
     }
@@ -352,6 +346,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
+
   const handleGenerate = () => {
     onSelectTemplate(selectedTemplate.id);
     onClose();
@@ -374,10 +369,15 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         aria-modal="true"
         aria-labelledby="template-modal-title"
         onClick={handleBackdropClick}
-        className="fixed inset-0 flex items-center justify-center p-4 md:pl-20 md:pt-16"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.50)', zIndex: 10000 }}
+        className="
+          fixed inset-0 z-[10000]
+          flex justify-center
+          items-start md:items-center
+          p-2 md:p-4
+          bg-black/50
+          overflow-y-auto
+        "
       >
-
         <motion.div
           key="template-modal"
           id="template-modal"
@@ -387,12 +387,16 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           exit={{ y: 8, opacity: 0, scale: 0.98 }}
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white text-gray-900 shadow-2xl rounded-2xl border border-gray-300 overflow-hidden relative w-full"
+          className="
+            bg-white text-gray-900 shadow-2xl rounded-2xl border border-gray-300
+            relative w-full
+            flex flex-col
+            max-h-[calc(100vh-32px)]
+            md:max-h-[calc(100vh-120px)]
+            overflow-hidden
+          "
           style={{
             maxWidth: `${MODAL_MAX_W_PX}px`,
-            height: `min(85vh, ${MODAL_MAX_H_PX}px)`,
-            display: "grid",
-            gridTemplateRows: "auto 1fr auto",
             zIndex: 10001,
           }}
         >
@@ -420,20 +424,26 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
             </button>
           </div>
 
-          {/* Body: grid 2 colunas */}
+          {/* Body */}
           <div
-            className="relative h-full"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "18rem 1fr",
-            }}
+            className="
+              relative
+              flex-1 min-h-0
+              grid
+              grid-cols-1
+              md:grid-cols-[18rem,1fr]
+            "
           >
             {/* Sidebar */}
             <aside
-              className={`${
-                showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-              } transition-transform duration-200 ease-out bg-gray-50 border-r border-gray-200 overflow-y-auto pointer-events-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300`}
-              style={{ gridColumn: "1 / 2" }}
+              className={`
+                ${showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+                transition-transform duration-200 ease-out
+                bg-gray-50 border-r border-gray-200
+                overflow-y-auto
+                pointer-events-auto
+                scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300
+              `}
             >
               <div className="p-3 md:p-4 space-y-2">
                 {AVAILABLE_TEMPLATES.map((template, idx) => {
@@ -462,7 +472,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                           <p className="text-xs text-gray-600 line-clamp-2">
                             {template.description}
                           </p>
-                          {/* Badge de compatibilidade */}
                           <div className="mt-2">
                             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-medium ${
                               template.compatibility === 'video-image' 
@@ -483,13 +492,13 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
             </aside>
 
             {/* Canvas */}
-            <section className="relative bg-gray-100" style={{ gridColumn: "2 / -1" }}>
-              {/* BG grid pattern mais sutil */}
+            <section className="relative bg-gray-100 overflow-hidden">
+              {/* BG grid pattern */}
               <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.03)_1px,transparent_1px)] [background-size:20px_20px]" />
               </div>
 
-              {/* Viewport absoluto */}
+              {/* Viewport */}
               <div
                 ref={viewportRef}
                 onPointerDown={onPointerDown}
@@ -500,7 +509,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 className={`${isDragging ? "cursor-grabbing" : "cursor-grab"} absolute inset-0 z-10`}
                 style={{ touchAction: "none", overflow: "hidden", pointerEvents: "auto" }}
               >
-                {/* Loader: não bloqueia botões */}
                 {isLoadingPreview && (
                   <div className="absolute inset-0 flex items-center justify-center text-gray-700 z-20 pointer-events-none">
                     <div className="flex flex-col items-center gap-4">
@@ -510,7 +518,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                   </div>
                 )}
 
-                {/* Pan + Escala */}
                 <div
                   className="absolute top-0 left-0"
                   style={{
@@ -574,10 +581,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white/95 backdrop-blur-sm">
+          <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white/95 backdrop-blur-sm flex-shrink-0">
             <button
               onClick={handleGenerate}
-              className="w-full inline-flex items-center justify-center gap-2 font-semibold text-sm py-3 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 ring-purple-500/50"
+              className="w-full inline-flex items-center justify-center gap-2 font-semibold text-sm md:text-base py-3 md:py-3 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 ring-purple-500/50"
             >
               <span>Gerar {selectedTemplate.name}</span>
             </button>

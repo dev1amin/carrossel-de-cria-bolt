@@ -32,6 +32,16 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
   const dragY = useMotionValue(0);
   const controls = useAnimation();
 
+  /**
+   * Calcula o ranking absoluto de um post baseado em overallScore
+   * Retorna a posição do post quando todos os posts são ordenados por overallScore
+   * Isso garante que os top 3 posts sempre tenham os ícones, independente do filtro
+   */
+  const getAbsoluteRanking = (post: Post): number => {
+    const sortedByScore = [...posts].sort((a, b) => b.overallScore - a.overallScore);
+    return sortedByScore.findIndex(p => p.id === post.id);
+  };
+
   const handleGenerateCarousel = async (code: string, templateId: string, postId?: number) => {
     if (onGenerateCarouselProp) {
       onGenerateCarouselProp(code, templateId, postId);
@@ -203,7 +213,7 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
             <div className="snap-y snap-mandatory h-[calc(100vh-7rem)] overflow-y-auto">
               {filteredPosts.map((post, index) => (
                 <motion.div 
-                  key={post.code}
+                  key={`${post.id}-${post.code}`}
                   className="snap-start h-[calc(100vh-7rem)] w-full flex items-start justify-center"
                   style={{ y: dragY }}
                   drag="y"
@@ -214,7 +224,7 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                 >
                   <PostCard
                     post={post}
-                    index={index}
+                    index={getAbsoluteRanking(post)}
                     onGenerateCarousel={handleGenerateCarousel}
                     onGenerateClick={onGenerateClick}
                     feedId={feedId}
@@ -227,7 +237,7 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
               <AnimatePresence>
                 {filteredPosts.map((post, index) => (
                   <motion.div
-                    key={post.code}
+                    key={`${post.id}-${post.code}`}
                     layout
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -237,7 +247,7 @@ const Feed: React.FC<FeedProps> = ({ posts, searchTerm, activeSort, onGenerateCa
                   >
                     <PostCard
                       post={post}
-                      index={index}
+                      index={getAbsoluteRanking(post)}
                       onGenerateCarousel={handleGenerateCarousel}
                       onGenerateClick={onGenerateClick}
                       feedId={feedId}

@@ -4,6 +4,7 @@ import type { CarouselData, ElementType, ElementStyles } from '../../../types/ca
 import { AVAILABLE_TEMPLATES } from '../../../types/carousel';
 import { searchImages, templateRenderer } from '../../../services/carousel';
 import { updateGeneratedContent, getGeneratedContent } from '../../../services/generatedContent';
+import { downloadSlidesAsPNG } from '../../../services/carousel/download.service';
 import Toast, { type ToastMessage } from '../../Toast';
 import { TopBar } from './TopBar';
 import { LayersSidebar } from './LayersSidebar';
@@ -2190,11 +2191,10 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
       
       console.log('✅ Resposta da API:', response);
       
-      // NÃO limpar os estados - as mudanças devem persistir visualmente
-      // até o usuário recarregar ou fechar o editor
-      // setEditedContent({});
-      // setElementStyles({);
-      // setUploadedImages({});
+      // Limpa os estados de edição pois os dados foram salvos
+      // Os estilos permanecem aplicados nos iframes
+      setEditedContent({});
+      setUploadedImages({});
       setHasUnsavedChanges(false);
       
       addToast('Alterações salvas com sucesso!', 'success');
@@ -2213,18 +2213,42 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({ slides, carouselData, o
   };
 
   /** ===== Download ===== */
-  const handleDownloadAll = () => {
-    renderedSlides.forEach((slide, index) => {
-      const blob = new Blob([slide], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `slide-${index + 1}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
+
+  const handleDownloadAll = async () => {
+    try {
+      // Captura o srcDoc completo de cada iframe, preservando todas as marcações de edição
+      const capturedSlides: string[] = [];
+      
+      for (let i = 0; i < iframeRefs.current.length; i++) {
+        const ifr = iframeRefs.current[i];
+        if (!ifr?.srcDoc) {
+          console.warn(`⚠️ Iframe ${i} não possui srcDoc disponível`);
+          continue;
+        }
+        
+        // Captura o srcDoc diretamente (HTML completo com todas as features do editor)
+        const editorHTML = ifr.srcDoc;
+        
+        capturedSlides.push(editorHTML);
+        console.log(`✅ Capturado srcDoc completo do slide ${i + 1} (${editorHTML.length} bytes)`);
+      }
+      
+      if (capturedSlides.length === 0) {
+        throw new Error('Nenhum slide capturado para download');
+      }
+      
+      // Usa o serviço de download que detecta vídeos automaticamente
+      console.log('📥 Iniciando download de', capturedSlides.length, 'slides (HTML completo do editor com todas as marcações)...');
+      await downloadSlidesAsPNG(capturedSlides, (current, total) => {
+        console.log(`📊 Progresso: ${current}/${total}`);
+      });
+      
+      addToast(`${capturedSlides.length} slides baixados com sucesso!`, 'success');
+    } catch (error) {
+      console.error('❌ Erro ao baixar slides:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      addToast(`Erro ao baixar slides: ${errorMessage}`, 'error');
+    }
   };
 
   /** ===== Render ===== */

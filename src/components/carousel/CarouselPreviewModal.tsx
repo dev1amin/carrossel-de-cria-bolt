@@ -241,7 +241,7 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
         role="dialog"
         aria-modal="true"
         onClick={handleBackdropClick}
-        className="fixed inset-0 flex items-center justify-center p-4 md:pl-20 md:pt-16"
+        className="fixed inset-0 flex items-center justify-center p-4 pb-20 md:pb-4 md:pl-20 md:pt-16"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.90)', zIndex: 10000 }}
       >
         <motion.div
@@ -255,7 +255,8 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
           className="bg-black text-white shadow-2xl rounded-2xl border border-zinc-700/50 overflow-hidden relative w-full"
           style={{
             maxWidth: `${MODAL_MAX_W_PX}px`,
-            height: `min(85vh, ${MODAL_MAX_H_PX}px)`,
+            height: `min(calc(100vh - 120px), ${MODAL_MAX_H_PX}px)`,
+            maxHeight: 'calc(100vh - 120px)',
             display: "grid",
             gridTemplateRows: "auto 1fr auto",
             zIndex: 10001,

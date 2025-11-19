@@ -312,7 +312,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main>
+        <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0`}>
           <section className="relative pb-[5rem]">
             <MouseFollowLight zIndex={5} />
             <div

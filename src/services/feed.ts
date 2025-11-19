@@ -38,6 +38,22 @@ interface FeedItem {
   };
 }
 
+/**
+ * Remove posts duplicados baseado no code (Instagram shortcode)
+ * Logs são gerados para debug quando duplicatas são encontradas
+ */
+const deduplicatePosts = (posts: Post[]): Post[] => {
+  const seen = new Set<string>();
+  return posts.filter(post => {
+    if (seen.has(post.code)) {
+      console.warn(`🔄 Post duplicado removido: ${post.code} (ID: ${post.id})`);
+      return false;
+    }
+    seen.add(post.code);
+    return true;
+  });
+};
+
 // Converter FeedItem da nova API para Post do formato antigo
 const convertFeedItemToPost = (item: FeedItem): Post => {
   const content = item.influencer_content;
@@ -114,7 +130,10 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<{ posts: Po
     const data: FeedResponse = await response.json();
 
     // Converter itens do feed para o formato Post
-    const posts = data.feed.map(convertFeedItemToPost);
+    let posts = data.feed.map(convertFeedItemToPost);
+    
+    // Remover posts duplicados
+    posts = deduplicatePosts(posts);
 
     // Check if data has changed
     const hasChanged = CacheService.hasDataChanged(CACHE_KEYS.FEED, posts);
@@ -156,7 +175,10 @@ export const createFeed = async (): Promise<{ posts: Post[], feed_id: string | n
   const data: FeedResponse = await response.json();
   
   // Converter itens do feed para o formato Post
-  const posts = data.feed.map(convertFeedItemToPost);
+  let posts = data.feed.map(convertFeedItemToPost);
+  
+  // Remover posts duplicados
+  posts = deduplicatePosts(posts);
   
   // Salvar no cache
   CacheService.setItem(CACHE_KEYS.FEED, posts);
