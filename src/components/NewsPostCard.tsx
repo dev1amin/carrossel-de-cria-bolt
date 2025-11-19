@@ -15,10 +15,25 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
+    // Verifica se o tone setup já foi completado
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    
+    // Se tone setup foi completado (false), abre o modal de template diretamente
+    if (needsToneSetup === 'false') {
+      console.log('✅ Tone setup completo - abrindo modal de template (NewsPostCard)');
+      if (!onGenerateCarousel) return;
+      setIsModalOpen(true);
+      return;
+    }
+    
+    // Se needs_tone_setup for true ou não existir, delega para o parent component
+    console.log('⚠️ Tone setup necessário - delegando para parent component (NewsPostCard)');
     if (onGenerateClick) {
       onGenerateClick();
       return;
     }
+    
+    // Fallback: se não tiver onGenerateClick, abre o modal diretamente
     if (!onGenerateCarousel) return;
     setIsModalOpen(true);
   };

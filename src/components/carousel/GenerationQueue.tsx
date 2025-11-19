@@ -80,10 +80,9 @@ const GenerationQueue: React.FC<GenerationQueueProps> = ({ items, onRemoveItem, 
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -100, opacity: 0 }}
-      className="relative bg-white/95 backdrop-blur-md border-b border-gray-300 shadow-lg"
+      className="fixed top-0 left-0 md:left-20 right-0 bg-white/95 backdrop-blur-md border-b border-gray-300 shadow-lg"
       style={{ 
         zIndex: 70, // Acima da navegação (z-50), abaixo do header (z-100)
-        marginLeft: window.innerWidth >= 768 ? '81px' : '0',
       }}
     >
       {/* Container com flex para separar conteúdo (80%) e toggle (20%) */}

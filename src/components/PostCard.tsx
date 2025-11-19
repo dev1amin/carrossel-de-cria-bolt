@@ -24,20 +24,27 @@ const PostCard: React.FC<PostCardProps> = ({ post, index, onGenerateCarousel, on
   }, [post.is_saved]);
 
   const handleOpenModal = () => {
-    // Verifica se needs_tone_setup é false
+    // Verifica se o tone setup já foi completado
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    
+    // Se tone setup foi completado (false), abre o modal de template diretamente
     if (needsToneSetup === 'false') {
-      // Tone setup completo, abre o modal de template diretamente
+      console.log('✅ Tone setup completo - abrindo modal de template');
       if (!onGenerateCarousel) return;
       setIsModalOpen(true);
       return;
     }
     
-    // Se needs_tone_setup for true ou não existir, usa o comportamento padrão
+    // Se needs_tone_setup for true ou não existir, delega para o parent component
+    // O parent (FeedPage) tem o hook useToneSetupAutoShow que mostrará o modal de tone setup
+    console.log('⚠️ Tone setup necessário - delegando para parent component');
     if (onGenerateClick) {
       onGenerateClick();
       return;
     }
+    
+    // Fallback: se não tiver onGenerateClick, abre o modal diretamente
+    // (para casos onde o componente é usado sem o context do tone setup)
     if (!onGenerateCarousel) return;
     setIsModalOpen(true);
   };

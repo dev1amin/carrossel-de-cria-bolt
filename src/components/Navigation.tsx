@@ -4,7 +4,6 @@ import {
   Grid,
   Newspaper,
   Image,
-  ChevronRight,
   User,
   Ghost,
   PlusCircle,
@@ -90,15 +89,15 @@ const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <nav
-      className="hidden md:flex fixed left-0 top-0 bottom-0 bg-white border-r border-gray-light z-50 flex-col w-20"
+      className="fixed md:left-0 md:top-0 md:bottom-0 bottom-0 left-0 right-0 md:w-20 w-full bg-white border-r md:border-r border-t md:border-t-0 border-gray-light z-50 flex md:flex-col flex-row"
     >
-      {/* Topo: Logo */}
-      <div className="border-b border-gray-light p-4 flex items-center justify-center">
+      {/* Topo: Logo (apenas desktop) */}
+      <div className="hidden md:flex border-b border-gray-light p-4 items-center justify-center">
         <Ghost className="w-6 h-6 text-blue flex-shrink-0" />
       </div>
 
       {/* Menu Items */}
-      <div className="flex-1 flex flex-col py-4 space-y-2 px-2">
+      <div className="flex-1 flex md:flex-col flex-row md:py-4 py-0 md:space-y-2 space-y-0 md:space-x-0 space-x-0 md:px-2 px-0 justify-around md:justify-start">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -124,7 +123,7 @@ const Navigation: React.FC<NavigationProps> = ({
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              <span className="text-[10px] font-medium text-center">{item.label}</span>
+              <span className="text-[10px] font-medium text-center whitespace-nowrap">{item.label}</span>
               {item.id === 'gallery' && unviewedCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
                   {unviewedCount}
@@ -136,7 +135,7 @@ const Navigation: React.FC<NavigationProps> = ({
       </div>
 
       {/* Rodapé: User Dropdown */}
-      <div className="border-t border-gray-light p-2">
+      <div className="md:border-t border-t-0 md:border-l-0 border-l border-gray-light md:p-2 p-0 md:w-auto w-16">
         <div className="relative">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -145,12 +144,12 @@ const Navigation: React.FC<NavigationProps> = ({
             <div className="w-8 h-8 rounded-full bg-light flex items-center justify-center">
               <User className="w-4 h-4 text-blue" />
             </div>
-            <span className="text-[10px] font-medium text-center">{userName.split(' ')[0]}</span>
+            <span className="text-[10px] font-medium text-center whitespace-nowrap">{userName.split(' ')[0]}</span>
             <ChevronDown className={`w-3 h-3 text-gray transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isUserDropdownOpen && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-light rounded-lg shadow-lg z-50">
+            <div className="absolute bottom-full md:left-0 md:right-0 right-0 mb-2 md:w-auto w-48 bg-white border border-gray-light rounded-lg shadow-lg z-50">
               <button
                 onClick={() => {
                   navigate('/settings');

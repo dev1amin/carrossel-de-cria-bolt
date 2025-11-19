@@ -336,7 +336,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main className={`${generationQueue.length > 0 ? 'mt-20' : ''} bg-white`}>
+        <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0 bg-white`}>
         <section className="relative pb-[5rem]">
           <MouseFollowLight zIndex={-1} />
             <div

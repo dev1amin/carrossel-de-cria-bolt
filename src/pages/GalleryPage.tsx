@@ -507,7 +507,7 @@ const GalleryPage = () => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoadingFromAPI} />
 
-        <main className={`${generationQueue.length > 0 ? 'mt-20' : ''}`}>
+        <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0`}>
           <section className="relative pb-[5rem]">
             <MouseFollowLight zIndex={-1} />
             <div
