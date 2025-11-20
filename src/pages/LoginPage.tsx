@@ -126,7 +126,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="mt-8 text-center">
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
-              <button className="text-blue hover:text-blue-dark font-medium hover:underline transition-colors">
+              <button 
+                onClick={() => window.location.href = 'https://www.socialsquare.com.br/'}
+                className="text-blue hover:text-blue-dark font-medium hover:underline transition-colors"
+              >
                 Criar conta
               </button>
             </p>
