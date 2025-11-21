@@ -144,7 +144,7 @@ export const loginWithJWT = async (jwtToken: string): Promise<LoginResponse> => 
     
     try {
       const profileResponse = await fetch(API_ENDPOINTS.profile, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
           'Content-Type': 'application/json',
