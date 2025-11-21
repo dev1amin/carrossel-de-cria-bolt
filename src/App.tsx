@@ -14,7 +14,6 @@ import GalleryPage from './pages/GalleryPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPageContainer from './pages/SettingsPageContainer';
 import CreateCarouselPage from './pages/CreateCarouselPage';
-import CreateBusinessPage from './pages/CreateBusinessPage';
 import ChatBotPage from './pages/ChatBotPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -101,9 +100,6 @@ function AppContent() {
       <Routes>
         {/* Rota de Login */}
         <Route path="/login" element={<LoginPage />} />
-
-        {/* Rota de Setup de Business */}
-        <Route path="/setup-business" element={<CreateBusinessPage />} />
 
         {/* Rota Raiz */}
         <Route path="/" element={<Navigate to="/home" replace />} />

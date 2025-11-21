@@ -5,21 +5,95 @@ import {
   Newspaper,
   Image,
   User,
-  Ghost,
   PlusCircle,
   Home,
   ChevronDown,
+  Settings,
+  Briefcase,
+  LogOut,
 } from 'lucide-react';
 
 interface NavigationProps {
   currentPage?: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools';
-  onPageChange?: (page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools') => void;
+  onPageChange?: (
+    page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools',
+  ) => void;
   unviewedCount?: number;
 }
 
 type MenuItem =
-  | { id: string; label: string; icon: React.ComponentType<any>; page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' }
-  | { id: string; label: string; icon: React.ComponentType<any>; onClick: () => void };
+  | {
+      id: string;
+      label: string;
+      icon: React.ComponentType<any>;
+      page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot';
+    }
+  | {
+      id: string;
+      label: string;
+      icon: React.ComponentType<any>;
+      onClick: () => void;
+    };
+
+// Logo com o SVG que você mandou
+const LogoIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    viewBox="0 0 300 328"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M154.148 326.382L262.952 263.564C268.484 260.371 268.484 252.389 262.952 249.195L154.148 186.378C151.58 184.898 148.419 184.898 145.851 186.378L37.0479 249.195C31.5153 252.389 31.5153 260.371 37.0479 263.564L145.851 326.382C148.419 327.862 151.58 327.862 154.148 326.382Z"
+      fill="url(#paint0_linear_58_2)"
+    />
+    <path
+      d="M0 196.76V71.1259C0 68.1613 1.58249 65.4216 4.14637 63.9413L112.95 1.12415C118.482 -2.06946 125.393 1.92153 125.393 8.30875V133.943C125.393 136.908 123.811 139.647 121.247 141.128L12.4432 203.945C6.91062 207.138 0 203.147 0 196.76Z"
+      fill="url(#paint1_linear_58_2)"
+    />
+    <path
+      d="M287.557 203.945L178.753 141.128C176.185 139.647 174.607 136.908 174.607 133.943V8.30875C174.607 1.92153 181.522 -2.06946 187.05 1.12415L295.854 63.9413C298.422 65.4216 300 68.1613 300 71.1259V196.76C300 203.147 293.085 207.138 287.557 203.945Z"
+      fill="url(#paint2_linear_58_2)"
+    />
+    <defs>
+      <linearGradient
+        id="paint0_linear_58_2"
+        x1="30.9696"
+        y1="214.239"
+        x2="77.6859"
+        y2="355.591"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#0047BB" />
+        <stop offset="1" stopColor="#005CF2" />
+        <stop offset="1" stopColor="#4D90FF" />
+      </linearGradient>
+      <linearGradient
+        id="paint1_linear_58_2"
+        x1="-1.03273"
+        y1="41.7734"
+        x2="111.241"
+        y2="167.916"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#0047BB" />
+        <stop offset="1" stopColor="#005CF2" />
+        <stop offset="1" stopColor="#4D90FF" />
+      </linearGradient>
+      <linearGradient
+        id="paint2_linear_58_2"
+        x1="173.574"
+        y1="41.7734"
+        x2="285.848"
+        y2="167.916"
+        gradientUnits="userSpaceOnUse"
+      >
+        <stop stopColor="#0047BB" />
+        <stop offset="1" stopColor="#005CF2" />
+        <stop offset="1" stopColor="#4D90FF" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
 const Navigation: React.FC<NavigationProps> = ({
   currentPage,
@@ -93,7 +167,7 @@ const Navigation: React.FC<NavigationProps> = ({
     >
       {/* Topo: Logo (apenas desktop) */}
       <div className="hidden md:flex border-b border-gray-light p-4 items-center justify-center">
-        <Ghost className="w-6 h-6 text-blue flex-shrink-0" />
+        <LogoIcon className="w-6 h-6 flex-shrink-0" />
       </div>
 
       {/* Menu Items */}
@@ -123,7 +197,9 @@ const Navigation: React.FC<NavigationProps> = ({
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              <span className="text-[10px] font-medium text-center whitespace-nowrap">{item.label}</span>
+              <span className="text-[10px] font-medium text-center whitespace-nowrap">
+                {item.label}
+              </span>
               {item.id === 'gallery' && unviewedCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
                   {unviewedCount}
@@ -134,9 +210,9 @@ const Navigation: React.FC<NavigationProps> = ({
         })}
       </div>
 
-      {/* Rodapé: User Dropdown */}
+      {/* User + opções embaixo, mesmo estilo dos itens de cima */}
       <div className="md:border-t border-t-0 md:border-l-0 border-l border-gray-light md:p-2 p-0 md:w-auto w-16">
-        <div className="relative">
+        <div className="flex flex-col items-stretch">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
             className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-light transition-colors w-full"
@@ -144,39 +220,58 @@ const Navigation: React.FC<NavigationProps> = ({
             <div className="w-8 h-8 rounded-full bg-light flex items-center justify-center">
               <User className="w-4 h-4 text-blue" />
             </div>
-            <span className="text-[10px] font-medium text-center whitespace-nowrap">{userName.split(' ')[0]}</span>
-            <ChevronDown className={`w-3 h-3 text-gray transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+            <span className="text-[10px] font-medium text-center whitespace-nowrap">
+              {userName.split(' ')[0]}
+            </span>
+            <ChevronDown
+              className={`w-3 h-3 text-gray transition-transform ${
+                isUserDropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
           {isUserDropdownOpen && (
-            <div className="absolute bottom-full md:left-0 md:right-0 right-0 mb-2 md:w-auto w-48 bg-white border border-gray-light rounded-lg shadow-lg z-50">
+            <div className="mt-1 flex flex-col items-center space-y-1">
               <button
                 onClick={() => {
                   navigate('/settings');
                   setIsUserDropdownOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs hover:bg-light transition-colors rounded-t-lg"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-gray hover:text-dark hover:bg-light w-full"
               >
-                Configurações
+                <Settings className="w-5 h-5 flex-shrink-0" />
+                <span className="text-[10px] font-medium text-center whitespace-nowrap">
+                  Configurações
+                </span>
               </button>
+
+              {/* 
               <button
                 onClick={() => {
                   navigate('/create-business');
                   setIsUserDropdownOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs hover:bg-light transition-colors"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-gray hover:text-dark hover:bg-light w-full"
               >
-                Criar Business
+                <Briefcase className="w-5 h-5 flex-shrink-0" />
+                <span className="text-[10px] font-medium text-center whitespace-nowrap">
+                  Criar Business
+                </span>
               </button>
+              */}
+
               <button
                 onClick={() => {
                   localStorage.removeItem('access_token');
                   localStorage.removeItem('user');
                   navigate('/login');
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-red-600 hover:text-red-700 hover:bg-red-50 w-full"
               >
-                Sair
+                <LogOut className="w-5 h-5 flex-shrink-0" />
+                <span className="text-[10px] font-medium text-center whitespace-nowrap">
+                  Sair
+                </span>
               </button>
             </div>
           )}

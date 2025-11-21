@@ -38,7 +38,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       if (user.needs_business_setup) {
         console.log('🏢 Usuário precisa configurar business, redirecionando...');
-        navigate('/setup-business');
+        navigate('/feed');
         return;
       }
 
@@ -69,7 +69,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
       if (response.needs_business_setup) {
         console.log('🏢 Usuário precisa configurar business, redirecionando...');
-        navigate('/setup-business');
+        navigate('/feed');
         return;
       }
 

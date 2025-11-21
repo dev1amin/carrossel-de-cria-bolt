@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Clock, Layers, ChevronDown } from 'lucide-react';
+import { Clock, Layers, ChevronDown, Bookmark } from 'lucide-react';
 
 interface GalleryFiltersProps {
-  onSortChange: (sort: 'recent' | 'template') => void;
-  activeSort: 'recent' | 'template';
+  onSortChange: (sort: 'recent' | 'template' | 'saved') => void;
+  activeSort: 'recent' | 'template' | 'saved';
 }
 
 const GalleryFilters: React.FC<GalleryFiltersProps> = ({ onSortChange, activeSort }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const filters: { label: string; value: 'recent' | 'template'; icon: React.ElementType }[] = [
+  const filters: { label: string; value: 'recent' | 'template' | 'saved'; icon: React.ElementType }[] = [
     { label: 'Mais recentes', value: 'recent', icon: Clock },
     { label: 'Por template', value: 'template', icon: Layers },
+    { label: 'Posts Salvos', value: 'saved', icon: Bookmark },
   ];
 
   const activeFilter = filters.find(f => f.value === activeSort);

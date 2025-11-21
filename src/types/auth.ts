@@ -16,6 +16,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  instagram?: string;
+  logo_url?: string;
   plan?: string;
   needs_business_setup?: boolean;
   needs_tone_setup?: boolean;

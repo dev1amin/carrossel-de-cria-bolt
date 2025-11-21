@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, AlertCircle, Loader2, Edit2, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  X, 
+  ChevronRight, 
+  ChevronLeft, 
+  AlertCircle, 
+  Loader2, 
+  Edit2, 
+  Save,
+  UploadCloud
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { submitStepAnswer, checkBusinessSelected, saveProgress, loadProgress, clearProgress, clearSubmittedQuestions } from '../services/toneSetup';
 import { BusinessSelectorModal } from './BusinessSelectorModal';
@@ -16,6 +25,40 @@ interface WebhookResponse {
   publico_alvo: string;
 }
 
+// Textarea que cresce com o conteúdo, sem scroll interno
+const AutoResizeTextarea: React.FC<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+> = ({ className = '', onChange, ...props }) => {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  const resize = () => {
+    if (!ref.current) return;
+    ref.current.style.height = 'auto';
+    ref.current.style.height = `${ref.current.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    resize();
+  }, [props.value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onChange) onChange(e);
+    requestAnimationFrame(resize);
+  };
+
+  return (
+    <textarea
+      ref={ref}
+      {...props}
+      onChange={handleChange}
+      className={
+        'w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none overflow-hidden ' +
+        className
+      }
+    />
+  );
+};
+
 export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose, onComplete }) => {
   const [showForm, setShowForm] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -26,6 +69,40 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   const [showBusinessSelector, setShowBusinessSelector] = useState(false);
   const [editableResponse, setEditableResponse] = useState<WebhookResponse | null>(null);
   const [isSavingToneVoice, setIsSavingToneVoice] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  // ref para o container rolável das perguntas
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Bloquear scroll do body enquanto o modal estiver aberto
+  useEffect(() => {
+    if (isOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [isOpen]);
+
+  // Preview do logo selecionado
+  useEffect(() => {
+    if (!logoFile) {
+      setLogoPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(logoFile);
+    setLogoPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [logoFile]);
 
   // Carregar progresso salvo ao abrir o modal
   useEffect(() => {
@@ -47,6 +124,16 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       saveProgress(answers, currentStep);
     }
   }, [answers, currentStep, showForm]);
+
+  // Resetar scroll do container interno ao mudar de pergunta
+  useEffect(() => {
+    if (showForm && contentRef.current) {
+      contentRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+  }, [currentStep, showForm]);
 
   const questions = [
     {
@@ -177,26 +264,50 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       ]
     },
     {
+      // NOVA PERGUNTA SEPARADA: MODELO DE ATUAÇÃO
+      title: "Qual é o modelo de atuação principal da marca?",
+      subtitle: "Selecione o modelo que melhor representa como a marca se relaciona com o cliente",
+      type: "single",
+      answers: [
+        "B2B",
+        "B2C",
+        "B2B2C",
+        "D2C"
+      ]
+    },
+    {
+      // PÚBLICO-ALVO: SOMENTE DEMOGRAFIA (SEM LOCALIZAÇÃO)
       title: "Quem é o público-alvo principal da marca?",
-      subtitle: "Selecione as descrições que mais se aproximam do seu público",
-      type: "grouped",
+      subtitle: "Selecione as principais características demográficas do seu público",
+      type: "grouped-multiple",
+      minSelections: 1,
+      maxSelections: 12,
       groups: {
-        "B2C": [
-          "Jovens Adultos Urbanos",
-          "Famílias e Pais/Mães",
-          "Adolescentes / Geração Z",
-          "Profissionais em Início de Carreira",
-          "Classe Alta / Público Premium",
-          "Nichos de Interesse Específico",
-          "Seniors da Melhor Idade"
+        "Idade": [
+          "18-24 anos",
+          "25-34 anos",
+          "35-44 anos",
+          "45-60 anos",
+          "60+ anos"
         ],
-        "B2B": [
-          "Pequenas e Médias Empresas",
-          "Grandes Empresas / Corporativo",
-          "Startups e Empresas Inovadoras",
-          "Setor Público/Instituições",
-          "Por Área de Atuação",
-          "Decisores e Personas Específicas"
+        "Gênero": [
+          "Predominantemente masculino",
+          "Predominantemente feminino",
+          "Equilibrado entre gêneros",
+          "Independente de gênero"
+        ],
+        "Renda": [
+          "Baixa renda",
+          "Média renda",
+          "Alta renda",
+          "Alta renda / Premium"
+        ],
+        "Contexto profissional": [
+          "Estudantes",
+          "Profissionais em início de carreira",
+          "Gestores e líderes",
+          "Empreendedores",
+          "Autônomos / freelancers"
         ]
       }
     },
@@ -313,6 +424,11 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       subtitle: "Liste termos proibidos",
       type: "text",
       placeholder: "Ex: barato, desconto, promoção..."
+    },
+    {
+      title: "Envie o logo da marca ou a foto do perfil",
+      subtitle: "Faça upload do arquivo de logo (PNG, JPG, SVG)",
+      type: "file"
     }
   ];
 
@@ -328,7 +444,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
         [currentStep]: current.filter(a => a !== answer)
       });
     } else {
-      const maxSelections = question.maxSelections || 1;
+      const maxSelections = (question as any).maxSelections || 1;
       if (current.length < maxSelections) {
         setAnswers({
           ...answers,
@@ -352,22 +468,118 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     });
   };
 
+  const handleLogoFile = (file: File) => {
+    if (!file) return;
+
+    setLogoFile(file);
+
+    // Se ainda não tiver URL salva, mantém resposta vazia até upload concluir
+    setAnswers(prev => ({
+      ...prev,
+      [currentStep]:
+        prev[currentStep] && typeof prev[currentStep] === 'string' && (prev[currentStep] as string).startsWith('http')
+          ? prev[currentStep]
+          : ''
+    }));
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleLogoFile(file);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleLogoFile(file);
+    }
+  };
+
+  const uploadLogo = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        return { success: false, error: 'Token de autenticação não encontrado' };
+      }
+
+      const formData = new FormData();
+      // segue o padrão que você descreveu: key + file
+      formData.append('key', 'logo_url');
+      formData.append('file', file);
+
+      const response = await fetch('https://carousel-api-sepia.vercel.app/api/business/forms/logo_url', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // NÃO coloca Content-Type, o browser seta com boundary correto
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, error: `Erro ao enviar logo: ${response.status} - ${errorText}` };
+      }
+
+      const data = await response.json();
+
+      const uploadedUrl =
+        data?.data?.uploaded_url || data?.data?.response || null;
+
+      if (!uploadedUrl) {
+        return { success: false, error: 'API não retornou URL do logo' };
+      }
+
+      return { success: true, url: uploadedUrl };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido ao enviar logo';
+      return { success: false, error: msg };
+    }
+  };
+
   const canGoNext = () => {
     const answer = answers[currentStep];
     const question = questions[currentStep];
-    
+
+    // campos de texto continuam opcionais
     if (question.type === 'text') {
-      return true; // Text fields are optional
+      return true;
     }
-    
+
+    // logo (file)
+    if (question.type === 'file') {
+      const answerStr = typeof answer === 'string' ? answer : '';
+      const alreadyUploaded = answerStr.startsWith('http'); // URL gravada
+      // pode avançar se já fez upload (URL) ou se já escolheu um arquivo (logoFile)
+      return alreadyUploaded || !!logoFile;
+    }
+
     if (!answer) return false;
-    
+
     if (Array.isArray(answer)) {
-      const minSelections = question.minSelections || 1;
+      const minSelections = (question as any).minSelections || 1;
       return answer.length >= minSelections;
     }
-    
-    return answer.length > 0;
+
+    return (answer as string).length > 0;
   };
 
   const handleNext = async () => {
@@ -380,7 +592,50 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       return;
     }
 
-    // Enviar resposta atual para API antes de avançar
+    const question = questions[currentStep];
+
+    // CASO ESPECIAL: passo de logo (upload de arquivo)
+    if (question.type === 'file') {
+      const currentAnswer = answers[currentStep];
+      const alreadyUploaded =
+        typeof currentAnswer === 'string' && currentAnswer.startsWith('http');
+
+      if (!alreadyUploaded) {
+        if (!logoFile) {
+          setSubmitError('Selecione um arquivo de logo antes de continuar.');
+          return;
+        }
+
+        setIsSavingAnswer(true);
+        const result = await uploadLogo(logoFile);
+        setIsSavingAnswer(false);
+
+        if (!result.success || !result.url) {
+          setSubmitError(result.error || 'Erro ao enviar logo');
+          // não avança se não salvou
+          return;
+        }
+
+        // grava a URL retornada como resposta desse passo
+        setAnswers(prev => ({
+          ...prev,
+          [currentStep]: result.url!,
+        }));
+
+        setLogoFile(null);
+      }
+
+      // avançar para próxima pergunta ou finalizar
+      if (currentStep < questions.length - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+
+      return;
+    }
+
+    // FLUXO PADRÃO (igual ao seu, para as outras perguntas)
     const currentAnswer = answers[currentStep];
     if (currentAnswer) {
       setIsSavingAnswer(true);
@@ -433,29 +688,32 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
         completed_at: new Date().toISOString(),
         // Mapear respostas para nomes legíveis
         mapped_responses: Object.entries(answers).reduce((acc, [step, answer]) => {
-          const questionIndex = parseInt(step);
+          const questionIndex = parseInt(step, 10);
           const question = questions[questionIndex];
           
-          // Perguntas que devem enviar array: 1,2,3,9,10,11 (índices 0,1,2,8,9,10)
-          const arrayQuestions = [0, 1, 2, 8, 9, 10];
+          // Perguntas que devem enviar array:
+          // 0,1,2 (missão/valores/diferenciais)
+          // 6 (público-alvo demográfico)
+          // 9,10,11 (razões, atributos de tom, consistência)
+          const arrayQuestions = [0, 1, 2, 6, 9, 10, 11];
           
           if (arrayQuestions.includes(questionIndex)) {
-            // Para essas perguntas, enviar como array
             if (Array.isArray(answer)) {
               acc[question.title] = answer;
             } else if (typeof answer === 'string') {
-              // Para perguntas de texto, pode ser array se tiver vírgulas
-              acc[question.title] = answer.split(',').map(s => s.trim()).filter(s => s.length > 0);
+              acc[question.title] = answer
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
             } else {
-              acc[question.title] = answer;
+              acc[question.title] = answer as any;
             }
           } else {
-            // Para outras perguntas, manter como string
             let formattedAnswer;
             if (Array.isArray(answer)) {
               formattedAnswer = answer.join(', ');
             } else {
-              formattedAnswer = answer;
+              formattedAnswer = answer as string;
             }
             acc[question.title] = formattedAnswer;
           }
@@ -477,7 +735,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
         setEditableResponse(responseData);
         console.log('📝 Resposta do webhook recebida:', responseData);
       } else if (webhookResult && typeof webhookResult === 'object') {
-        // Se vier um objeto direto ao invés de array
         setEditableResponse(webhookResult);
         console.log('📝 Resposta do webhook recebida:', webhookResult);
       } else {
@@ -495,7 +752,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   const handleBusinessSelected = () => {
     setShowBusinessSelector(false);
     console.log('🏢 Negócio selecionado, continuando com o formulário');
-    // O formulário continuará normalmente agora que há um negócio selecionado
   };
 
   const handleSaveToneVoice = async () => {
@@ -596,20 +852,81 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
         <textarea
           value={(answers[currentStep] as string) || ''}
           onChange={(e) => handleTextInput(e.target.value)}
-          placeholder={question.placeholder}
+          placeholder={(question as any).placeholder}
           className="w-full min-h-[120px] p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
         />
+      );
+    }
+
+    // upload de logo
+    if (question.type === 'file') {
+      const answer = answers[currentStep];
+      const uploadedUrl =
+        typeof answer === 'string' && answer.startsWith('http') ? answer : null;
+
+      const previewUrl = logoPreview || uploadedUrl || null;
+
+      return (
+        <div className="space-y-4">
+          <div
+            className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all
+              ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/50'}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
+            <p className="text-sm font-medium text-gray-800">
+              Arraste e solte o logo aqui
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              ou clique para selecionar um arquivo (PNG, JPG, SVG)
+            </p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileInputChange}
+            />
+
+            {logoFile && !uploadedUrl && (
+              <p className="mt-3 text-xs text-gray-600">
+                Arquivo selecionado: <span className="font-semibold">{logoFile.name}</span>
+              </p>
+            )}
+
+            {uploadedUrl && !logoFile && (
+              <p className="mt-3 text-xs text-green-600">
+                Logo já enviado. Você pode avançar ou escolher outro arquivo para substituir.
+              </p>
+            )}
+          </div>
+
+          {previewUrl && (
+            <div className="border border-gray-200 bg-white rounded-xl p-3 flex flex-col items-center">
+              <p className="text-xs text-gray-500 mb-2">Pré-visualização do logo</p>
+              <img
+                src={previewUrl}
+                alt="Logo"
+                className="max-h-40 object-contain"
+              />
+            </div>
+          )}
+        </div>
       );
     }
 
     if (question.type === 'grouped' || question.type === 'grouped-multiple') {
       return (
         <div className="space-y-6">
-          {Object.entries(question.groups!).map(([groupName, options]) => (
+          {Object.entries((question as any).groups!).map(([groupName, options]) => (
             <div key={groupName}>
               <h4 className="font-semibold text-gray-900 mb-3">{groupName}</h4>
               <div className="grid grid-cols-1 gap-2">
-                {options.map((option: string) => (
+                {(options as string[]).map((option: string) => (
                   <button
                     key={option}
                     onClick={() => question.type === 'grouped-multiple' ? handleToggleAnswer(option) : handleSelectSingle(option)}
@@ -631,7 +948,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
 
     return (
       <div className="grid grid-cols-1 gap-2">
-        {question.answers!.map((answer) => (
+        {(question as any).answers!.map((answer: string) => (
           <button
             key={answer}
             onClick={() => question.type === 'single' ? handleSelectSingle(answer) : handleToggleAnswer(answer)}
@@ -651,7 +968,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto overscroll-contain">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -710,11 +1027,15 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
                   <label className="text-sm font-semibold text-gray-700">Posicionamento da Marca</label>
                   <Edit2 className="w-4 h-4 text-blue-600" />
                 </div>
-                <textarea
+                <AutoResizeTextarea
                   value={editableResponse.posicionamento_da_marca}
-                  onChange={(e) => setEditableResponse({ ...editableResponse, posicionamento_da_marca: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
+                  onChange={(e) =>
+                    setEditableResponse({
+                      ...editableResponse,
+                      posicionamento_da_marca: e.target.value,
+                    })
+                  }
+                  className="p-3"
                 />
               </div>
 
@@ -723,11 +1044,15 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
                   <label className="text-sm font-semibold text-gray-700">Tom de Voz</label>
                   <Edit2 className="w-4 h-4 text-blue-600" />
                 </div>
-                <textarea
+                <AutoResizeTextarea
                   value={editableResponse.tom_de_voz}
-                  onChange={(e) => setEditableResponse({ ...editableResponse, tom_de_voz: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
+                  onChange={(e) =>
+                    setEditableResponse({
+                      ...editableResponse,
+                      tom_de_voz: e.target.value,
+                    })
+                  }
+                  className="p-3"
                 />
               </div>
 
@@ -736,11 +1061,15 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
                   <label className="text-sm font-semibold text-gray-700">Público Alvo</label>
                   <Edit2 className="w-4 h-4 text-blue-600" />
                 </div>
-                <textarea
+                <AutoResizeTextarea
                   value={editableResponse.publico_alvo}
-                  onChange={(e) => setEditableResponse({ ...editableResponse, publico_alvo: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
+                  onChange={(e) =>
+                    setEditableResponse({
+                      ...editableResponse,
+                      publico_alvo: e.target.value,
+                    })
+                  }
+                  className="p-3"
                 />
               </div>
             </div>
@@ -794,7 +1123,10 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div
+              ref={contentRef}
+              className="flex-1 overflow-y-auto p-6"
+            >
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 {currentQuestion.title}
               </h3>

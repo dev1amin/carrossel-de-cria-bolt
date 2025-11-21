@@ -11,6 +11,49 @@ import { TemplateConfig, AVAILABLE_TEMPLATES } from "../../types/carousel";
 import { templateService, templateRenderer } from "../../services/carousel";
 import { TEMPLATE_PREVIEW_DATA } from "../../data/templatePreviews";
 
+interface UserData {
+  name: string;
+  instagram: string;
+  logo_url: string;
+}
+
+// Função para obter dados do usuário do localStorage
+const getUserData = (): UserData | null => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    
+    const user = JSON.parse(userStr);
+    return {
+      name: user.name || 'Nome do Usuário',
+      instagram: user.instagram || '@usuario',
+      logo_url: user.logo_url || 'https://via.placeholder.com/150'
+    };
+  } catch (error) {
+    console.error('Erro ao obter dados do usuário:', error);
+    return null;
+  }
+};
+
+// Função para mesclar dados do usuário com dados do preview do template
+const mergeUserDataWithPreview = (previewData: any, userData: UserData | null) => {
+  if (!userData) return previewData;
+  
+  const merged = { ...previewData };
+  
+  // Substitui os dados gerais do template pelos dados do usuário
+  if (merged.dados_gerais) {
+    merged.dados_gerais = {
+      ...merged.dados_gerais,
+      nome: userData.name,
+      arroba: userData.instagram,
+      foto_perfil: userData.logo_url
+    };
+  }
+  
+  return merged;
+};
+
 interface TemplateSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -133,8 +176,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           const previewData = TEMPLATE_PREVIEW_DATA[selectedTemplate.id];
           
           if (previewData) {
-            // Renderiza os slides com os dados de preview
-            const renderedSlides = templateRenderer.renderAllSlides(slides, previewData);
+            // Mescla dados do usuário com dados do template
+            const userData = getUserData();
+            const mergedPreviewData = mergeUserDataWithPreview(previewData, userData);
+            
+            // Renderiza os slides com os dados mesclados
+            const renderedSlides = templateRenderer.renderAllSlides(slides, mergedPreviewData);
             setSlidesHtml(renderedSlides);
           } else {
             // Se não houver dados de preview, usa os slides vazios

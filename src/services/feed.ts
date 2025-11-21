@@ -24,7 +24,10 @@ interface FeedItem {
     content_url: string;
     media_type: number;
     product_type: string;
-    published_at: string;
+    // BACKEND REAL: manda taken_at (number em segundos)
+    taken_at?: number;
+    // Pode existir em algumas versões da API
+    published_at?: string;
     like_count: number;
     comment_count: number;
     play_count: number;
@@ -54,14 +57,48 @@ const deduplicatePosts = (posts: Post[]): Post[] => {
   });
 };
 
+// Normaliza taken_at vindo da API para timestamp Unix em segundos
+const normalizeTakenAt = (content: FeedItem['influencer_content']): number => {
+  // 1) Preferir taken_at numérico se existir
+  if (content.taken_at !== undefined && content.taken_at !== null) {
+    let t = Number(content.taken_at);
+    if (!Number.isFinite(t)) {
+      console.warn('❌ taken_at inválido em influencer_content:', content.taken_at);
+      return 0;
+    }
+    // Se vier em ms por erro futuro, converte
+    if (t > 1e12) {
+      t = Math.floor(t / 1000);
+    }
+    return t;
+  }
+
+  // 2) Fallback para published_at (ISO string) se existir
+  if (content.published_at) {
+    const ms = Date.parse(content.published_at);
+    if (!Number.isFinite(ms)) {
+      console.warn('❌ published_at inválido em influencer_content:', content.published_at);
+      return 0;
+    }
+    return Math.floor(ms / 1000);
+  }
+
+  // 3) Sem nada, volta 0
+  console.warn('⚠️ Nenhum taken_at/published_at encontrado em influencer_content:', content);
+  return 0;
+};
+
 // Converter FeedItem da nova API para Post do formato antigo
 const convertFeedItemToPost = (item: FeedItem): Post => {
   const content = item.influencer_content;
+
+  const takenAt = normalizeTakenAt(content);
+
   return {
     id: content.id, // ID do post para enviar ao generateCarousel
     code: content.code,
     text: content.text,
-    taken_at: new Date(content.published_at).getTime() / 1000, // Converter para timestamp Unix
+    taken_at: takenAt,
     username: item.influencer_id, // Usar ID do influenciador como username temporariamente
     image_url: content.content_url,
     video_url: content.media_type === 8 ? content.content_url : null,
@@ -85,7 +122,6 @@ export const getFeed = async (forceUpdate: boolean = false): Promise<{ posts: Po
   // Get cached data first (for immediate display)
   const cachedFeed = CacheService.getItem<Post[]>(CACHE_KEYS.FEED);
 
-  // Always try to fetch fresh data unless force update
   try {
     const response = await authenticatedFetch(API_ENDPOINTS.feed, {
       method: 'GET',
@@ -216,4 +252,66 @@ export const unsaveContent = async (contentId: number, feedId: string): Promise<
 
   // Invalidar cache do feed
   CacheService.clearItem(CACHE_KEYS.FEED);
+};
+
+// ====== SALVOS ======
+
+export interface SavedPost {
+  saved_at: string;
+  id: number;
+  influencer_id: string;
+  content_url: string;
+  product_type: string;
+  text: string;
+  platform: string;
+  published_at: string;
+  like_count: number;
+  play_count: number;
+  comment_count: number;
+  overall_score: number;
+  influencer: {
+    id: string;
+    handle: string;
+    display_name: string;
+    profile_url: string | null;
+    platform: string;
+  };
+}
+
+interface SavedPostApiResponse {
+  message: string;
+  saved_items: {
+    data: SavedPost[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+export const getSavedPosts = async (
+  page: number = 1,
+  limit: number = 20
+): Promise<SavedPost[]> => {
+  const response = await authenticatedFetch(
+    `${API_ENDPOINTS.feedSaved}?page=${page}&limit=${limit}`,
+    {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch saved posts');
+  }
+
+  const data: SavedPostApiResponse = await response.json();
+
+  // API real: { message, saved_items: { data: [...], pagination: {...} } }
+  const savedPosts = data.saved_items?.data ?? [];
+
+  return savedPosts;
 };

@@ -11,7 +11,7 @@ import { ToneSetupModal } from '../components/ToneSetupModal';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
-import { getFeed } from '../services/feed';
+import { getFeed, saveContent, unsaveContent } from '../services/feed';
 import {
   templateService,
   templateRenderer,
@@ -250,6 +250,36 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         status: 'error',
         errorMessage: error instanceof Error ? error.message : 'Erro desconhecido'
       });
+    }
+  };
+
+  const handleSavePost = async (postId: number) => {
+    if (!feedId) {
+      addToast('Feed ID não disponível', 'error');
+      return;
+    }
+    try {
+      await saveContent(postId, feedId);
+      setPosts(prev => prev.map(post => post.id === postId ? { ...post, is_saved: true } : post));
+      addToast('Post salvo com sucesso!', 'success');
+    } catch (err) {
+      console.error('Erro ao salvar post:', err);
+      addToast('Erro ao salvar post', 'error');
+    }
+  };
+
+  const handleUnsavePost = async (postId: number) => {
+    if (!feedId) {
+      addToast('Feed ID não disponível', 'error');
+      return;
+    }
+    try {
+      await unsaveContent(postId, feedId);
+      setPosts(prev => prev.map(post => post.id === postId ? { ...post, is_saved: false } : post));
+      addToast('Post removido dos salvos!', 'success');
+    } catch (err) {
+      console.error('Erro ao remover post dos salvos:', err);
+      addToast('Erro ao remover post dos salvos', 'error');
     }
   };
 
@@ -506,6 +536,9 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
                   onGenerateCarousel={handleGenerateCarousel}
                   onGenerateClick={handleGenerateClick}
                   feedId={feedId}
+                  showSaveButtons={true}
+                  onSavePost={handleSavePost}
+                  onUnsavePost={handleUnsavePost}
                 />
               )}
             </div>

@@ -16,6 +16,7 @@ import { templateService } from '../services/carousel/template.service';
 import { templateRenderer } from '../services/carousel/templateRenderer.service';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { downloadSlidesAsPNG } from '../services/carousel/download.service';
+import { useToneSetup } from '../hooks/useToneSetup';
 
 interface GalleryCarousel {
   id: string;
@@ -572,7 +573,7 @@ const HomePage: React.FC = () => {
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-12"
               style={{ fontFamily: '"Shadows Into Light", cursive' }}
             >
-              Bem vindo de volta {userName}!
+              Bem-vindo de, volta {userName}!
             </h1>
 
             <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative z-10">
@@ -920,19 +921,8 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
 };
 
 const HomePageWrapper: React.FC = () => {
-  // Use useState directly instead of useToneSetup to avoid automatic popup on home
-  const [showToneModal, setShowToneModal] = useState(false);
-  
-  const closeToneModal = () => {
-    localStorage.setItem('tone_setup_postponed', 'true');
-    setShowToneModal(false);
-  };
-  
-  const completeToneSetup = () => {
-    localStorage.setItem('needs_tone_setup', 'false');
-    localStorage.removeItem('tone_setup_postponed');
-    setShowToneModal(false);
-  };
+  // Use useToneSetup to show popup automatically when user enters home without tone setup
+  const { showToneModal, closeToneModal, completeToneSetup } = useToneSetup();
   
   return (
     <>

@@ -8,11 +8,12 @@ export const API_ENDPOINTS = {
   refresh: `${API_BASE_URL}/auth/refresh`,
   verify: `${API_BASE_URL}/auth/verify`,
   // Users
-  profile: `${API_BASE_URL}/users/profile`,
-  influencers: `${API_BASE_URL}/users/influencers`,
+  profile: `${API_BASE_URL}/user/profile`,
+  influencers: `${API_BASE_URL}/user/influencers`,
   // Feed
   feed: `${API_BASE_URL}/feed`,
   feedSave: `${API_BASE_URL}/feed/save`,
+  feedSaved: `${API_BASE_URL}/feed/saved`,
   // Generated Content
   generatedContent: `${API_BASE_URL}/generated-content`,
   generatedContentStats: `${API_BASE_URL}/generated-content/stats`,

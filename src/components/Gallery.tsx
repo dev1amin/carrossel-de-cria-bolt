@@ -233,13 +233,23 @@ const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProp
 
     {/* Botões */}
     <div className="flex gap-2">
-      <button
-        onClick={() => onEdit(carousel)}
-        className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors"
-      >
-        <Edit className="w-4 h-4" />
-        Editar
-      </button>
+      {carousel.id.startsWith('saved-') ? (
+        <button
+          disabled
+          className="flex-1 flex items-center justify-center gap-2 bg-gray-300 text-gray-500 font-medium py-2.5 px-4 rounded-lg cursor-not-allowed"
+        >
+          <Edit className="w-4 h-4" />
+          Post Salvo
+        </button>
+      ) : (
+        <button
+          onClick={() => onEdit(carousel)}
+          className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors"
+        >
+          <Edit className="w-4 h-4" />
+          Editar
+        </button>
+      )}
       <button
         onClick={() => onDownload(carousel)}
         className="flex items-center justify-center gap-2 bg-zinc-800 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-700 transition-colors border border-zinc-700"

@@ -22,11 +22,9 @@ const ProtectedRoute = () => {
         if (userStr) {
           const user = JSON.parse(userStr);
           
-          // Se precisa de setup e não está na página de setup, redireciona
-          if (user.needs_business_setup && location.pathname !== '/setup-business') {
-            console.log('🏢 Redirecionando para setup de business...');
-            navigate('/setup-business');
-            return;
+          // Se precisa de setup, permite acesso normal (não redireciona)
+          if (user.needs_business_setup) {
+            console.log('🏢 Usuário precisa configurar business, mas permitindo acesso normal');
           }
         }
         
