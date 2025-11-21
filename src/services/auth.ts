@@ -130,30 +130,77 @@ export const loginWithJWT = async (jwtToken: string): Promise<LoginResponse> => 
   const data = await response.json();
   console.log('JWT Login API response:', data);
 
-  if (!response.ok || data.error) {
+  if (!response.ok || data.error || !data.success) {
     console.error('JWT Login API error:', data.error);
     throw new Error(data.error || 'Invalid JWT token');
   }
 
-  // Assumindo que a resposta inclui user, access_token, refresh_token, etc.
-  if (data.user && data.access_token) {
-    console.log('Storing user data from JWT login');
-    localStorage.setItem('user', JSON.stringify(data.user));
-    localStorage.setItem('access_token', data.access_token);
-    localStorage.setItem('refresh_token', data.refresh_token);
-    localStorage.setItem('token_expires_at', data.expires_at.toString());
+  let userData;
+  let needsToneSetup = false;
+
+  // Se a resposta tem user_id, precisamos buscar os dados completos do usuário
+  if (data.user_id && !data.user) {
+    console.log('Fetching complete user data from profile endpoint...');
     
-    if (data.user.needs_tone_setup !== undefined) {
-      localStorage.setItem('needs_tone_setup', String(data.user.needs_tone_setup));
+    try {
+      const profileResponse = await fetch(API_ENDPOINTS.profile, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const profileData = await profileResponse.json();
+      console.log('Profile API response:', profileData);
+
+      if (profileResponse.ok && profileData.user) {
+        userData = profileData.user;
+        needsToneSetup = userData.needs_tone_setup || false;
+      } else {
+        // Se não conseguir buscar o perfil, criar um user básico
+        console.warn('Could not fetch user profile, creating basic user object');
+        userData = {
+          id: data.user_id,
+          needs_tone_setup: false
+        };
+        needsToneSetup = false;
+      }
+    } catch (profileError) {
+      console.error('Error fetching user profile:', profileError);
+      // Criar user básico se falhar
+      userData = {
+        id: data.user_id,
+        needs_tone_setup: false
+      };
+      needsToneSetup = false;
     }
+  } else if (data.user) {
+    // Resposta completa como esperado
+    userData = data.user;
+    needsToneSetup = data.user.needs_tone_setup || false;
+  } else {
+    throw new Error('Invalid API response: no user data found');
+  }
+
+  // Armazenar dados no localStorage
+  console.log('Storing user data from JWT login');
+  localStorage.setItem('user', JSON.stringify(userData));
+  localStorage.setItem('access_token', jwtToken); // Usar o JWT verificado como access_token
+  // Note: refresh_token não está disponível na resposta verify, deixar vazio por enquanto
+  localStorage.setItem('refresh_token', ''); // TODO: implementar refresh token se necessário
+  localStorage.setItem('token_expires_at', ''); // TODO: implementar expiração se necessário
+  
+  if (needsToneSetup !== undefined) {
+    localStorage.setItem('needs_tone_setup', String(needsToneSetup));
   }
 
   return {
     status: 'success',
     message: data.message || 'Login successful',
-    user: data.user,
-    jwt_token: data.access_token,
-    needs_tone_setup: data.user.needs_tone_setup,
+    user: userData,
+    jwt_token: jwtToken,
+    needs_tone_setup: needsToneSetup,
   };
 };
 
