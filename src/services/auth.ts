@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from '../config/api';
 import { LoginCredentials, LoginResponse, ValidateTokenResponse } from '../types/auth';
 
 export const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
@@ -119,7 +119,7 @@ export const isAuthenticated = (): boolean => {
 export const loginWithJWT = async (jwtToken: string): Promise<LoginResponse> => {
   console.log('Making JWT login request');
   
-  const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+  const response = await fetch(`${API_ENDPOINTS.base}/auth/verify`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${jwtToken}`,

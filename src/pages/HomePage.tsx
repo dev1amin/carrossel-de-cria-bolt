@@ -15,6 +15,7 @@ import type { CarouselData } from '../carousel';
 import { templateService } from '../services/carousel/template.service';
 import { templateRenderer } from '../services/carousel/templateRenderer.service';
 import { CacheService, CACHE_KEYS } from '../services/cache';
+import { downloadSlidesAsPNG } from '../services/carousel/download.service';
 
 interface GalleryCarousel {
   id: string;
@@ -32,6 +33,8 @@ const HomePage: React.FC = () => {
   const [carousels, setCarousels] = useState<GalleryCarousel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [aiMessage, setAiMessage] = useState('');
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const { editorTabs, addEditorTab, setShouldShowEditor } = useEditorTabs();
 
   const getUserName = (): string => {
@@ -328,7 +331,7 @@ const HomePage: React.FC = () => {
     navigate(route);
   };
 
-  const handleViewCarousel = async (carousel: GalleryCarousel, autoDownload = false) => {
+  const handleViewCarousel = async (carousel: GalleryCarousel) => {
     if (!carousel.slides || !carousel.carouselData) {
       alert('Erro: Dados do carrossel não encontrados.');
       return;
@@ -384,7 +387,6 @@ const HomePage: React.FC = () => {
       carouselData: carouselData,
       title: carousel.templateName,
       generatedContentId: carousel.generatedContentId,
-      autoDownload: autoDownload,
     };
 
     addEditorTab(newTab);
@@ -397,12 +399,26 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    console.log('🚀 Iniciando download via editor automático para:', carousel.templateName);
+    setDownloadingId(carousel.id);
+    setDownloadProgress({ current: 0, total: carousel.slides.length });
 
-    // Abre o editor com auto-download ativado
-    await handleViewCarousel(carousel, true); // true = autoDownload
-
-    // O download será feito automaticamente pelo editor e ele será fechado
+    try {
+      await downloadSlidesAsPNG(
+        carousel.slides,
+        (current, total) => {
+          setDownloadProgress({ current, total });
+        }
+      );
+      
+      // Success message
+      alert(`✅ ${carousel.slides.length} slides baixados com sucesso!`);
+    } catch (error) {
+      console.error('❌ Erro ao baixar slides:', error);
+      alert('Erro ao baixar slides. Verifique o console para mais detalhes.');
+    } finally {
+      setDownloadingId(null);
+      setDownloadProgress({ current: 0, total: 0 });
+    }
   };
 
   const handleAISubmit = (e: React.FormEvent) => {
@@ -556,7 +572,7 @@ const HomePage: React.FC = () => {
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-12"
               style={{ fontFamily: '"Shadows Into Light", cursive' }}
             >
-              Bem-vindo de volta, {userName}!
+              Bem vindo de volta {userName}!
             </h1>
 
             <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative z-10">
@@ -655,6 +671,8 @@ const HomePage: React.FC = () => {
                 carousels={carousels}
                 onEdit={handleViewCarousel}
                 onDownload={handleDownload}
+                downloadingId={downloadingId}
+                downloadProgress={downloadProgress}
               />
             )}
           </div>
@@ -668,15 +686,19 @@ interface GalleryItemProps {
   carousel: GalleryCarousel;
   onEdit: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
+  downloadingId: string | null;
+  downloadProgress: { current: number; total: number } | null;
 }
 
 interface CarouselSliderProps {
   carousels: GalleryCarousel[];
   onEdit: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
+  downloadingId: string | null;
+  downloadProgress: { current: number; total: number } | null;
 }
 
-const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDownload }) => {
+const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDownload, downloadingId, downloadProgress }) => {
   const [startIndex, setStartIndex] = useState(0);
   const itemsPerPage = 4;
   const visibleCarousels = carousels.slice(startIndex, startIndex + itemsPerPage);
@@ -704,6 +726,8 @@ const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDo
             carousel={carousel}
             onEdit={onEdit}
             onDownload={onDownload}
+            downloadingId={downloadingId}
+            downloadProgress={downloadProgress}
           />
         ))}
       </div>
@@ -738,7 +762,7 @@ const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDo
   );
 };
 
-const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload }) => {
+const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload, downloadingId, downloadProgress }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -875,10 +899,19 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
           </button>
           <button
             onClick={() => onDownload(carousel)}
-            className="flex items-center justify-center gap-2 bg-blue text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-dark transition-colors border border-blue"
+            disabled={downloadingId === carousel.id}
+            className="flex items-center justify-center gap-2 bg-blue text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-dark transition-colors border border-blue disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4" />
-            Download
+            {downloadingId === carousel.id ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                {downloadProgress && (
+                  <span className="text-xs">{downloadProgress.current}/{downloadProgress.total}</span>
+                )}
+              </>
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
@@ -887,20 +920,8 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
 };
 
 const HomePageWrapper: React.FC = () => {
+  // Use useState directly instead of useToneSetup to avoid automatic popup on home
   const [showToneModal, setShowToneModal] = useState(false);
-  
-  useEffect(() => {
-    // Check immediately if user needs tone setup when entering home
-    const needsToneSetup = localStorage.getItem('needs_tone_setup');
-    const postponed = localStorage.getItem('tone_setup_postponed');
-    console.log('🏠 Verificando needs_tone_setup na HomePage:', { needsToneSetup, postponed });
-    
-    // Show modal immediately if user needs tone setup and hasn't postponed
-    if (needsToneSetup === 'true' && !postponed) {
-      console.log('✅ Mostrando modal de configuração de tom na HomePage');
-      setShowToneModal(true);
-    }
-  }, []);
   
   const closeToneModal = () => {
     localStorage.setItem('tone_setup_postponed', 'true');
