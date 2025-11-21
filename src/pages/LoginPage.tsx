@@ -36,14 +36,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         onLoginSuccess();
       }
 
+      // Preservar os parâmetros da URL atual no redirecionamento
+      const currentUrl = new URL(window.location.href);
+      const params = currentUrl.search; // Mantém todos os parâmetros incluindo jwt
+
       if (response.needs_business_setup) {
         console.log('🏢 Usuário precisa configurar business, redirecionando...');
-        navigate('/setup-business');
+        window.location.href = `/setup-business${params}`;
         return;
       }
 
       console.log('Navigating to home page after JWT login');
-      navigate('/');
+      window.location.href = `/${params}`;
     } catch (err) {
       console.error('JWT Login error:', err);
       setError(err instanceof Error ? err.message : 'Falha no login automático');
