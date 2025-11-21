@@ -573,7 +573,7 @@ const HomePage: React.FC = () => {
               className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-12"
               style={{ fontFamily: '"Shadows Into Light", cursive' }}
             >
-              Bem-vindo de, volta {userName}!
+              Bem-vindo de volta, {userName}!
             </h1>
 
             <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative z-10">
