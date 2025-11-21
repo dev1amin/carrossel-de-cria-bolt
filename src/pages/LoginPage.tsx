@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { login } from '../services/auth';
+import { login, loginWithJWT } from '../services/auth';
 import { useNavigate } from 'react-router-dom';
 
 interface LoginPageProps {
@@ -14,6 +14,43 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const jwtToken = urlParams.get('jwt');
+
+    if (jwtToken) {
+      console.log('JWT token found in URL, attempting automatic login...');
+      handleJWTLogin(jwtToken);
+    }
+  }, []);
+
+  const handleJWTLogin = async (jwtToken: string) => {
+    try {
+      setIsLoading(true);
+      const response = await loginWithJWT(jwtToken);
+      console.log('JWT Login response:', response);
+
+      if (onLoginSuccess) {
+        console.log('Calling onLoginSuccess callback');
+        onLoginSuccess();
+      }
+
+      if (response.needs_business_setup) {
+        console.log('🏢 Usuário precisa configurar business, redirecionando...');
+        navigate('/setup-business');
+        return;
+      }
+
+      console.log('Navigating to home page after JWT login');
+      navigate('/');
+    } catch (err) {
+      console.error('JWT Login error:', err);
+      setError(err instanceof Error ? err.message : 'Falha no login automático');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
