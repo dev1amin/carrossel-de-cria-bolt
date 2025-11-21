@@ -887,8 +887,20 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload 
 };
 
 const HomePageWrapper: React.FC = () => {
-  // Use useState directly instead of useToneSetup to avoid automatic popup on home
   const [showToneModal, setShowToneModal] = useState(false);
+  
+  useEffect(() => {
+    // Check immediately if user needs tone setup when entering home
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    const postponed = localStorage.getItem('tone_setup_postponed');
+    console.log('🏠 Verificando needs_tone_setup na HomePage:', { needsToneSetup, postponed });
+    
+    // Show modal immediately if user needs tone setup and hasn't postponed
+    if (needsToneSetup === 'true' && !postponed) {
+      console.log('✅ Mostrando modal de configuração de tom na HomePage');
+      setShowToneModal(true);
+    }
+  }, []);
   
   const closeToneModal = () => {
     localStorage.setItem('tone_setup_postponed', 'true');
