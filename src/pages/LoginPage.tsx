@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { login } from '../services/auth';
-import { useNavigate } from 'react-router-dom';
+import { login, verifyToken } from '../services/auth';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface LoginPageProps {
   onLoginSuccess?: () => void;
@@ -14,6 +14,43 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const jwt = searchParams.get('jwt');
+    if (jwt) {
+      handleAutoLogin(jwt);
+    }
+  }, [searchParams]);
+
+  const handleAutoLogin = async (jwt: string) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await verifyToken(jwt);
+      console.log('Auto login response:', response);
+
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
+
+      // Check if user needs business setup
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.needs_business_setup) {
+        console.log('🏢 Usuário precisa configurar business, redirecionando...');
+        navigate('/setup-business');
+        return;
+      }
+
+      console.log('Navigating to home page');
+      navigate('/');
+    } catch (err) {
+      console.error('Auto login error:', err);
+      setError(err instanceof Error ? err.message : 'Falha no login automático');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

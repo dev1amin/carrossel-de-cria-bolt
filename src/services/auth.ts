@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '../config/api';
-import { LoginCredentials, LoginResponse, ValidateTokenResponse } from '../types/auth';
+import { LoginCredentials, LoginResponse, ValidateTokenResponse, User } from '../types/auth';
 
 export const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   console.log('Making login request to:', API_ENDPOINTS.login);
@@ -100,6 +100,63 @@ export const validateToken = async (): Promise<ValidateTokenResponse> => {
   }
 
   return { valid: true };
+};
+
+export const verifyToken = async (jwtToken: string): Promise<ValidateTokenResponse> => {
+  console.log('Verifying JWT token');
+  
+  const response = await fetch(API_ENDPOINTS.verify, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${jwtToken}`,
+    },
+  });
+
+  const data = await response.json();
+  console.log('Verify API response:', data);
+
+  if (!response.ok || data.error) {
+    console.error('Verify API error:', data.error);
+    throw new Error(data.error || 'Invalid token');
+  }
+
+  if (data.success && data.user_id) {
+    // Store the token
+    localStorage.setItem('access_token', jwtToken);
+    // If refresh token is provided, store it too
+    if (data.refresh_token) {
+      localStorage.setItem('refresh_token', data.refresh_token);
+    }
+    if (data.expires_at) {
+      localStorage.setItem('token_expires_at', data.expires_at.toString());
+    }
+
+    // Fetch user profile to get full user data
+    try {
+      const profileResponse = await fetch(API_ENDPOINTS.profile, {
+        headers: {
+          'Authorization': `Bearer ${jwtToken}`,
+        },
+      });
+      const profileData = await profileResponse.json();
+      if (profileResponse.ok && profileData.user) {
+        localStorage.setItem('user', JSON.stringify(profileData.user));
+        if (profileData.user.needs_tone_setup !== undefined) {
+          localStorage.setItem('needs_tone_setup', String(profileData.user.needs_tone_setup));
+        }
+        return { valid: true, user: profileData.user };
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+    }
+
+    // Fallback: create minimal user object
+    const minimalUser = { id: data.user_id } as User;
+    localStorage.setItem('user', JSON.stringify(minimalUser));
+    return { valid: true, user: minimalUser };
+  }
+
+  throw new Error('Token verification failed');
 };
 
 export const getAuthHeaders = (): HeadersInit => {
