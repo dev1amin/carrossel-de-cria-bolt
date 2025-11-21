@@ -156,3 +156,10 @@ export const loginWithJWT = async (jwtToken: string): Promise<LoginResponse> => 
     needs_tone_setup: data.user.needs_tone_setup,
   };
 };
+
+export const logout = (): void => {
+  localStorage.removeItem('user');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('token_expires_at');
+};
