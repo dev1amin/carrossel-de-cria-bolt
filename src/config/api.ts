@@ -8,7 +8,7 @@ export const API_ENDPOINTS = {
   refresh: `${API_BASE_URL}/auth/refresh`,
   verify: `${API_BASE_URL}/auth/verify`,
   // Users
-  profile: `${API_BASE_URL}/profile`,
+  profile: `https://carousel-api-sepia.vercel.app/profile`,
   influencers: `${API_BASE_URL}/users/influencers`,
   // Feed
   feed: `${API_BASE_URL}/feed`,
