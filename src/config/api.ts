@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://carousel-api-sepia.vercel.app/';
+export const API_BASE_URL = 'https://carousel-api-sepia.vercel.app';
 
 export const API_ENDPOINTS = {
   base: API_BASE_URL,
