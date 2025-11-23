@@ -164,7 +164,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <p className="text-gray text-sm">
               Não tem uma conta?{' '}
               <button 
-                onClick={() => window.location.href = 'https://socialsquare-createtoken.bolt.host/'}
+                onClick={() => window.location.href = 'https://create-account-carousel-j7cp.vercel.app/create-account'}
                 className="text-blue hover:text-blue-dark font-medium hover:underline transition-colors"
               >
                 Criar conta
