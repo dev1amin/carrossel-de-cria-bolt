@@ -133,21 +133,35 @@ export const verifyToken = async (jwtToken: string): Promise<ValidateTokenRespon
 
     // Fetch user profile to get full user data
     try {
+      console.log('🔍 Fetching user profile from:', API_ENDPOINTS.profile);
       const profileResponse = await fetch(API_ENDPOINTS.profile, {
         headers: {
           'Authorization': `Bearer ${jwtToken}`,
         },
       });
       const profileData = await profileResponse.json();
-      if (profileResponse.ok && profileData.user) {
-        localStorage.setItem('user', JSON.stringify(profileData.user));
-        if (profileData.user.needs_tone_setup !== undefined) {
-          localStorage.setItem('needs_tone_setup', String(profileData.user.needs_tone_setup));
+      console.log('📋 Profile API response:', JSON.stringify(profileData, null, 2));
+      
+      // API pode retornar { user: {...} } ou diretamente {...}
+      const userData = profileData.user || profileData;
+      
+      if (profileResponse.ok && userData.id) {
+        console.log('✅ Profile data received:', {
+          userName: userData.name,
+          businessName: userData.business?.name,
+          selectedBusinessId: userData.selected_business_id,
+        });
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log('💾 User data stored in localStorage');
+        if (userData.needs_tone_setup !== undefined) {
+          localStorage.setItem('needs_tone_setup', String(userData.needs_tone_setup));
         }
-        return { valid: true, user: profileData.user };
+        return { valid: true, user: userData };
+      } else {
+        console.warn('⚠️ Profile response not OK or missing user data:', profileResponse.status);
       }
     } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+      console.error('❌ Failed to fetch user profile:', error);
     }
 
     // Fallback: create minimal user object

@@ -14,7 +14,7 @@ import GalleryPage from './pages/GalleryPage';
 import StatsPage from './pages/StatsPage';
 import SettingsPageContainer from './pages/SettingsPageContainer';
 import CreateCarouselPage from './pages/CreateCarouselPage';
-import ChatBotPage from './pages/ChatBotPage';
+import ChatBotPageWithConversations from './pages/ChatBotPageWithConversations';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -111,7 +111,7 @@ function AppContent() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/news" element={<NewsPage />} />
           <Route path="/create-carousel" element={<CreateCarouselPage />} />
-          <Route path="/chatbot" element={<ChatBotPage />} />
+          <Route path="/chatbot" element={<ChatBotPageWithConversations />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPageContainer />} />
         </Route>

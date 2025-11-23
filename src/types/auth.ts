@@ -21,6 +21,11 @@ export interface User {
   plan?: string;
   needs_business_setup?: boolean;
   needs_tone_setup?: boolean;
+  selected_business_id?: string;
+  business?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface ValidateTokenResponse {
