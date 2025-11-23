@@ -21,4 +21,11 @@ export const API_ENDPOINTS = {
   business: `${API_BASE_URL}/business`,
   businessForms: (key: string) => `${API_BASE_URL}/business/forms/${key}`,
   businessToneOfVoice: `${API_BASE_URL}/business/tone-of-voice`,
+  // Conversations
+  conversations: `${API_BASE_URL}/conversations`,
+  conversation: (id: string) => `${API_BASE_URL}/conversations/${id}`,
+  conversationTokens: (id: string) => `${API_BASE_URL}/conversations/${id}/tokens`,
+  conversationMessages: (id: string) => `${API_BASE_URL}/conversations/${id}/messages`,
+  conversationMessage: (conversationId: string, messageId: string) => 
+    `${API_BASE_URL}/conversations/${conversationId}/messages/${messageId}`,
 } as const;

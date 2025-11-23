@@ -1,6 +1,14 @@
 /**
- * Serviço de integração com o chatbot
+ * Serviço de integração com o chatbot + API de conversas/mensagens
  */
+
+import { API_ENDPOINTS } from '../config/api';
+import { getAuthHeaders } from './auth';
+import type {
+  ConversationMessage,
+  CreateMessageRequest,
+  MessageResponse,
+} from '../types/conversation';
 
 export interface ChatMessage {
   id: string;
@@ -19,11 +27,36 @@ export interface TemplateSelectionTrigger {
 }
 
 /**
+ * Cria uma mensagem na API de conversas
+ * POST /api/conversations/:id/messages
+ */
+export const createConversationMessage = async (
+  conversationId: string,
+  request: CreateMessageRequest
+): Promise<ConversationMessage> => {
+  const response = await fetch(API_ENDPOINTS.conversationMessages(conversationId), {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(request),
+  });
+
+  const data: MessageResponse = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || 'Failed to create message');
+  }
+
+  return data.data;
+};
+
+/**
  * Envia mensagem para o chatbot e retorna a resposta
+ * Agora também envia conversationId para o mainAgentInsta
  */
 export const sendChatMessage = async (
   userId: string,
-  message: string
+  message: string,
+  conversationId?: string
 ): Promise<ChatbotResponse[]> => {
   const webhookUrl = 'https://webhook.workez.online/webhook/mainAgentInsta';
 
@@ -36,6 +69,7 @@ export const sendChatMessage = async (
       body: JSON.stringify({
         userID: userId,
         message: message,
+        conversationId: conversationId ?? null, // enviado pro agente
       }),
     });
 
@@ -45,17 +79,17 @@ export const sendChatMessage = async (
 
     const data = await response.json();
     console.log('Resposta bruta do webhook:', data);
-    
+
     // Se a resposta for um objeto com "output", converte para array
     if (data && typeof data === 'object' && 'output' in data) {
       return [data as ChatbotResponse];
     }
-    
+
     // Se já for um array, retorna como está
     if (Array.isArray(data)) {
       return data;
     }
-    
+
     // Caso contrário, retorna em um array
     return [data];
   } catch (error) {
@@ -77,13 +111,13 @@ export const parseTemplateSelectionTrigger = (
   if (match && match[1]) {
     try {
       const jsonContent = JSON.parse(match[1]);
-      
+
       // Verifica se é um array e se contém o tipo "template"
       if (Array.isArray(jsonContent)) {
         const hasTemplate = jsonContent.some(
           (item: any) => item.type === 'template'
         );
-        
+
         if (hasTemplate) {
           // Extrai a mensagem antes do bloco JSON
           const messageBeforeJson = response.split('```json')[0].trim();
@@ -117,7 +151,7 @@ export const parseCarouselData = (
   if (matchMarkdown && matchMarkdown[1]) {
     try {
       const jsonContent = JSON.parse(matchMarkdown[1]);
-      
+
       if (jsonContent.dados_gerais) {
         const messageBeforeJson = response.split('```json')[0].trim();
         return {
@@ -133,16 +167,16 @@ export const parseCarouselData = (
 
   // Tenta detectar JSON direto (sem markdown) que começa com { e contém "dados_gerais"
   try {
-    // Procura por um objeto JSON que comece com { e termine com }
     const directJsonRegex = /\{[\s\S]*"dados_gerais"[\s\S]*\}/;
     const matchDirect = response.match(directJsonRegex);
-    
+
     if (matchDirect) {
       const jsonContent = JSON.parse(matchDirect[0]);
-      
+
       if (jsonContent.dados_gerais) {
-        // Extrai mensagem antes do JSON (se houver)
-        const messageBeforeJson = response.substring(0, response.indexOf('{')).trim();
+        const messageBeforeJson = response
+          .substring(0, response.indexOf('{'))
+          .trim();
         return {
           message: messageBeforeJson,
           hasCarousel: true,
@@ -162,7 +196,7 @@ export const parseCarouselData = (
 };
 
 /**
- * Gera um ID único para mensagens
+ * Gera um ID único para mensagens (frontend)
  */
 export const generateMessageId = (): string => {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

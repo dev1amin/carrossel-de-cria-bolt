@@ -17,6 +17,7 @@ import { templateRenderer } from '../services/carousel/templateRenderer.service'
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { downloadSlidesAsPNG } from '../services/carousel/download.service';
 import { useToneSetup } from '../hooks/useToneSetup';
+import { API_ENDPOINTS } from '../config/api';
 
 interface GalleryCarousel {
   id: string;
@@ -36,22 +37,52 @@ const HomePage: React.FC = () => {
   const [aiMessage, setAiMessage] = useState('');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const [userName, setUserName] = useState<string>('Usuário');
   const { editorTabs, addEditorTab, setShouldShowEditor } = useEditorTabs();
 
-  const getUserName = (): string => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.name || user.username || 'Usuário';
-      }
-    } catch (error) {
-      console.error('Erro ao obter nome do usuário:', error);
-    }
-    return 'Usuário';
-  };
+  // Fetch user profile to get the business name
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          console.log('👤 No token found, using default name');
+          return;
+        }
 
-  const userName = getUserName();
+        console.log('🔍 Fetching user profile for HomePage');
+        const response = await fetch(API_ENDPOINTS.profile, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          console.log('📋 Profile data received:', profileData);
+          
+          // API pode retornar { user: {...} } ou diretamente {...}
+          const userData = profileData.user || profileData;
+          
+          if (userData) {
+            // Usar business.name se disponível, senão name do usuário
+            const displayName = userData.business?.name || userData.name || 'Usuário';
+            console.log('👤 Setting user name to:', displayName);
+            setUserName(displayName);
+            
+            // Atualizar localStorage também
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
+        } else {
+          console.warn('⚠️ Failed to fetch profile:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const renderSlidesWithTemplate = async (
     conteudos: any[],

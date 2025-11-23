@@ -1,35 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Bot, User as UserIcon, ArrowLeft } from 'lucide-react';
+import { Send, Loader2, Bot, User as UserIcon } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navigation from '../components/Navigation';
-import { MouseFollowLight } from '../components/MouseFollowLight';
-import { ToneSetupModal } from '../components/ToneSetupModal';
-import PageTitle from '../components/PageTitle';
+import ReactMarkdown from 'react-markdown';
+
+import ChatWelcomeScreen from '../components/ChatWelcomeScreen';
 import { TemplateSelectionModal } from '../components/carousel';
 import { CarouselPreviewModal } from '../components/carousel/CarouselPreviewModal';
+import { ToneSetupModal } from '../components/ToneSetupModal';
+
 import { useEditorTabs } from '../contexts/EditorTabsContext';
+import { useChat } from '../contexts/ChatContext';
 import { useToneSetupOnDemand as useToneSetup } from '../hooks/useToneSetupVariants';
+
 import type { CarouselData } from '../types/carousel';
+import type { ConversationMessage } from '../types/conversation';
+
 import {
   sendChatMessage,
   parseTemplateSelectionTrigger,
   parseCarouselData,
   generateMessageId,
   ChatMessage,
+  createConversationMessage,
 } from '../services/chatbot';
 
-const ChatBotPage: React.FC = () => {
+import { getConversationMessages } from '../services/conversations';
+
+interface ChatBotPageProps {
+  conversationId?: string;
+  newChatKey?: number;
+}
+
+const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey }) => {
   const location = useLocation();
   const initialMessage = location.state?.initialMessage || '';
+  const { createNewConversation, activeConversation } = useChat();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: generateMessageId(),
-      role: 'assistant',
-      content: 'Olá! Sou seu assistente de criação de carrosséis. Como posso ajudar você hoje?',
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState(initialMessage);
   const [isLoading, setIsLoading] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
@@ -40,40 +47,122 @@ const ChatBotPage: React.FC = () => {
   const [hasGeneratedCarousel, setHasGeneratedCarousel] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
-  
+
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(
+    conversationId
+  );
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
-  
-  const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
 
-  // Auto scroll para a última mensagem
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const { showToneModal, closeToneModal, completeToneSetup } = useToneSetup();
+  const navigate = useNavigate();
+  const { addEditorTab } = useEditorTabs();
+
+  // Mapeia mensagem da API → modelo de chat
+  const mapApiMessageToChat = (m: ConversationMessage): ChatMessage => ({
+    id: m.id,
+    role: m.sender_type === 'bot' ? 'assistant' : 'user',
+    content: m.message_text,
+    timestamp: new Date(m.created_at),
+  });
+
+  // Sincroniza conversationId vindo de fora (context / props)
+  useEffect(() => {
+    if (conversationId) {
+      setCurrentConversationId(conversationId);
+    } else if (activeConversation?.id) {
+      setCurrentConversationId(activeConversation.id);
+    }
+  }, [conversationId, activeConversation]);
+
+  // Reset COMPLETO quando clica em "Novo chat"
+  useEffect(() => {
+    if (!newChatKey) return;
+    setMessages([]);
+    setInputMessage('');
+    setIsTemplateModalOpen(false);
+    setWaitingForTemplate(false);
+    setIsCarouselPreviewOpen(false);
+    setCarouselData(null);
+    setHasGeneratedCarousel(false);
+    setEditingMessageId(null);
+    setEditingContent('');
+    setCurrentConversationId(undefined);
+  }, [newChatKey]);
+
+  // Carregar histórico quando entra numa conversa existente
+  useEffect(() => {
+    if (!currentConversationId) return;
+
+    let cancelled = false;
+
+    const loadHistory = async () => {
+      try {
+        const res = await getConversationMessages(currentConversationId, {
+          limit: 100,
+          offset: 0,
+        });
+
+        if (cancelled) return;
+
+        const sorted = [...res.data].sort((a, b) => {
+          const ta = new Date(a.created_at).getTime();
+          const tb = new Date(b.created_at).getTime();
+          if (ta === tb) return a.id.localeCompare(b.id);
+          return ta - tb;
+        });
+
+        const mapped = sorted.map(mapApiMessageToChat);
+        setMessages(mapped);
+      } catch (err) {
+        console.error('Erro ao carregar histórico da conversa:', err);
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentConversationId]);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
+  // Scroll automático quando o bot responde
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.role === 'assistant') {
+      scrollToBottom('smooth');
+    }
   }, [messages]);
 
-  useEffect(() => {
-    if (initialMessage && !isLoading) {
-      handleSendMessage();
-    }
-  }, []);
-
-  // Auto-resize textarea
+  // Auto-resize textarea principal
   useEffect(() => {
     const textarea = inputRef.current;
     if (textarea) {
-      textarea.style.height = '48px'; // Reset
+      textarea.style.height = '48px';
       const newHeight = Math.min(textarea.scrollHeight, 128);
       textarea.style.height = `${newHeight}px`;
     }
   }, [inputMessage]);
 
-  // Obter userId do localStorage
+  // Auto-resize textarea edição
+  useEffect(() => {
+    const textarea = editInputRef.current;
+    if (textarea && editingMessageId) {
+      textarea.style.height = '48px';
+      const newHeight = Math.min(textarea.scrollHeight, 128);
+      textarea.style.height = `${newHeight}px`;
+      textarea.focus();
+    }
+  }, [editingContent, editingMessageId]);
+
   const getUserId = (): string => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -87,54 +176,122 @@ const ChatBotPage: React.FC = () => {
     return 'anonymous';
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+  const getUserName = (): string => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.name || user.email?.split('@')[0] || 'User';
+      } catch (error) {
+        console.error('Erro ao obter nome do usuário:', error);
+      }
+    }
+    return 'User';
+  };
+
+  // Garante que exista conversationId (cria se não existir)
+  const ensureConversationId = async (): Promise<string | undefined> => {
+    let convId = currentConversationId;
+
+    if (!convId) {
+      try {
+        const newConv = await createNewConversation();
+        convId = newConv?.id;
+        if (!convId && activeConversation?.id) {
+          convId = activeConversation.id;
+        }
+        if (convId) {
+          setCurrentConversationId(convId);
+        }
+      } catch (err) {
+        console.error('Erro ao criar conversa:', err);
+      }
+    }
+
+    return convId;
+  };
+
+  const handleSendMessage = async (overrideMessage?: string) => {
+    const rawMessage = overrideMessage ?? inputMessage;
+    const trimmed = rawMessage.trim();
+    if (!trimmed || isLoading) return;
 
     const userId = getUserId();
+
+    // Coloca mensagem do usuário na tela IMEDIATAMENTE
     const userMessage: ChatMessage = {
       id: generateMessageId(),
       role: 'user',
-      content: inputMessage.trim(),
+      content: trimmed,
       timestamp: new Date(),
     };
 
-    // Adiciona mensagem do usuário
     setMessages((prev) => [...prev, userMessage]);
-    setInputMessage('');
+    if (!overrideMessage) {
+      setInputMessage('');
+    }
+
     setIsLoading(true);
 
+    const convId = await ensureConversationId();
+
+    if (convId) {
+      try {
+        await createConversationMessage(convId, {
+          sender_type: 'user',
+          message_text: userMessage.content,
+        });
+      } catch (err) {
+        console.error('Erro ao salvar mensagem do usuário:', err);
+      }
+    }
+
     try {
-      // Envia mensagem para o chatbot
-      const responses = await sendChatMessage(userId, userMessage.content);
+      // manda tbm conversationId pro agente (mesmo que o service ainda ignore)
+      const responses = await (sendChatMessage as any)(
+        userId,
+        userMessage.content,
+        convId
+      );
 
       if (responses && responses.length > 0) {
         const botResponse = responses[0].output;
-        
-        // Primeiro, verifica se há dados de carrossel
+
+        // 1) carrossel
         const carouselCheck = parseCarouselData(botResponse);
-        
+
         if (carouselCheck.hasCarousel) {
-          // Adiciona APENAS a mensagem "O que achou do carrossel?"
           const followUpMessage: ChatMessage = {
             id: generateMessageId(),
             role: 'assistant',
             content: 'O que achou do carrossel?',
             timestamp: new Date(),
           };
-          
+
           setMessages((prev) => [...prev, followUpMessage]);
-          
-          // Salva o carrossel, marca como gerado e ABRE o modal automaticamente
           setCarouselData(carouselCheck.carouselData);
           setHasGeneratedCarousel(true);
           setIsCarouselPreviewOpen(true);
+
+          if (convId) {
+            try {
+              await createConversationMessage(convId, {
+                sender_type: 'bot',
+                message_text: followUpMessage.content,
+              });
+            } catch (err) {
+              console.error('Erro ao salvar mensagem do bot (carrossel):', err);
+            }
+          }
+
           return;
         }
-        
-        // Se não for carrossel, verifica se há trigger de seleção de template
-        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(botResponse);
 
-        // Adiciona resposta do bot
+        // 2) resposta normal / template
+        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(
+          botResponse
+        );
+
         const assistantMessage: ChatMessage = {
           id: generateMessageId(),
           role: 'assistant',
@@ -144,22 +301,43 @@ const ChatBotPage: React.FC = () => {
 
         setMessages((prev) => [...prev, assistantMessage]);
 
-        // Se houver trigger de template, marca para esperar seleção
+        if (convId) {
+          try {
+            await createConversationMessage(convId, {
+              sender_type: 'bot',
+              message_text: assistantMessage.content,
+            });
+          } catch (err) {
+            console.error('Erro ao salvar mensagem do bot:', err);
+          }
+        }
+
         if (hasTemplateTrigger) {
           setWaitingForTemplate(true);
         }
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      
-      // Adiciona mensagem de erro
+
       const errorMessage: ChatMessage = {
         id: generateMessageId(),
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
+        content:
+          'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+
+      if (currentConversationId) {
+        try {
+          await createConversationMessage(currentConversationId, {
+            sender_type: 'bot',
+            message_text: errorMessage.content,
+          });
+        } catch (err) {
+          console.error('Erro ao salvar mensagem de erro do bot:', err);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -172,54 +350,63 @@ const ChatBotPage: React.FC = () => {
     }
   };
 
-  // Inicia edição de mensagem
   const handleStartEdit = (messageId: string, content: string) => {
     setEditingMessageId(messageId);
     setEditingContent(content);
   };
 
-  // Cancela edição
   const handleCancelEdit = () => {
     setEditingMessageId(null);
     setEditingContent('');
   };
 
-  // Salva mensagem editada e reenvia
   const handleSaveEdit = async (messageId: string) => {
     if (!editingContent.trim()) return;
 
     const userId = getUserId();
-    
-    // Remove todas as mensagens a partir da editada (usuário + bot)
-    const messageIndex = messages.findIndex(m => m.id === messageId);
+    const messageIndex = messages.findIndex((m) => m.id === messageId);
     if (messageIndex === -1) return;
-    
+
     const newMessages = messages.slice(0, messageIndex);
     setMessages(newMessages);
-    
-    // Adiciona mensagem editada
+
     const editedMessage: ChatMessage = {
       id: generateMessageId(),
       role: 'user',
       content: editingContent.trim(),
       timestamp: new Date(),
     };
-    
+
     setMessages((prev) => [...prev, editedMessage]);
     setEditingMessageId(null);
     setEditingContent('');
     setIsLoading(true);
 
+    const convId = currentConversationId || (await ensureConversationId());
+
+    if (convId) {
+      try {
+        await createConversationMessage(convId, {
+          sender_type: 'user',
+          message_text: editedMessage.content,
+        });
+      } catch (err) {
+        console.error('Erro ao salvar mensagem editada do usuário:', err);
+      }
+    }
+
     try {
-      // Envia mensagem editada para o chatbot
-      const responses = await sendChatMessage(userId, editedMessage.content);
+      const responses = await (sendChatMessage as any)(
+        userId,
+        editedMessage.content,
+        convId
+      );
 
       if (responses && responses.length > 0) {
         const botResponse = responses[0].output;
-        
-        // Verifica se há dados de carrossel
+
         const carouselCheck = parseCarouselData(botResponse);
-        
+
         if (carouselCheck.hasCarousel) {
           const followUpMessage: ChatMessage = {
             id: generateMessageId(),
@@ -227,16 +414,32 @@ const ChatBotPage: React.FC = () => {
             content: 'O que achou do carrossel?',
             timestamp: new Date(),
           };
-          
+
           setMessages((prev) => [...prev, followUpMessage]);
           setCarouselData(carouselCheck.carouselData);
           setHasGeneratedCarousel(true);
           setIsCarouselPreviewOpen(true);
+
+          if (convId) {
+            try {
+              await createConversationMessage(convId, {
+                sender_type: 'bot',
+                message_text: followUpMessage.content,
+              });
+            } catch (err) {
+              console.error(
+                'Erro ao salvar mensagem do bot (carrossel, edição):',
+                err
+              );
+            }
+          }
+
           return;
         }
-        
-        // Verifica trigger de seleção de template
-        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(botResponse);
+
+        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(
+          botResponse
+        );
 
         const assistantMessage: ChatMessage = {
           id: generateMessageId(),
@@ -247,44 +450,57 @@ const ChatBotPage: React.FC = () => {
 
         setMessages((prev) => [...prev, assistantMessage]);
 
+        if (convId) {
+          try {
+            await createConversationMessage(convId, {
+              sender_type: 'bot',
+              message_text: assistantMessage.content,
+            });
+          } catch (err) {
+            console.error('Erro ao salvar mensagem do bot (edição):', err);
+          }
+        }
+
         if (hasTemplateTrigger) {
           setWaitingForTemplate(true);
         }
       }
     } catch (error) {
       console.error('Erro ao reenviar mensagem editada:', error);
-      
+
       const errorMessage: ChatMessage = {
         id: generateMessageId(),
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem editada. Por favor, tente novamente.',
+        content:
+          'Desculpe, ocorreu um erro ao processar sua mensagem editada. Por favor, tente novamente.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+
+      if (currentConversationId) {
+        try {
+          await createConversationMessage(currentConversationId, {
+            sender_type: 'bot',
+            message_text: errorMessage.content,
+          });
+        } catch (err) {
+          console.error(
+            'Erro ao salvar mensagem de erro do bot (edição):',
+            err
+          );
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Auto-resize textarea de edição
-  useEffect(() => {
-    const textarea = editInputRef.current;
-    if (textarea && editingMessageId) {
-      textarea.style.height = '48px';
-      const newHeight = Math.min(textarea.scrollHeight, 128);
-      textarea.style.height = `${newHeight}px`;
-      textarea.focus();
-    }
-  }, [editingContent, editingMessageId]);
-
   const handleTemplateSelect = async (templateId: string) => {
     setIsTemplateModalOpen(false);
-    setWaitingForTemplate(false); // Limpa o estado de espera
+    setWaitingForTemplate(false);
 
-    // Extrai o nome do template (ex: "Template 6")
     const templateName = `Template ${templateId}`;
 
-    // Envia o nome do template como mensagem do usuário
     const userId = getUserId();
     const templateMessage: ChatMessage = {
       id: generateMessageId(),
@@ -296,15 +512,31 @@ const ChatBotPage: React.FC = () => {
     setMessages((prev) => [...prev, templateMessage]);
     setIsLoading(true);
 
+    const convId = currentConversationId || (await ensureConversationId());
+
+    if (convId) {
+      try {
+        await createConversationMessage(convId, {
+          sender_type: 'user',
+          message_text: templateMessage.content,
+        });
+      } catch (err) {
+        console.error('Erro ao salvar mensagem de template do usuário:', err);
+      }
+    }
+
     try {
-      const responses = await sendChatMessage(userId, templateName);
+      const responses = await (sendChatMessage as any)(
+        userId,
+        templateName,
+        convId
+      );
 
       if (responses && responses.length > 0) {
         const botResponse = responses[0].output;
-        
-        // Primeiro verifica se há carrossel
+
         const carouselCheck = parseCarouselData(botResponse);
-        
+
         if (carouselCheck.hasCarousel) {
           const assistantMessage: ChatMessage = {
             id: generateMessageId(),
@@ -313,15 +545,29 @@ const ChatBotPage: React.FC = () => {
             timestamp: new Date(),
           };
           setMessages((prev) => [...prev, assistantMessage]);
-          
-          // Abre popup de preview do carrossel
+
+          if (convId) {
+            try {
+              await createConversationMessage(convId, {
+                sender_type: 'bot',
+                message_text: assistantMessage.content,
+              });
+            } catch (err) {
+              console.error(
+                'Erro ao salvar mensagem do bot (carrossel, template):',
+                err
+              );
+            }
+          }
+
           setCarouselData(carouselCheck.carouselData);
           setIsCarouselPreviewOpen(true);
           return;
         }
-        
-        // Se não, verifica trigger de template
-        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(botResponse);
+
+        const { message, hasTemplateTrigger } = parseTemplateSelectionTrigger(
+          botResponse
+        );
 
         const assistantMessage: ChatMessage = {
           id: generateMessageId(),
@@ -332,276 +578,320 @@ const ChatBotPage: React.FC = () => {
 
         setMessages((prev) => [...prev, assistantMessage]);
 
-        // Se houver outro trigger, marca para esperar novamente
+        if (convId) {
+          try {
+            await createConversationMessage(convId, {
+              sender_type: 'bot',
+              message_text: assistantMessage.content,
+            });
+          } catch (err) {
+            console.error(
+              'Erro ao salvar mensagem do bot (template normal):',
+              err
+            );
+          }
+        }
+
         if (hasTemplateTrigger) {
           setWaitingForTemplate(true);
         }
       }
     } catch (error) {
       console.error('Erro ao enviar template selecionado:', error);
-      
+
       const errorMessage: ChatMessage = {
         id: generateMessageId(),
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua seleção. Por favor, tente novamente.',
+        content:
+          'Desculpe, ocorreu um erro ao processar sua seleção. Por favor, tente novamente.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+
+      if (currentConversationId) {
+        try {
+          await createConversationMessage(currentConversationId, {
+            sender_type: 'bot',
+            message_text: errorMessage.content,
+          });
+        } catch (err) {
+          console.error(
+            'Erro ao salvar mensagem de erro do bot (template):',
+            err
+          );
+        }
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const navigate = useNavigate();
-  const { addEditorTab } = useEditorTabs();
-
-  // Handler para editar carrossel
   const handleEditCarousel = (data: CarouselData) => {
     setIsCarouselPreviewOpen(false);
-    
-    // Cria slides vazios baseados no número de conteúdos
+
     const slides = data.conteudos?.map(() => '') || [];
-    
-    // Adiciona uma nova aba no editor com os dados do carrossel
+
     addEditorTab({
       id: `chat-carousel-${Date.now()}`,
       title: `Carrossel do Chat - ${data.dados_gerais?.nome || 'Novo'}`,
       slides,
       carouselData: data,
     });
-    
-    // Navega para a página de configurações (editor)
+
     navigate('/settings');
   };
 
-  // Handler para salvar carrossel
   const handleSaveCarousel = async (data: CarouselData) => {
     setIsCarouselPreviewOpen(false);
-    
-    // TODO: Implementar salvamento na galeria via API
-    // Por enquanto, apenas mostra mensagem de sucesso
+
     console.log('💾 Salvando carrossel:', data.dados_gerais?.nome);
-    
+
     const successMessage: ChatMessage = {
       id: generateMessageId(),
       role: 'assistant',
       content: '✅ Carrossel salvo com sucesso na galeria!',
       timestamp: new Date(),
     };
-    
+
     setMessages((prev) => [...prev, successMessage]);
+
+    if (currentConversationId) {
+      try {
+        await createConversationMessage(currentConversationId, {
+          sender_type: 'bot',
+          message_text: successMessage.content,
+        });
+      } catch (err) {
+        console.error(
+          'Erro ao salvar mensagem de sucesso do bot (carrossel):',
+          err
+        );
+      }
+    }
   };
 
-  // Handler para continuar no chat
   const handleContinueChat = () => {
     setIsCarouselPreviewOpen(false);
-    // Mantém hasGeneratedCarousel true para o botão continuar visível
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation currentPage="chatbot" />
-      <MouseFollowLight />
-      
-      <div className="md:ml-16">
-        {/* Title with Back Button */}
-        <div className="relative">
-          <PageTitle title="" />
-          <button
-            onClick={() => navigate('/create-carousel')}
-            className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-medium">Voltar</span>
-          </button>
-        </div>
+  const handleWelcomeSend = (message: string) => {
+    handleSendMessage(message);
+  };
 
-        {/* Main Chat Container - Fixed height, no global scroll */}
-        <main className="fixed top-[64px] bottom-0 left-0 right-0 md:left-16 bg-transparent">
-          <div className="h-full flex flex-col max-w-5xl mx-auto w-full">
-            {/* Messages Area - Scrollable */}
-            <div 
+  const showWelcome = !currentConversationId && messages.length === 0;
+
+  return (
+    <div className="flex h-full flex-col text-[#1f2937] bg-transparent min-h-0 overflow-hidden">
+      <main className="h-full flex flex-col min-h-0 overflow-hidden">
+        {showWelcome ? (
+          <div className="h-full flex items-center justify-center px-4">
+            <div className="w-full max-w-3xl">
+              <ChatWelcomeScreen
+                onSendMessage={handleWelcomeSend}
+                isLoading={isLoading}
+                userName={getUserName()}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col w-full min-h-0 overflow-hidden">
+            {/* Área de mensagens (único lugar com scroll) */}
+            <div
               ref={chatContainerRef}
-              className="flex-1 overflow-y-auto py-8 px-4 space-y-6 min-h-0"
+              className="flex-1 overflow-y-auto min-h-0"
             >
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-4 ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  {message.role === 'assistant' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
-                      <Bot className="w-5 h-5 text-gray-700" />
+              <div className="max-w-3xl mx-auto space-y-6 py-6">
+                {messages.map((message) => {
+                  const mdContent = message.content
+                    .replace(/\r\n/g, '\n')   // normaliza quebra de linha Windows
+                    .replace(/\/n/g, '\n\n'); // transforma "/n" em duas quebras de linha (parágrafo)
+                    
+                  return (
+                    <div
+                      key={message.id}
+                      className={`group w-full flex ${
+                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <div className="max-w-[50%] w-full">
+                        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200">
+                          <div className="px-4 py-5 flex gap-4">
+                            {message.role === 'assistant' ? (
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-[#1f2937]/15 flex items-center justify-center">
+                                <Bot className="w-5 h-5 text-[#1f2937]" />
+                              </div>
+                            ) : (
+                              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-[#1f2937]/15 flex items-center justify-center">
+                                <UserIcon className="w-5 h-5 text-[#1f2937]" />
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0">
+                              {editingMessageId === message.id ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    ref={editInputRef}
+                                    value={editingContent}
+                                    onChange={(e) => setEditingContent(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSaveEdit(message.id);
+                                      }
+                                      if (e.key === 'Escape') {
+                                        handleCancelEdit();
+                                      }
+                                    }}
+                                    className="w-full bg-white text-[#1f2937] placeholder-gray-400 rounded-lg px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                                    rows={1}
+                                    style={{ minHeight: '48px', maxHeight: '128px' }}
+                                  />
+                                  <div className="flex gap-2 justify-end mt-2">
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      className="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 rounded-lg transition-colors text-[#1f2937]"
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={() => handleSaveEdit(message.id)}
+                                      disabled={!editingContent.trim()}
+                                      className="px-3 py-1.5 text-sm bg-[#1f2937] hover:bg-gray-900 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      Salvar
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="prose max-w-none prose-p:my-0 prose-headings:mb-2 prose-headings:mt-2 prose-ul:my-1 prose-ol:my-1 prose-strong:text-[#1f2937] prose-p:text-[#1f2937]">
+                                    <ReactMarkdown>{mdContent}</ReactMarkdown>
+                                  </div>
+
+                                  {message.role === 'user' && !isLoading && (
+                                    <button
+                                      onClick={() =>
+                                        handleStartEdit(message.id, message.content)
+                                      }
+                                      className="mt-2 text-sm text-[#1f2937] hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
+                                    >
+                                      Editar
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  <div
-                    className={`max-w-[70%] rounded-lg px-4 py-3 ${
-                      message.role === 'user'
-                        ? 'bg-white text-black'
-                        : 'bg-gray-100 text-gray-900 border border-gray-200'
-                    }`}
-                  >
-                    {/* Modo de edição */}
-                    {editingMessageId === message.id ? (
-                      <div className="space-y-2">
-                        <textarea
-                          ref={editInputRef}
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSaveEdit(message.id);
-                            }
-                            if (e.key === 'Escape') {
-                              handleCancelEdit();
-                            }
-                          }}
-                          className="w-full bg-white text-gray-900 placeholder-gray-400 rounded-lg px-2 py-1 border border-primary-500/30 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none text-sm"
-                          rows={1}
-                          style={{ minHeight: '48px', maxHeight: '128px' }}
-                        />
-                        <div className="flex gap-2 justify-end">
+                  );
+                })}
+
+                {isLoading && (
+                  <div className="group w-full flex justify-start">
+                    <div className="max-w-[50%] w-full">
+                      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200">
+                        <div className="px-4 py-5 flex gap-4">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-[#1f2937]/15 flex items-center justify-center">
+                            <Bot className="w-5 h-5 text-[#1f2937]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-[#1f2937]" />
+                              <span className="text-base text-[#1f2937]">
+                                Pensando...
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {waitingForTemplate && !isLoading && (
+                  <div className="group w-full flex justify-start">
+                    <div className="max-w-[50%] w-full">
+                      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200">
+                        <div className="px-4 py-5 flex gap-4 items-center">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-[#1f2937]/15 flex items-center justify-center">
+                            <Bot className="w-5 h-5 text-[#1f2937]" />
+                          </div>
                           <button
-                            onClick={handleCancelEdit}
-                            className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-900"
+                            onClick={() => setIsTemplateModalOpen(true)}
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 animate-pulse"
                           >
-                            Cancelar (Esc)
-                          </button>
-                          <button
-                            onClick={() => handleSaveEdit(message.id)}
-                            disabled={!editingContent.trim()}
-                            className="px-3 py-1 text-xs bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white rounded-lg transition-all shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            Salvar (Enter)
+                            <span>✨ Escolher Template</span>
                           </button>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <p className="text-sm whitespace-pre-wrap break-words">
-                          {message.content}
-                        </p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className={`text-xs ${
-                            message.role === 'user' ? 'text-black/60' : 'text-gray-500'
-                          }`}>
-                            {message.timestamp.toLocaleTimeString('pt-BR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          
-                          {/* Botão de editar apenas para mensagens do usuário */}
-                          {message.role === 'user' && !isLoading && (
-                            <button
-                              onClick={() => handleStartEdit(message.id, message.content)}
-                              className="text-xs text-black/60 hover:text-black transition-colors ml-2 underline"
-                            >
-                              Editar
-                            </button>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {message.role === 'user' && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-black" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isLoading && (
-                <div className="flex gap-4 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
-                    <Bot className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <div className="bg-gray-100 rounded-lg px-4 py-3 border border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
-                      <span className="text-sm text-gray-600">Pensando...</span>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Botão de escolher template quando esperando */}
-              {waitingForTemplate && !isLoading && (
-                <div className="flex gap-4 justify-start">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
-                    <Bot className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <button
-                    onClick={() => setIsTemplateModalOpen(true)}
-                    className="bg-gradient-to-r from-white to-gray-200 hover:from-gray-100 hover:to-white text-black px-6 py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 animate-pulse"
-                  >
-                    <span>✨ Escolher Template</span>
-                  </button>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} />
+              </div>
             </div>
 
-            {/* Input Area - Fixed at bottom */}
-            <div className="flex-shrink-0 border-t border-gray-200 px-4 py-4 bg-white">
-              <div className="flex gap-2 items-end mb-2">
-                <div className="flex-1 relative">
+            {/* Input fixo embaixo, fora do scroll */}
+            <div className="flex-shrink-0 px-4 pb-4">
+              <div className="max-w-3xl mx-auto">
+                <div className="relative flex items-end gap-2 bg-white/90 backdrop-blur-md rounded-2xl p-2 border border-gray-300 focus-within:border-blue-500 transition-colors shadow-lg">
                   <textarea
                     ref={inputRef}
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={waitingForTemplate ? "Aguardando seleção de template..." : "Digite sua mensagem..."}
+                    onKeyDown={handleKeyPress}
+                    placeholder={
+                      waitingForTemplate
+                        ? 'Aguardando seleção de template...'
+                        : 'Digite sua mensagem...'
+                    }
                     disabled={isLoading || waitingForTemplate}
                     rows={1}
-                    className="w-full bg-white text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      height: '48px',
-                      maxHeight: '128px',
-                    }}
+                    className="flex-1 bg-transparent text-[#1f2937] placeholder-gray-400 px-2 py-2 focus:outline-none resize-none overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed max-h-32 font-medium"
                   />
+
+                  <button
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputMessage.trim() || isLoading || waitingForTemplate}
+                    className="flex-shrink-0 w-10 h-10 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-md"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin text-[#1f2937]" />
+                    ) : (
+                      <Send className="w-5 h-5 text-[#1f2937]" />
+                    )}
+                  </button>
                 </div>
-                
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isLoading || waitingForTemplate}
-                  className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center shadow-glow"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-5 h-5 text-white animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5 text-white" />
-                  )}
-                </button>
+
+                <p className="text-xs text-gray-400 text-center mt-2">
+                  Pressione{' '}
+                  <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono text-[10px]">
+                    Enter
+                  </kbd>{' '}
+                  para enviar ou{' '}
+                  <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 font-mono text-[10px]">
+                    Shift + Enter
+                  </kbd>{' '}
+                  para nova linha
+                </p>
               </div>
-              
-              {/* Disclaimer text */}
-              <p className="text-xs text-gray-500 text-center">
-                As suas mensagens não são salvas
-              </p>
             </div>
           </div>
-        </main>
-
-        {/* Floating Carousel Button */}
-        {hasGeneratedCarousel && !isCarouselPreviewOpen && (
-          <button
-            onClick={() => setIsCarouselPreviewOpen(true)}
-            className="fixed top-[140px] right-6 bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-6 py-3 rounded-full shadow-glow border-2 border-primary-400 transition-all hover:scale-105 flex items-center gap-2 z-50"
-          >
-            <span className="font-semibold">🎨 Ver Carrossel</span>
-          </button>
         )}
-      </div>
+      </main>
 
-      {/* Template Selection Modal */}
+      {hasGeneratedCarousel && !isCarouselPreviewOpen && (
+        <button
+          onClick={() => setIsCarouselPreviewOpen(true)}
+          className="fixed top-[140px] right-6 bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white px-6 py-3 rounded-full shadow-glow border-2 border-primary-400 transition-all hover:scale-105 flex items-center gap-2 z-50"
+        >
+          <span className="font-semibold">🎨 Ver Carrossel</span>
+        </button>
+      )}
+
       <TemplateSelectionModal
         isOpen={isTemplateModalOpen}
         onClose={() => setIsTemplateModalOpen(false)}
@@ -609,7 +899,6 @@ const ChatBotPage: React.FC = () => {
         postCode={postCode}
       />
 
-      {/* Carousel Preview Modal */}
       <CarouselPreviewModal
         isOpen={isCarouselPreviewOpen}
         onClose={() => setIsCarouselPreviewOpen(false)}
@@ -618,7 +907,7 @@ const ChatBotPage: React.FC = () => {
         onSave={handleSaveCarousel}
         onContinue={handleContinueChat}
       />
-      
+
       <ToneSetupModal
         isOpen={showToneModal}
         onClose={closeToneModal}
