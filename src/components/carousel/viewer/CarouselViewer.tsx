@@ -1583,6 +1583,38 @@ function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, edited
     };
   }, [renderedSlides]);
 
+  /** Aplica imagem placeholder quando não há imagens de fundo */
+  useEffect(() => {
+    const PLACEHOLDER_IMAGE = "https://i.imgur.com/kFVf8q3.png";
+    
+    // Aguarda os iframes carregarem
+    const timeout = setTimeout(() => {
+      iframeRefs.current.forEach((ifr, slideIndex) => {
+        if (!ifr?.contentDocument) return;
+        
+        const doc = ifr.contentDocument;
+        const conteudo = data.conteudos?.[slideIndex];
+        if (!conteudo) return;
+        
+        // Verifica se há alguma imagem disponível (excluindo placeholder)
+        const hasImages = [
+          conteudo.imagem_fundo,
+          conteudo.imagem_fundo2,
+          conteudo.imagem_fundo3,
+          uploadedImages[slideIndex]
+        ].some(img => img && img !== PLACEHOLDER_IMAGE);
+        
+        // Se não tem imagens, aplica o placeholder
+        if (!hasImages) {
+          console.log(`🖼️ Aplicando placeholder no slide ${slideIndex}`);
+          applyBackgroundImageImmediate(slideIndex, PLACEHOLDER_IMAGE, iframeRefs.current);
+        }
+      });
+    }, 800); // Aguarda 800ms para garantir que iframes carregaram
+    
+    return () => clearTimeout(timeout);
+  }, [slides, data, uploadedImages]);
+
   /** ===== Layers ===== */
   const toggleLayer = (index: number) => {
     const s = new Set(expandedLayers);
@@ -2199,11 +2231,14 @@ function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, edited
         updatedConteudo.title = editedContent[titleKey] ?? conteudo.title;
         updatedConteudo.subtitle = editedContent[subtitleKey] ?? conteudo.subtitle;
         
+        // Imagem placeholder quando não há imagens
+        const PLACEHOLDER_IMAGE = "https://i.imgur.com/kFVf8q3.png";
+        
         // Determinar qual imagem de fundo usar e reorganizar as imagens
         const selectedBackground = editedContent[backgroundKey] || uploadedImages[index];
         
         if (selectedBackground) {
-          // Coletar todas as imagens disponíveis
+          // Coletar todas as imagens disponíveis (excluindo placeholder)
           const allImages = [
             conteudo.imagem_fundo,
             conteudo.imagem_fundo2,
@@ -2211,7 +2246,7 @@ function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, edited
             conteudo.imagem_fundo4,
             conteudo.imagem_fundo5,
             conteudo.imagem_fundo6,
-          ].filter(Boolean); // Remove undefined/null
+          ].filter(img => img && img !== PLACEHOLDER_IMAGE); // Remove undefined/null e placeholder
           
           // Se a imagem selecionada está na lista, reorganizar
           if (allImages.includes(selectedBackground)) {
@@ -2228,6 +2263,12 @@ function applyStylesFromState(ifr: HTMLIFrameElement, slideIndex: number, edited
           } else {
             // É uma imagem nova (uploaded), apenas atualiza imagem_fundo
             updatedConteudo.imagem_fundo = selectedBackground;
+          }
+        } else {
+          // Se não há nenhuma imagem selecionada ou disponível, usa placeholder
+          const hasAnyImage = conteudo.imagem_fundo || conteudo.imagem_fundo2 || conteudo.imagem_fundo3;
+          if (!hasAnyImage) {
+            updatedConteudo.imagem_fundo = PLACEHOLDER_IMAGE;
           }
         }
         

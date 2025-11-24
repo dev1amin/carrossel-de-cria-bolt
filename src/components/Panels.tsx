@@ -184,7 +184,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   uploadedImages,
   isVideoUrl,
 }) => {
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
   const hasSelection = selectedElement.element !== null;
+  const PLACEHOLDER_IMAGE = "https://i.imgur.com/kFVf8q3.png";
 
   const renderTextControls = (kind: "title" | "subtitle") => {
     const idx = selectedElement.slideIndex;
@@ -286,6 +288,14 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
     const currentBg =
       getEditedValue(idx, "background", conteudo?.imagem_fundo || "");
 
+    // Verifica se há alguma imagem disponível (excluindo a placeholder)
+    const hasImages = (
+      (conteudo?.imagem_fundo && conteudo.imagem_fundo !== PLACEHOLDER_IMAGE) ||
+      (conteudo?.imagem_fundo2 && conteudo.imagem_fundo2 !== PLACEHOLDER_IMAGE) ||
+      (conteudo?.imagem_fundo3 && conteudo.imagem_fundo3 !== PLACEHOLDER_IMAGE) ||
+      (uploadedImages[idx] && uploadedImages[idx] !== PLACEHOLDER_IMAGE)
+    );
+
     const makeThumb = (label: string, url: string, isVideo?: boolean) => (
       <div
         className={`bg-neutral-900 border rounded p-2 cursor-pointer transition-all ${
@@ -331,7 +341,32 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </div>
 
         <div className="space-y-2">
-          {conteudo?.imagem_fundo && makeThumb(
+          {!hasImages && (
+            <div
+              className="bg-neutral-900 border border-dashed border-neutral-700 rounded p-4 cursor-pointer transition-all hover:border-blue-400 hover:bg-neutral-800"
+              onClick={() => {
+                // Scroll primeiro
+                searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Depois foca com delay para garantir que o scroll termine
+                setTimeout(() => {
+                  searchInputRef.current?.focus();
+                  searchInputRef.current?.select(); // Seleciona o texto (se houver) para deixar mais visível
+                }, 300);
+              }}
+            >
+              <div className="text-center">
+                <img
+                  src={PLACEHOLDER_IMAGE}
+                  alt="No background image"
+                  className="w-full h-32 object-cover rounded mb-2 opacity-50"
+                />
+                <p className="text-neutral-500 text-xs">No background images available</p>
+                <p className="text-blue-400 text-xs mt-1">Click to search for images</p>
+              </div>
+            </div>
+          )}
+
+          {conteudo?.imagem_fundo && conteudo.imagem_fundo !== PLACEHOLDER_IMAGE && makeThumb(
             isVideoUrl(conteudo.imagem_fundo) ? "Video 1" : "Image 1",
             isVideoUrl(conteudo.imagem_fundo) && conteudo.thumbnail_url
               ? conteudo.thumbnail_url
@@ -339,13 +374,13 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             isVideoUrl(conteudo.imagem_fundo)
           )}
 
-          {conteudo?.imagem_fundo2 &&
+          {conteudo?.imagem_fundo2 && conteudo.imagem_fundo2 !== PLACEHOLDER_IMAGE &&
             makeThumb("Image 2", conteudo.imagem_fundo2)}
 
-          {conteudo?.imagem_fundo3 &&
+          {conteudo?.imagem_fundo3 && conteudo.imagem_fundo3 !== PLACEHOLDER_IMAGE &&
             makeThumb("Image 3", conteudo.imagem_fundo3)}
 
-          {uploadedImages[idx] &&
+          {uploadedImages[idx] && uploadedImages[idx] !== PLACEHOLDER_IMAGE &&
             makeThumb("Image 4 (Uploaded)", uploadedImages[idx])}
         </div>
 
@@ -356,6 +391,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </label>
           <div className="relative">
             <input
+              ref={searchInputRef}
               type="text"
               className="w-full bg-neutral-900 border border-neutral-800 rounded pl-10 pr-20 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
               placeholder="Search for images..."
