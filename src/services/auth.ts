@@ -120,54 +120,38 @@ export const verifyToken = async (jwtToken: string): Promise<ValidateTokenRespon
     throw new Error(data.error || 'Invalid token');
   }
 
-  if (data.success && data.user_id) {
-    // Store the token
-    localStorage.setItem('access_token', jwtToken);
-    // If refresh token is provided, store it too
+  // Nova resposta do verify vem no mesmo formato do login:
+  // { message, user, access_token, refresh_token, expires_at }
+  if (data.user && data.access_token) {
+    console.log('✅ Verify successful, storing complete user data');
+    
+    // Store all tokens and user data
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('access_token', data.access_token);
+    
     if (data.refresh_token) {
       localStorage.setItem('refresh_token', data.refresh_token);
     }
+    
     if (data.expires_at) {
       localStorage.setItem('token_expires_at', data.expires_at.toString());
     }
 
-    // Fetch user profile to get full user data
-    try {
-      console.log('🔍 Fetching user profile from:', API_ENDPOINTS.profile);
-      const profileResponse = await fetch(API_ENDPOINTS.profile, {
-        headers: {
-          'Authorization': `Bearer ${jwtToken}`,
-        },
-      });
-      const profileData = await profileResponse.json();
-      console.log('📋 Profile API response:', JSON.stringify(profileData, null, 2));
-      
-      // API pode retornar { user: {...} } ou diretamente {...}
-      const userData = profileData.user || profileData;
-      
-      if (profileResponse.ok && userData.id) {
-        console.log('✅ Profile data received:', {
-          userName: userData.name,
-          businessName: userData.business?.name,
-          selectedBusinessId: userData.selected_business_id,
-        });
-        localStorage.setItem('user', JSON.stringify(userData));
-        console.log('💾 User data stored in localStorage');
-        if (userData.needs_tone_setup !== undefined) {
-          localStorage.setItem('needs_tone_setup', String(userData.needs_tone_setup));
-        }
-        return { valid: true, user: userData };
-      } else {
-        console.warn('⚠️ Profile response not OK or missing user data:', profileResponse.status);
-      }
-    } catch (error) {
-      console.error('❌ Failed to fetch user profile:', error);
+    // Store needs_tone_setup flag from user object
+    if (data.user.needs_tone_setup !== undefined) {
+      console.log('📝 Salvando needs_tone_setup:', data.user.needs_tone_setup);
+      localStorage.setItem('needs_tone_setup', String(data.user.needs_tone_setup));
     }
 
-    // Fallback: create minimal user object
-    const minimalUser = { id: data.user_id } as User;
-    localStorage.setItem('user', JSON.stringify(minimalUser));
-    return { valid: true, user: minimalUser };
+    console.log('💾 Complete user data stored:', {
+      userName: data.user.name,
+      userId: data.user.id,
+      selectedBusinessId: data.user.selected_business_id,
+      needsToneSetup: data.user.needs_tone_setup,
+      needsBusinessSetup: data.user.needs_business_setup
+    });
+
+    return { valid: true, user: data.user };
   }
 
   throw new Error('Token verification failed');

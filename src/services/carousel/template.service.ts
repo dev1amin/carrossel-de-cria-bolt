@@ -1,12 +1,97 @@
 import { getCarouselConfig } from '../../config/carousel';
 
+const CACHE_KEY_PREFIX = 'template_cache_';
+const CACHE_VERSION = 'v1';
+const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+interface CachedTemplate {
+  slides: string[];
+  timestamp: number;
+  version: string;
+}
+
 export class TemplateService {
-  private cache: Map<string, string[]> = new Map();
+  private memoryCache: Map<string, string[]> = new Map();
+
+  private getCacheKey(templateId: string): string {
+    return `${CACHE_KEY_PREFIX}${templateId}`;
+  }
+
+  private loadFromLocalStorage(templateId: string): string[] | null {
+    try {
+      const cacheKey = this.getCacheKey(templateId);
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (!cached) return null;
+      
+      const data: CachedTemplate = JSON.parse(cached);
+      
+      // Verifica versão e expiração
+      if (data.version !== CACHE_VERSION) {
+        console.log(`Cache version mismatch for template ${templateId}, clearing...`);
+        localStorage.removeItem(cacheKey);
+        return null;
+      }
+      
+      const now = Date.now();
+      if (now - data.timestamp > CACHE_EXPIRATION_MS) {
+        console.log(`Cache expired for template ${templateId}, clearing...`);
+        localStorage.removeItem(cacheKey);
+        return null;
+      }
+      
+      console.log(`✅ Loaded template ${templateId} from localStorage cache`);
+      return data.slides;
+    } catch (error) {
+      console.error(`Error loading template ${templateId} from localStorage:`, error);
+      return null;
+    }
+  }
+
+  private saveToLocalStorage(templateId: string, slides: string[]): void {
+    try {
+      const cacheKey = this.getCacheKey(templateId);
+      const data: CachedTemplate = {
+        slides,
+        timestamp: Date.now(),
+        version: CACHE_VERSION
+      };
+      
+      localStorage.setItem(cacheKey, JSON.stringify(data));
+      console.log(`💾 Saved template ${templateId} to localStorage cache`);
+    } catch (error) {
+      console.error(`Error saving template ${templateId} to localStorage:`, error);
+      // Se falhar (quota excedida), limpa caches antigos
+      this.clearOldCaches();
+    }
+  }
+
+  private clearOldCaches(): void {
+    try {
+      const keys = Object.keys(localStorage);
+      for (const key of keys) {
+        if (key.startsWith(CACHE_KEY_PREFIX)) {
+          localStorage.removeItem(key);
+        }
+      }
+      console.log('🗑️ Cleared old template caches from localStorage');
+    } catch (error) {
+      console.error('Error clearing old caches:', error);
+    }
+  }
 
   async fetchTemplate(templateId: string): Promise<string[]> {
-    if (this.cache.has(templateId)) {
-      console.log(`Using cached template ${templateId}`);
-      return this.cache.get(templateId)!;
+    // 1. Verifica cache em memória
+    if (this.memoryCache.has(templateId)) {
+      console.log(`✅ Using memory cached template ${templateId}`);
+      return this.memoryCache.get(templateId)!;
+    }
+
+    // 2. Verifica cache em localStorage
+    const cachedSlides = this.loadFromLocalStorage(templateId);
+    if (cachedSlides) {
+      this.memoryCache.set(templateId, cachedSlides);
+      return cachedSlides;
     }
 
     const config = getCarouselConfig();
@@ -53,16 +138,62 @@ export class TemplateService {
     }
 
     console.log(`All ${TOTAL_SLIDES} slides loaded successfully for template ${templateId}`);
-    this.cache.set(templateId, slides);
+    
+    // 3. Salva em ambos os caches
+    this.memoryCache.set(templateId, slides);
+    this.saveToLocalStorage(templateId, slides);
+    
     return slides;
   }
 
-  clearCache(): void {
-    this.cache.clear();
+  clearCache(templateId?: string): void {
+    if (templateId) {
+      // Limpa cache específico
+      this.memoryCache.delete(templateId);
+      const cacheKey = this.getCacheKey(templateId);
+      localStorage.removeItem(cacheKey);
+      console.log(`🗑️ Cleared cache for template ${templateId}`);
+    } else {
+      // Limpa todos os caches
+      this.memoryCache.clear();
+      this.clearOldCaches();
+      console.log('🗑️ Cleared all template caches');
+    }
   }
 
   getCachedTemplate(templateId: string): string[] | null {
-    return this.cache.get(templateId) || null;
+    // Verifica memória primeiro
+    if (this.memoryCache.has(templateId)) {
+      return this.memoryCache.get(templateId)!;
+    }
+    
+    // Depois localStorage
+    return this.loadFromLocalStorage(templateId);
+  }
+
+  // Método para pré-carregar templates em background
+  async preloadTemplate(templateId: string): Promise<void> {
+    if (this.getCachedTemplate(templateId)) {
+      console.log(`Template ${templateId} already cached, skipping preload`);
+      return;
+    }
+    
+    try {
+      console.log(`📦 Preloading template ${templateId}...`);
+      await this.fetchTemplate(templateId);
+      console.log(`✅ Template ${templateId} preloaded successfully`);
+    } catch (error) {
+      console.error(`Failed to preload template ${templateId}:`, error);
+    }
+  }
+
+  // Método para pré-carregar múltiplos templates
+  async preloadTemplates(templateIds: string[]): Promise<void> {
+    console.log(`📦 Preloading ${templateIds.length} templates...`);
+    await Promise.allSettled(
+      templateIds.map(id => this.preloadTemplate(id))
+    );
+    console.log('✅ Template preloading completed');
   }
 }
 

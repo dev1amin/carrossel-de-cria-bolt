@@ -161,6 +161,17 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     modalRootRef.current = existing as HTMLElement;
   }, []);
 
+  // Pré-carrega todos os templates em background quando o modal abre
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Pré-carrega templates em background (sem bloquear a UI)
+    const templateIds = AVAILABLE_TEMPLATES.map(t => t.id).filter(id => id !== selectedTemplate.id);
+    templateService.preloadTemplates(templateIds).catch(err => {
+      console.error('Error preloading templates:', err);
+    });
+  }, [isOpen, selectedTemplate.id]);
+
   // Fetch slides com dados de preview
   useEffect(() => {
     if (!isOpen || !selectedTemplate) return;

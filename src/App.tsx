@@ -127,8 +127,8 @@ function App() {
   useEffect(() => {
     configureCarousel({
       webhook: {
-        generateCarousel: 'https://webhook.workez.online/webhook/generateCarousel',
-        searchImages: 'https://webhook.workez.online/webhook/searchImages',
+        generateCarousel: 'https://api.workez.online/webhook/generateCarousel',
+        searchImages: 'https://api.workez.online/webhook/searchImages',
       },
       minio: {
         endpoint: 'https://s3.workez.online',

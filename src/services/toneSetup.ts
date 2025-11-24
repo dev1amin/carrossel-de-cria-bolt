@@ -36,7 +36,7 @@ export const QUESTION_KEY_MAP: Record<number, string> = {
   2: 'brand_differentials',
   3: 'market_segment',
   4: 'competitive_context',
-  5: 'target_audience',
+  5: 'business_model',
   6: 'current_perception',
   7: 'emotional_benefit',
   8: 'reasons_to_believe',
@@ -46,6 +46,55 @@ export const QUESTION_KEY_MAP: Record<number, string> = {
   12: 'preferred_words',
   13: 'forbidden_words',
   14: 'logo_url'
+};
+
+// Mapeamento para campos demográficos do step 6 (antigo)
+export const DEMOGRAPHIC_FIELD_MAP: Record<string, string> = {
+  'age_group': 'age_group',
+  'gender': 'gender',
+  'income_amount': 'income_amount',
+  'professional_context': 'professional_context'
+};
+
+/**
+ * Envia os campos demográficos individuais
+ */
+export async function submitDemographicFields(
+  fields: Record<string, string>
+): Promise<{ success: boolean; error?: string }> {
+  const results = {
+    success: true,
+    errors: [] as string[]
+  };
+
+  for (const [fieldName, fieldValue] of Object.entries(fields)) {
+    // Pula campos vazios opcionais
+    if (!fieldValue || fieldValue.trim() === '') {
+      continue;
+    }
+
+    const key = DEMOGRAPHIC_FIELD_MAP[fieldName];
+    if (!key) {
+      console.warn(`No key mapping found for demographic field ${fieldName}`);
+      continue;
+    }
+
+    try {
+      await submitFormAnswer(key, fieldValue);
+      console.log(`✅ Campo demográfico salvo: ${key} = ${fieldValue}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Erro ao salvar campo demográfico ${key}:`, error);
+      results.success = false;
+      results.errors.push(`${fieldName}: ${errorMessage}`);
+    }
+  }
+
+  if (!results.success) {
+    return { success: false, error: results.errors.join(', ') };
+  }
+
+  return { success: true };
 };
 
 /**
@@ -189,8 +238,8 @@ export async function submitStepAnswer(
     return { success: false, error: 'Key não encontrada' };
   }
 
-  // Perguntas que devem enviar array: 0,1,2,8,9,10
-  const arrayQuestions = [0, 1, 2, 8, 9, 10];
+  // Perguntas que devem enviar array: 0,1,2,5,8,9,10
+  const arrayQuestions = [0, 1, 2, 5, 8, 9, 10];
   
   let value: string | string[];
   if (arrayQuestions.includes(step)) {
@@ -259,8 +308,8 @@ export async function submitAllFormAnswers(
       continue;
     }
 
-    // Perguntas que devem enviar array: 0,1,2,8,9,10
-    const arrayQuestions = [0, 1, 2, 8, 9, 10];
+    // Perguntas que devem enviar array: 0,1,2,5,8,9,10
+    const arrayQuestions = [0, 1, 2, 5, 8, 9, 10];
     
     let value: string | string[];
     if (arrayQuestions.includes(step)) {

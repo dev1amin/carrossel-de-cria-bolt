@@ -58,7 +58,7 @@ export const sendChatMessage = async (
   message: string,
   conversationId?: string
 ): Promise<ChatbotResponse[]> => {
-  const webhookUrl = 'https://webhook.workez.online/webhook/mainAgentInsta';
+  const webhookUrl = 'https://api.workez.online/webhook/mainAgentInsta';
 
   try {
     const response = await fetch(webhookUrl, {

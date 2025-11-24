@@ -10,7 +10,7 @@ import {
   UploadCloud
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { submitStepAnswer, checkBusinessSelected, saveProgress, loadProgress, clearProgress, clearSubmittedQuestions } from '../services/toneSetup';
+import { submitStepAnswer, checkBusinessSelected, saveProgress, loadProgress, clearProgress, clearSubmittedQuestions, submitDemographicFields } from '../services/toneSetup';
 import { BusinessSelectorModal } from './BusinessSelectorModal';
 
 interface ToneSetupModalProps {
@@ -72,6 +72,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [demographicFields, setDemographicFields] = useState<Record<string, string>>({});
 
   // ref para o container rolável das perguntas
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -266,8 +267,10 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     {
       // NOVA PERGUNTA SEPARADA: MODELO DE ATUAÇÃO
       title: "Qual é o modelo de atuação principal da marca?",
-      subtitle: "Selecione o modelo que melhor representa como a marca se relaciona com o cliente",
-      type: "single",
+      subtitle: "Selecione os modelos que se aplicam à sua marca",
+      type: "multiple",
+      minSelections: 1,
+      maxSelections: 4,
       answers: [
         "B2B",
         "B2C",
@@ -276,40 +279,56 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       ]
     },
     {
-      // PÚBLICO-ALVO: SOMENTE DEMOGRAFIA (SEM LOCALIZAÇÃO)
+      // PÚBLICO-ALVO: DEMOGRAFIA COM CAMPOS SEPARADOS
       title: "Quem é o público-alvo principal da marca?",
-      subtitle: "Selecione as principais características demográficas do seu público",
-      type: "grouped-multiple",
-      minSelections: 1,
-      maxSelections: 12,
-      groups: {
-        "Idade": [
-          "18-24 anos",
-          "25-34 anos",
-          "35-44 anos",
-          "45-60 anos",
-          "60+ anos"
-        ],
-        "Gênero": [
-          "Predominantemente masculino",
-          "Predominantemente feminino",
-          "Equilibrado entre gêneros",
-          "Independente de gênero"
-        ],
-        "Renda": [
-          "Baixa renda",
-          "Média renda",
-          "Alta renda",
-          "Alta renda / Premium"
-        ],
-        "Contexto profissional": [
-          "Estudantes",
-          "Profissionais em início de carreira",
-          "Gestores e líderes",
-          "Empreendedores",
-          "Autônomos / freelancers"
-        ]
-      }
+      subtitle: "Preencha as características demográficas do seu público",
+      type: "demographic-fields",
+      fields: [
+        {
+          name: "age_group",
+          label: "Faixa Etária",
+          type: "single_select",
+          required: true,
+          options: [
+            "18-24 anos",
+            "25-34 anos",
+            "35-44 anos",
+            "45-60 anos",
+            "60+ anos"
+          ]
+        },
+        {
+          name: "gender",
+          label: "Gênero",
+          type: "single_select",
+          required: true,
+          options: [
+            "Predominantemente masculino",
+            "Predominantemente feminino",
+            "Equilibrado entre gêneros",
+            "Independente de gênero"
+          ]
+        },
+        {
+          name: "income_amount",
+          label: "Renda",
+          type: "single_select",
+          required: false,
+          options: [
+            "Baixa renda",
+            "Média renda",
+            "Alta renda",
+            "Alta renda / Premium"
+          ]
+        },
+        {
+          name: "professional_context",
+          label: "Contexto Profissional",
+          type: "text",
+          required: false,
+          placeholder: "Ex: Estudantes, Empreendedores, Gestores"
+        }
+      ]
     },
     {
       title: "Como o público percebe atualmente as soluções existentes (ou a própria marca)?",
@@ -468,6 +487,13 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     });
   };
 
+  const handleDemographicFieldChange = (fieldName: string, value: string) => {
+    setDemographicFields(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
   const handleLogoFile = (file: File) => {
     if (!file) return;
 
@@ -559,6 +585,17 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     const answer = answers[currentStep];
     const question = questions[currentStep];
 
+    // campos demográficos separados
+    if (question.type === 'demographic-fields') {
+      const fields = (question as any).fields || [];
+      for (const field of fields) {
+        if (field.required && !demographicFields[field.name]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     // campos de texto continuam opcionais
     if (question.type === 'text') {
       return true;
@@ -593,6 +630,29 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     }
 
     const question = questions[currentStep];
+
+    // CASO ESPECIAL: campos demográficos separados
+    if (question.type === 'demographic-fields') {
+      setIsSavingAnswer(true);
+      const result = await submitDemographicFields(demographicFields);
+      setIsSavingAnswer(false);
+
+      if (!result.success && result.error) {
+        setSubmitError(`Erro ao salvar campos demográficos: ${result.error}`);
+        setTimeout(() => setSubmitError(null), 3000);
+      }
+
+      // Limpar campos demográficos após salvar
+      setDemographicFields({});
+
+      if (currentStep < questions.length - 1) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+
+      return;
+    }
 
     // CASO ESPECIAL: passo de logo (upload de arquivo)
     if (question.type === 'file') {
@@ -692,10 +752,9 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
           const question = questions[questionIndex];
           
           // Perguntas que devem enviar array:
-          // 0,1,2 (missão/valores/diferenciais)
-          // 6 (público-alvo demográfico)
-          // 9,10,11 (razões, atributos de tom, consistência)
-          const arrayQuestions = [0, 1, 2, 6, 9, 10, 11];
+          // 0,1,2,5 (missão/valores/diferenciais/business_model)
+          // 8,9,10 (razões, atributos de tom, consistência)
+          const arrayQuestions = [0, 1, 2, 5, 8, 9, 10];
           
           if (arrayQuestions.includes(questionIndex)) {
             if (Array.isArray(answer)) {
@@ -819,7 +878,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   };
 
   const sendToWebhook = async (formData: any): Promise<any> => {
-    const webhookUrl = 'https://webhook.workez.online/webhook/createToneVoice';
+    const webhookUrl = 'https://api.workez.online/webhook/createToneOfVoice';
 
     console.log('📤 Enviando dados para webhook:', webhookUrl);
     console.log('📦 Payload:', formData);
@@ -915,6 +974,50 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
               />
             </div>
           )}
+        </div>
+      );
+    }
+
+    if (question.type === 'demographic-fields') {
+      const fields = (question as any).fields || [];
+      return (
+        <div className="space-y-4">
+          {fields.map((field: any) => (
+            <div key={field.name}>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              
+              {field.type === 'text' && (
+                <input
+                  type="text"
+                  value={demographicFields[field.name] || ''}
+                  onChange={(e) => handleDemographicFieldChange(field.name, e.target.value)}
+                  placeholder={field.placeholder}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                />
+              )}
+              
+              {field.type === 'single_select' && (
+                <div className="grid grid-cols-1 gap-2">
+                  {field.options.map((option: string) => (
+                    <button
+                      key={option}
+                      onClick={() => handleDemographicFieldChange(field.name, option)}
+                      className={`p-3 text-left rounded-lg border-2 transition-all ${
+                        demographicFields[field.name] === option
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       );
     }

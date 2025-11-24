@@ -14,6 +14,9 @@ interface PropertiesPanelProps {
   uploadedImages: Record<number, string>;
   isMinimized?: boolean;
   templateCompatibility?: TemplateCompatibility; // Compatibilidade do template
+  searchInputRef?: React.RefObject<HTMLInputElement>;
+  isSearchInputPulsing?: boolean;
+  onSearchInputClick?: () => void;
   onToggleMinimize?: () => void;
   onUpdateEditedValue: (slideIndex: number, field: string, value: any) => void;
   onUpdateElementStyle: (slideIndex: number, element: ElementType, prop: keyof ElementStyles, value: string) => void;
@@ -90,6 +93,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   uploadedImages,
   isMinimized = false,
   templateCompatibility = 'video-image',
+  searchInputRef,
+  isSearchInputPulsing = false,
+  onSearchInputClick,
   onToggleMinimize,
   onUpdateEditedValue,
   onUpdateElementStyle,
@@ -405,13 +411,34 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
                     <div className="mt-3">
                       <label className="text-gray-600 text-xs mb-2 block font-medium">Search Images</label>
+                      <style>
+                        {`
+                          @keyframes pulse-ring {
+                            0% {
+                              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+                            }
+                            50% {
+                              box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+                            }
+                            100% {
+                              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                            }
+                          }
+                          .search-input-pulsing {
+                            animation: pulse-ring 1.5s ease-out infinite;
+                            border-color: #3b82f6 !important;
+                          }
+                        `}
+                      </style>
                       <div className="relative">
                         <input
+                          ref={searchInputRef}
                           type="text"
-                          className="w-full bg-white border border-gray-300 rounded pl-10 pr-20 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className={`w-full bg-white border border-gray-300 rounded pl-10 pr-20 py-2 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${isSearchInputPulsing ? 'search-input-pulsing' : ''}`}
                           placeholder="Search for images..."
                           value={searchKeyword}
                           onChange={(e) => onSearchKeywordChange(e.target.value)}
+                          onClick={onSearchInputClick}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') onSearchImages();
                           }}
