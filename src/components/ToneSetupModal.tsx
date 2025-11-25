@@ -819,7 +819,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   };
 
   const sendToWebhook = async (formData: any): Promise<any> => {
-    const webhookUrl = 'https://webhook.workez.online/webhook/createToneVoice';
+    const webhookUrl = 'https://api.workez.online/webhook/createToneOfVoice';
 
     console.log('📤 Enviando dados para webhook:', webhookUrl);
     console.log('📦 Payload:', formData);
