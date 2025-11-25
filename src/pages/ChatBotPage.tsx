@@ -93,14 +93,46 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
     setCurrentConversationId(undefined);
   }, [newChatKey]);
 
-  // Carregar histórico quando entra numa conversa existente
+  // Processar mensagem inicial da HomePage (se houver)
+  const initialMessageRef = useRef(false);
   useEffect(() => {
-    if (!currentConversationId) return;
+    const isProcessing = location.state?.isProcessing;
+    const isCreating = location.state?.isCreatingConversation;
+    
+    // Se está criando ou processando, mostra a mensagem inicial imediatamente
+    if ((isProcessing || isCreating) && initialMessage && !initialMessageRef.current) {
+      console.log('📝 Exibindo mensagem inicial:', initialMessage);
+      initialMessageRef.current = true;
+      
+      const userMessage: ChatMessage = {
+        id: generateMessageId(),
+        role: 'user',
+        content: initialMessage,
+        timestamp: new Date(),
+      };
+      
+      setMessages([userMessage]);
+      setIsLoading(true); // Mostra "pensando..."
+    }
+  }, [initialMessage, location.state]);
+
+  // Carregar histórico quando entra numa conversa existente
+  const hasLoadedRef = useRef<string | null>(null);
+  useEffect(() => {
+    // Ignora IDs temporários ou inválidos
+    if (!currentConversationId || currentConversationId === 'creating') return;
+    
+    // Evita carregar múltiplas vezes o mesmo ID (mas permite polling se isProcessing)
+    const isProcessing = location.state?.isProcessing;
+    if (!isProcessing && hasLoadedRef.current === currentConversationId) return;
+    hasLoadedRef.current = currentConversationId;
 
     let cancelled = false;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     const loadHistory = async () => {
       try {
+        console.log('📚 Carregando histórico da conversa:', currentConversationId);
         const res = await getConversationMessages(currentConversationId, {
           limit: 100,
           offset: 0,
@@ -116,18 +148,99 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
         });
 
         const mapped = sorted.map(mapApiMessageToChat);
+        console.log('✅ Histórico carregado:', mapped.length, 'mensagens');
+        console.log('📝 Mensagens:', mapped.map(m => ({ role: m.role, content: m.content.substring(0, 50) })));
+        
         setMessages(mapped);
+        
+        // Se encontrou mensagem do bot, para o polling e remove loading
+        const botMessages = mapped.filter(m => m.role === 'assistant');
+        const hasResponse = botMessages.length > 0;
+        
+        console.log('🤖 Mensagens do bot encontradas:', botMessages.length);
+        
+        if (hasResponse) {
+          console.log('✅ Resposta do bot detectada! Parando polling...');
+          setIsLoading(false);
+          if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        } else if (isProcessing) {
+          console.log('⏳ Ainda aguardando resposta do bot...');
+        }
       } catch (err) {
-        console.error('Erro ao carregar histórico da conversa:', err);
+        console.error('❌ Erro ao carregar histórico da conversa:', err);
+        setIsLoading(false);
       }
     };
 
+    // Carrega imediatamente
     loadHistory();
+    
+    // Se está processando, faz polling a cada 2 segundos (máximo 30 segundos)
+    if (isProcessing) {
+      console.log('🔄 Iniciando polling para aguardar resposta do bot...');
+      let pollCount = 0;
+      const maxPolls = 15; // 15 x 2s = 30 segundos
+      
+      pollInterval = setInterval(async () => {
+        if (cancelled) return;
+        
+        pollCount++;
+        console.log(`🔄 Poll #${pollCount}/${maxPolls}`);
+        
+        if (pollCount >= maxPolls) {
+          console.log('⏰ Timeout: Parando polling após 30 segundos');
+          setIsLoading(false);
+          if (pollInterval) {
+            clearInterval(pollInterval);
+          }
+          return;
+        }
+        
+        // Faz novo fetch
+        try {
+          const res = await getConversationMessages(currentConversationId, {
+            limit: 100,
+            offset: 0,
+          });
+          
+          if (cancelled) return;
+          
+          const sorted = [...res.data].sort((a, b) => {
+            const ta = new Date(a.created_at).getTime();
+            const tb = new Date(b.created_at).getTime();
+            if (ta === tb) return a.id.localeCompare(b.id);
+            return ta - tb;
+          });
+          
+          const mapped = sorted.map(mapApiMessageToChat);
+          const botMessages = mapped.filter(m => m.role === 'assistant');
+          
+          console.log(`🔄 Poll #${pollCount}: ${mapped.length} mensagens, ${botMessages.length} do bot`);
+          
+          if (botMessages.length > 0) {
+            console.log('✅ Resposta do bot detectada! Parando polling...');
+            setMessages(mapped);
+            setIsLoading(false);
+            if (pollInterval) {
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (err) {
+          console.error('❌ Erro no polling:', err);
+        }
+      }, 2000);
+    }
 
     return () => {
       cancelled = true;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
     };
-  }, [currentConversationId]);
+  }, [currentConversationId, location.state?.isProcessing]);
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -215,6 +328,13 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
     const rawMessage = overrideMessage ?? inputMessage;
     const trimmed = rawMessage.trim();
     if (!trimmed || isLoading) return;
+
+    // Verifica se precisa configurar tom de voz
+    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    if (needsToneSetup === 'true') {
+      console.log('🚫 Bloqueando envio de mensagem - tom de voz não configurado');
+      return; // O modal já aparece automaticamente pelo useToneSetup
+    }
 
     const userId = getUserId();
 

@@ -112,6 +112,7 @@ function AppContent() {
           <Route path="/news" element={<NewsPage />} />
           <Route path="/create-carousel" element={<CreateCarouselPage />} />
           <Route path="/chatbot" element={<ChatBotPageWithConversations />} />
+          <Route path="/chatbot/:conversationId" element={<ChatBotPageWithConversations />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPageContainer />} />
         </Route>

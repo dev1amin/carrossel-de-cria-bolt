@@ -24,10 +24,11 @@ export const useToneSetup = () => {
 
   const checkToneSetupBeforeAction = (action: () => void) => {
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
-    console.log('🔍 Verificando antes da ação:', { needsToneSetup });
+    console.log('🔍 Verificando antes da ação:', { needsToneSetup, currentShowToneModal: showToneModal });
     if (needsToneSetup === 'true') {
       console.log('🚫 Bloqueando ação - mostrando modal de tom');
       setShowToneModal(true);
+      console.log('✅ setShowToneModal(true) chamado');
       return false; // Return false to indicate action was blocked
     }
     action();
