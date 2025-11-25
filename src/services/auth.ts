@@ -1,6 +1,13 @@
 import { API_ENDPOINTS } from '../config/api';
 import { LoginCredentials, LoginResponse, ValidateTokenResponse, User } from '../types/auth';
 
+// Logout deve vir primeiro para ser usado em outras funções
+export const logout = (): void => {
+  // Remove todos os dados do localStorage
+  localStorage.clear();
+  console.log('🚪 Logout: Todos os dados do localStorage foram removidos');
+};
+
 export const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   console.log('Making login request to:', API_ENDPOINTS.login);
   
@@ -63,10 +70,8 @@ export const refreshToken = async (): Promise<string> => {
   const data = await response.json();
 
   if (!response.ok || data.error) {
-    localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('token_expires_at');
+    // Se refresh falhar, limpa tudo
+    logout();
     throw new Error(data.error || 'Invalid refresh token');
   }
 
@@ -169,11 +174,4 @@ export const isAuthenticated = (): boolean => {
   const isAuth = Boolean(localStorage.getItem('access_token'));
   console.log('Checking authentication:', isAuth);
   return isAuth;
-};
-
-export const logout = (): void => {
-  localStorage.removeItem('user');
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('token_expires_at');
 };

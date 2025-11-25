@@ -427,10 +427,92 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleAISubmit = (e: React.FormEvent) => {
+  const handleAISubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (aiMessage.trim()) {
-      navigate('/chatbot', { state: { initialMessage: aiMessage } });
+      const messageToSend = aiMessage.trim();
+      
+      // Verifica se precisa configurar tom de voz
+      const needsToneSetup = localStorage.getItem('needs_tone_setup');
+      if (needsToneSetup === 'true') {
+        console.log('🚫 Bloqueando envio de mensagem - tom de voz não configurado');
+        // Dispara evento para o HomePageWrapper abrir o modal
+        window.dispatchEvent(new CustomEvent('showToneSetup'));
+        return;
+      }
+      
+      // Limpa o input imediatamente
+      setAiMessage('');
+      
+      // Gera um ID temporário para navegar imediatamente
+      const tempId = 'creating';
+      
+      // REDIRECIONA IMEDIATAMENTE com ID temporário na URL
+      navigate(`/chatbot/${tempId}`, { 
+        state: { 
+          isCreatingConversation: true,
+          initialMessage: messageToSend
+        } 
+      });
+      
+      // Processa tudo em sequência (uma requisição depende da outra)
+      (async () => {
+        try {
+          const { createConversation } = await import('../services/conversations');
+          const { createConversationMessage, sendChatMessage } = await import('../services/chatbot');
+          
+          console.log('🔄 1/4 - Criando nova conversa...');
+          
+          // PASSO 1: Cria uma nova conversa (AGUARDA)
+          const newConversation = await createConversation();
+          console.log('✅ 1/4 - Nova conversa criada:', newConversation.id);
+          
+          // Atualiza a URL com o ID real da conversa
+          navigate(`/chatbot/${newConversation.id}`, { 
+            state: { 
+              initialMessage: messageToSend,
+              isProcessing: true
+            },
+            replace: true // Substitui o estado anterior
+          });
+          
+          console.log('🔄 2/4 - Salvando mensagem do usuário...');
+          
+          // PASSO 2: Salva a mensagem do usuário na API (AGUARDA)
+          await createConversationMessage(newConversation.id, {
+            sender_type: 'user',
+            message_text: messageToSend,
+          });
+          console.log('✅ 2/4 - Mensagem do usuário salva');
+          
+          console.log('🔄 3/4 - Enviando para o chatbot...');
+          
+          // PASSO 3: Envia para o chatbot e aguarda resposta (AGUARDA)
+          const userStr = localStorage.getItem('user');
+          const userId = userStr ? JSON.parse(userStr).id : 'unknown';
+          
+          const responses = await sendChatMessage(userId, messageToSend, newConversation.id);
+          console.log('✅ 3/4 - Resposta do chatbot recebida:', responses);
+          
+          console.log('🔄 4/4 - Salvando resposta do assistente...');
+          
+          // PASSO 4: Salva a resposta do assistente na API (AGUARDA)
+          if (responses && responses.length > 0) {
+            const assistantContent = responses.map(r => r.output).join('\n\n');
+            await createConversationMessage(newConversation.id, {
+              sender_type: 'bot',
+              message_text: assistantContent,
+            });
+            console.log('✅ 4/4 - Resposta do assistente salva');
+          }
+          
+          console.log('✅ Processo completo! A página do chatbot irá recarregar as mensagens.');
+          
+        } catch (error) {
+          console.error('❌ Erro no processo:', error);
+          // O ChatBotPage deve mostrar o erro ao usuário
+        }
+      })();
     }
   };
 
@@ -928,14 +1010,36 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
 const HomePageWrapper: React.FC = () => {
   // Use useToneSetup to show popup automatically when user enters home without tone setup
   const { showToneModal, closeToneModal, completeToneSetup } = useToneSetup();
+  const [forceShowModal, setForceShowModal] = useState(false);
+  
+  // Escuta evento customizado para forçar abertura do modal
+  useEffect(() => {
+    const handleShowToneSetup = () => {
+      console.log('📢 Evento showToneSetup recebido, abrindo modal');
+      setForceShowModal(true);
+    };
+    
+    window.addEventListener('showToneSetup', handleShowToneSetup);
+    return () => window.removeEventListener('showToneSetup', handleShowToneSetup);
+  }, []);
+  
+  const handleClose = () => {
+    setForceShowModal(false);
+    closeToneModal();
+  };
+  
+  const handleComplete = () => {
+    setForceShowModal(false);
+    completeToneSetup();
+  };
   
   return (
     <>
       <HomePage />
       <ToneSetupModal
-        isOpen={showToneModal}
-        onClose={closeToneModal}
-        onComplete={completeToneSetup}
+        isOpen={showToneModal || forceShowModal}
+        onClose={handleClose}
+        onComplete={handleComplete}
       />
     </>
   );

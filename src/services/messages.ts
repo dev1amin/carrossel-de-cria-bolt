@@ -4,6 +4,7 @@
 
 import { API_ENDPOINTS } from '../config/api';
 import { getAuthHeaders } from './auth';
+import { fetchWithAuth } from './fetchWithAuth';
 import type {
   ConversationMessage,
   MessageResponse,
@@ -19,7 +20,7 @@ export const createMessage = async (
   conversationId: string,
   request: CreateMessageRequest
 ): Promise<ConversationMessage> => {
-  const response = await fetch(API_ENDPOINTS.conversationMessages(conversationId), {
+  const response = await fetchWithAuth(API_ENDPOINTS.conversationMessages(conversationId), {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(request),
@@ -47,7 +48,7 @@ export const getMessages = async (
 
   const url = `${API_ENDPOINTS.conversationMessages(conversationId)}?${queryParams.toString()}`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithAuth(url, {
     method: 'GET',
     headers: getAuthHeaders(),
   });

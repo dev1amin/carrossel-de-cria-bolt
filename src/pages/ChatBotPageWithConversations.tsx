@@ -3,6 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { ChatProvider, useChat } from '../contexts/ChatContext';
 import ConversationList from '../components/ConversationList';
 import ChatBotPage from './ChatBotPage';
@@ -20,7 +21,18 @@ const ChatBotPageContent: React.FC<ChatBotPageContentProps> = ({
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { activeConversation } = useChat();
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const { activeConversation, setActiveConversationById } = useChat();
+
+  // Carrega a conversa da URL quando o componente monta ou o ID muda
+  useEffect(() => {
+    if (conversationId && conversationId !== 'creating' && conversationId !== activeConversation?.id) {
+      console.log('🔄 Carregando conversa da URL:', conversationId);
+      setActiveConversationById(conversationId).catch(err => {
+        console.error('❌ Erro ao carregar conversa:', err);
+      });
+    }
+  }, [conversationId, activeConversation?.id, setActiveConversationById]);
 
   useEffect(() => {
     const checkMobile = () => {

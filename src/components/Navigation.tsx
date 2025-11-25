@@ -12,6 +12,7 @@ import {
   Briefcase,
   LogOut,
 } from 'lucide-react';
+import { logout } from '../services/auth';
 
 interface NavigationProps {
   currentPage?: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools';
@@ -262,8 +263,7 @@ const Navigation: React.FC<NavigationProps> = ({
 
               <button
                 onClick={() => {
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('user');
+                  logout();
                   navigate('/login');
                 }}
                 className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-red-600 hover:text-red-700 hover:bg-red-50 w-full"
