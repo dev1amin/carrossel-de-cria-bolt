@@ -11,7 +11,7 @@ import { ToneSetupModal } from '../components/ToneSetupModal';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
 import type { GenerationQueueItem } from '../carousel';
-import { getFeed, saveContent, unsaveContent } from '../services/feed';
+import { getFeed, createFeed, saveContent, unsaveContent } from '../services/feed';
 import {
   templateService,
   templateRenderer,
@@ -54,16 +54,16 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('🔄 Atualizando feed...');
-      const feedData = await getFeed(true); // Force update bypasses cache
-      console.log('✅ Feed atualizado:', feedData.posts.length, 'posts');
+      console.log('🔄 Gerando novo feed (POST)...');
+      const feedData = await createFeed(); // Usa POST para criar novo feed
+      console.log('✅ Novo feed gerado:', feedData.posts.length, 'posts');
       setPosts(feedData.posts);
       setFeedId(feedData.feed_id);
-      addToast('Feed atualizado com sucesso!', 'success');
+      addToast('Novo feed gerado com sucesso!', 'success');
     } catch (err) {
-      console.error('❌ Erro ao atualizar feed:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh feed';
-      addToast('Erro ao atualizar feed', 'error');
+      console.error('❌ Erro ao gerar novo feed:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create feed';
+      addToast('Erro ao gerar novo feed', 'error');
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -105,10 +105,10 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
         console.error('❌ Erro ao carregar feed:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load feed';
 
-        if (errorMessage.includes('adicionar pelo menos 1 influenciador')) {
-          setError(
-            'Você precisa adicionar pelo menos 1 influenciador como interesse antes de gerar seu feed. Configure isso nas configurações do seu business.'
-          );
+        if (errorMessage.includes('adicionar pelo menos 3 influenciadores') || errorMessage.includes('adicionar pelo menos 1 influenciador')) {
+          // Exibir feed vazio com aviso de influenciadores
+          setPosts([]);
+          setError('NEEDS_INFLUENCERS');
         } else if (errorMessage.includes('Feed generation failed')) {
           setError('Não foi possível gerar seu feed no momento. Tente novamente em alguns instantes.');
         } else {
@@ -309,7 +309,10 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
     </div>
   );
 
-  if (error) {
+  // Tratamento especial para erro de influenciadores - mostra feed vazio com aviso
+  const needsInfluencers = error === 'NEEDS_INFLUENCERS';
+
+  if (error && !needsInfluencers) {
     return (
       <div className="min-h-screen bg-light text-dark flex items-center justify-center p-4">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
@@ -324,6 +327,54 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
       </div>
     );
   }
+
+  // Componente de aviso de influenciadores
+  const InfluencersWarning = () => (
+    <div className="flex flex-col items-center justify-center py-20 px-4">
+      <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mb-6">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      </div>
+      <h3 className="text-gray-900 text-xl font-bold mb-3 text-center">Adicione Influenciadores</h3>
+      <p className="text-gray-600 text-center max-w-md mb-6">
+        Você só pode gerar um feed depois de adicionar pelo menos 3 influencers como interesse.
+      </p>
+      <button
+        onClick={() => window.location.href = '/settings'}
+        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg font-medium hover:shadow-lg transition-all flex items-center gap-2"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+        Adicionar Agora
+      </button>
+    </div>
+  );
 
   const memoizedNavigation = useMemo(() => <Navigation currentPage="feed" unviewedCount={unviewedCount} />, [unviewedCount]);
 
@@ -526,6 +577,8 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
               {isLoading && posts.length === 0 ? (
                 <SkeletonGrid count={8} type="post" />
+              ) : needsInfluencers ? (
+                <InfluencersWarning />
               ) : posts.length === 0 ? (
                 <EmptyState />
               ) : (

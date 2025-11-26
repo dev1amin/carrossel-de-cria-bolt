@@ -41,6 +41,12 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
       console.log('📝 Salvando needs_tone_setup:', data.user.needs_tone_setup);
       localStorage.setItem('needs_tone_setup', String(data.user.needs_tone_setup));
     }
+    
+    // Store post_count from user object
+    if (data.user.post_count !== undefined) {
+      console.log('📝 Salvando post_count:', data.user.post_count);
+      localStorage.setItem('post_count', String(data.user.post_count));
+    }
   }
 
   return {
@@ -146,6 +152,12 @@ export const verifyToken = async (jwtToken: string): Promise<ValidateTokenRespon
     if (data.user.needs_tone_setup !== undefined) {
       console.log('📝 Salvando needs_tone_setup:', data.user.needs_tone_setup);
       localStorage.setItem('needs_tone_setup', String(data.user.needs_tone_setup));
+    }
+    
+    // Store post_count from user object
+    if (data.user.post_count !== undefined) {
+      console.log('📝 Salvando post_count:', data.user.post_count);
+      localStorage.setItem('post_count', String(data.user.post_count));
     }
 
     console.log('💾 Complete user data stored:', {

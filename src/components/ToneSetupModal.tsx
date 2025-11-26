@@ -6,8 +6,7 @@ import {
   AlertCircle, 
   Loader2, 
   Edit2, 
-  Save,
-  UploadCloud
+  Save
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { submitStepAnswer, checkBusinessSelected, saveProgress, loadProgress, clearProgress, clearSubmittedQuestions, submitDemographicFields } from '../services/toneSetup';
@@ -61,6 +60,8 @@ const AutoResizeTextarea: React.FC<
 
 export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose, onComplete }) => {
   const [showForm, setShowForm] = useState(false);
+  const [showAutoGenerateOption, setShowAutoGenerateOption] = useState(false);
+  const [isGeneratingAutoTone, setIsGeneratingAutoTone] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string[] | string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,14 +70,10 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
   const [showBusinessSelector, setShowBusinessSelector] = useState(false);
   const [editableResponse, setEditableResponse] = useState<WebhookResponse | null>(null);
   const [isSavingToneVoice, setIsSavingToneVoice] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [demographicFields, setDemographicFields] = useState<Record<string, string>>({});
 
   // ref para o container rolável das perguntas
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Bloquear scroll do body enquanto o modal estiver aberto
   useEffect(() => {
@@ -89,21 +86,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       };
     }
   }, [isOpen]);
-
-  // Preview do logo selecionado
-  useEffect(() => {
-    if (!logoFile) {
-      setLogoPreview(null);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(logoFile);
-    setLogoPreview(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [logoFile]);
 
   // Carregar progresso salvo ao abrir o modal
   useEffect(() => {
@@ -443,11 +425,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       subtitle: "Liste termos proibidos",
       type: "text",
       placeholder: "Ex: barato, desconto, promoção..."
-    },
-    {
-      title: "Envie o logo da marca ou a foto do perfil",
-      subtitle: "Faça upload do arquivo de logo (PNG, JPG, SVG)",
-      type: "file"
     }
   ];
 
@@ -494,91 +471,86 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     }));
   };
 
-  const handleLogoFile = (file: File) => {
-    if (!file) return;
-
-    setLogoFile(file);
-
-    // Se ainda não tiver URL salva, mantém resposta vazia até upload concluir
-    setAnswers(prev => ({
-      ...prev,
-      [currentStep]:
-        prev[currentStep] && typeof prev[currentStep] === 'string' && (prev[currentStep] as string).startsWith('http')
-          ? prev[currentStep]
-          : ''
-    }));
+  // Função para verificar se pode usar geração automática
+  const getPostCount = (): number => {
+    const postCountStr = localStorage.getItem('post_count');
+    return postCountStr ? parseInt(postCountStr, 10) : 0;
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
+  // Função para gerar tom de voz automaticamente
+  const handleAutoGenerateTone = async () => {
+    setIsGeneratingAutoTone(true);
+    setSubmitError(null);
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleLogoFile(file);
-    }
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleLogoFile(file);
-    }
-  };
-
-  const uploadLogo = async (file: File): Promise<{ success: boolean; url?: string; error?: string }> => {
     try {
       const token = localStorage.getItem('access_token');
-      if (!token) {
-        return { success: false, error: 'Token de autenticação não encontrado' };
+      const user = localStorage.getItem('user');
+      const userData = user ? JSON.parse(user) : null;
+
+      if (!token || !userData) {
+        throw new Error('Dados de autenticação não encontrados');
       }
 
-      const formData = new FormData();
-      // segue o padrão que você descreveu: key + file
-      formData.append('key', 'logo_url');
-      formData.append('file', file);
+      const webhookUrl = 'https://api.workez.online/webhook/createAutomaticToneOfVoice';
+      
+      const payload = {
+        user_id: userData.id,
+        business_id: userData.selected_business_id
+      };
 
-      const response = await fetch('https://carousel-api-sepia.vercel.app/api/business/forms/logo_url', {
+      console.log('🤖 Gerando tom de voz automaticamente:', payload);
+
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          // NÃO coloca Content-Type, o browser seta com boundary correto
         },
-        body: formData,
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        return { success: false, error: `Erro ao enviar logo: ${response.status} - ${errorText}` };
+        throw new Error(`Erro ao gerar tom de voz: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      console.log('✅ Tom de voz gerado automaticamente:', result);
 
-      const uploadedUrl =
-        data?.data?.uploaded_url || data?.data?.response || null;
-
-      if (!uploadedUrl) {
-        return { success: false, error: 'API não retornou URL do logo' };
+      // Extrair a resposta do webhook (esperamos um array com um objeto)
+      if (Array.isArray(result) && result.length > 0) {
+        const responseData = result[0];
+        setEditableResponse(responseData);
+        console.log('📝 Resposta do webhook recebida:', responseData);
+      } else if (result && typeof result === 'object' && result.posicionamento_da_marca) {
+        setEditableResponse(result);
+        console.log('📝 Resposta do webhook recebida:', result);
+      } else {
+        throw new Error('Formato de resposta do webhook inválido');
       }
-
-      return { success: true, url: uploadedUrl };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro desconhecido ao enviar logo';
-      return { success: false, error: msg };
+    } catch (error) {
+      console.error('❌ Erro ao gerar tom de voz automaticamente:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      setSubmitError(errorMessage);
+    } finally {
+      setIsGeneratingAutoTone(false);
     }
+  };
+
+  // Função para mostrar tela de opção de geração automática
+  const handleFazerAgoraClick = () => {
+    const postCount = getPostCount();
+    if (postCount >= 5) {
+      setShowAutoGenerateOption(true);
+    } else {
+      setShowForm(true);
+    }
+  };
+
+  // Função para prosseguir com formulário manual
+  const handleManualForm = () => {
+    setShowAutoGenerateOption(false);
+    setShowForm(true);
   };
 
   const canGoNext = () => {
@@ -599,14 +571,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
     // campos de texto continuam opcionais
     if (question.type === 'text') {
       return true;
-    }
-
-    // logo (file)
-    if (question.type === 'file') {
-      const answerStr = typeof answer === 'string' ? answer : '';
-      const alreadyUploaded = answerStr.startsWith('http'); // URL gravada
-      // pode avançar se já fez upload (URL) ou se já escolheu um arquivo (logoFile)
-      return alreadyUploaded || !!logoFile;
     }
 
     if (!answer) return false;
@@ -645,47 +609,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       // Limpar campos demográficos após salvar
       setDemographicFields({});
 
-      if (currentStep < questions.length - 1) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        handleSubmit();
-      }
-
-      return;
-    }
-
-    // CASO ESPECIAL: passo de logo (upload de arquivo)
-    if (question.type === 'file') {
-      const currentAnswer = answers[currentStep];
-      const alreadyUploaded =
-        typeof currentAnswer === 'string' && currentAnswer.startsWith('http');
-
-      if (!alreadyUploaded) {
-        if (!logoFile) {
-          setSubmitError('Selecione um arquivo de logo antes de continuar.');
-          return;
-        }
-
-        setIsSavingAnswer(true);
-        const result = await uploadLogo(logoFile);
-        setIsSavingAnswer(false);
-
-        if (!result.success || !result.url) {
-          setSubmitError(result.error || 'Erro ao enviar logo');
-          // não avança se não salvou
-          return;
-        }
-
-        // grava a URL retornada como resposta desse passo
-        setAnswers(prev => ({
-          ...prev,
-          [currentStep]: result.url!,
-        }));
-
-        setLogoFile(null);
-      }
-
-      // avançar para próxima pergunta ou finalizar
       if (currentStep < questions.length - 1) {
         setCurrentStep(currentStep + 1);
       } else {
@@ -879,6 +802,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
 
   const sendToWebhook = async (formData: any): Promise<any> => {
     const webhookUrl = 'https://api.workez.online/webhook/createToneOfVoice';
+    const token = localStorage.getItem('access_token');
 
     console.log('📤 Enviando dados para webhook:', webhookUrl);
     console.log('📦 Payload:', formData);
@@ -887,6 +811,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(formData),
     });
@@ -914,67 +839,6 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
           placeholder={(question as any).placeholder}
           className="w-full min-h-[120px] p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none resize-none"
         />
-      );
-    }
-
-    // upload de logo
-    if (question.type === 'file') {
-      const answer = answers[currentStep];
-      const uploadedUrl =
-        typeof answer === 'string' && answer.startsWith('http') ? answer : null;
-
-      const previewUrl = logoPreview || uploadedUrl || null;
-
-      return (
-        <div className="space-y-4">
-          <div
-            className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all
-              ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/50'}`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <UploadCloud className="w-8 h-8 mb-3 text-gray-400" />
-            <p className="text-sm font-medium text-gray-800">
-              Arraste e solte o logo aqui
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              ou clique para selecionar um arquivo (PNG, JPG, SVG)
-            </p>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileInputChange}
-            />
-
-            {logoFile && !uploadedUrl && (
-              <p className="mt-3 text-xs text-gray-600">
-                Arquivo selecionado: <span className="font-semibold">{logoFile.name}</span>
-              </p>
-            )}
-
-            {uploadedUrl && !logoFile && (
-              <p className="mt-3 text-xs text-green-600">
-                Logo já enviado. Você pode avançar ou escolher outro arquivo para substituir.
-              </p>
-            )}
-          </div>
-
-          {previewUrl && (
-            <div className="border border-gray-200 bg-white rounded-xl p-3 flex flex-col items-center">
-              <p className="text-xs text-gray-500 mb-2">Pré-visualização do logo</p>
-              <img
-                src={previewUrl}
-                alt="Logo"
-                className="max-h-40 object-contain"
-              />
-            </div>
-          )}
-        </div>
       );
     }
 
@@ -1070,6 +934,8 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
 
   if (!isOpen) return null;
 
+  const postCount = getPostCount();
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto overscroll-contain">
       <motion.div
@@ -1078,7 +944,58 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
         exit={{ opacity: 0, scale: 0.95 }}
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
       >
-        {!showForm ? (
+        {/* Tela de opção de geração automática */}
+        {showAutoGenerateOption && !editableResponse ? (
+          <div className="p-8">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                Vimos que você tem {postCount} posts no instagram
+              </h2>
+              <p className="text-gray-600 mb-2">
+                Você gostaria de gerar seu tom de voz automaticamente com esses posts?
+              </p>
+              <p className="text-gray-500 text-sm">
+                Gostaria de gerar automaticamente?
+              </p>
+            </div>
+            
+            {submitError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700">{submitError}</p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleAutoGenerateTone}
+                disabled={isGeneratingAutoTone}
+                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isGeneratingAutoTone ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  'Sim, gerar automaticamente'
+                )}
+              </button>
+              <button
+                onClick={handleManualForm}
+                disabled={isGeneratingAutoTone}
+                className="flex-1 border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Não, preencher manualmente
+              </button>
+            </div>
+          </div>
+        ) : !showForm && !showAutoGenerateOption ? (
           <div className="p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1096,7 +1013,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
             
             <div className="flex gap-3">
               <button
-                onClick={() => setShowForm(true)}
+                onClick={handleFazerAgoraClick}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all"
               >
                 Fazer agora

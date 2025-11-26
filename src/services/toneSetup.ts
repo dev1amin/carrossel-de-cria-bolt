@@ -44,8 +44,7 @@ export const QUESTION_KEY_MAP: Record<number, string> = {
   10: 'brand_consistency',
   11: 'forbidden_topics',
   12: 'preferred_words',
-  13: 'forbidden_words',
-  14: 'logo_url'
+  13: 'forbidden_words'
 };
 
 // Mapeamento para campos demográficos do step 6 (antigo)
