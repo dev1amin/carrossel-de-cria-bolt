@@ -30,7 +30,7 @@ export interface CarouselResponse extends CarouselData {}
 
 // ==================== Element Types ====================
 
-export type ElementType = 'title' | 'subtitle' | 'background' | null;
+export type ElementType = 'title' | 'subtitle' | 'background' | 'nome' | 'arroba' | null;
 
 export interface ElementStyles {
   fontSize?: string;
@@ -104,8 +104,30 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     description: 'Creative and artistic',
     compatibility: 'video-image',
     compatibilityLabel: 'Vídeo + Imagem'
+  },
+  {
+    id: '7',
+    name: 'Template 7',
+    thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400',
+    description: 'Formato Reels/Twitter - 15 slides (9:16)',
+    compatibility: 'video-image',
+    compatibilityLabel: 'Vídeo + Imagem'
+  },
+  {
+    id: '8',
+    name: 'Template 8',
+    thumbnail: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=400',
+    description: 'Formato Reels/Twitter - 15 slides (9:16)',
+    compatibility: 'video-image',
+    compatibilityLabel: 'Vídeo + Imagem'
   }
 ];
+
+// Dimensões específicas por template (para templates com dimensões diferentes do padrão 1085x1354)
+export const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  '7': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
+  '8': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
+};
 
 // ==================== Queue Types ====================
 

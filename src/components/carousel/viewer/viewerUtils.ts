@@ -18,6 +18,42 @@ export const logb = (...a: any[]) => { if (LOG) console.log('[CV-BIND]', ...a); 
 export const isVideoUrl = (url: string): boolean => /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
 export const isImgurUrl = (url: string): boolean => url.includes('i.imgur.com');
 
+/** Detecta se uma imagem é logo/avatar (pequena, circular, ou com classes específicas) */
+export const isLogoOrAvatar = (img: HTMLImageElement, doc: Document): boolean => {
+  // Verifica se é uma URL do Imgur (geralmente são assets do template)
+  if (isImgurUrl(img.src)) return true;
+  
+  // Verifica classes comuns de avatar/logo
+  const classNames = img.className.toLowerCase();
+  if (classNames.includes('avatar') || classNames.includes('logo') || classNames.includes('profile') || classNames.includes('foto')) return true;
+  
+  // Verifica classes do pai
+  const parent = img.parentElement;
+  if (parent) {
+    const parentClasses = parent.className.toLowerCase();
+    if (parentClasses.includes('avatar') || parentClasses.includes('logo') || parentClasses.includes('profile') || parentClasses.includes('foto')) return true;
+  }
+  
+  // Verifica se é pequena e circular (típico de avatares)
+  const cs = doc.defaultView?.getComputedStyle(img);
+  const borderRadius = cs?.borderRadius || '';
+  const isRounded = borderRadius.includes('50%') || borderRadius.includes('9999') || parseInt(borderRadius) > 50;
+  
+  // Verifica tamanho - avatares geralmente são pequenos (< 150px)
+  const rect = img.getBoundingClientRect();
+  const isSmall = rect.width < 150 && rect.height < 150;
+  
+  // Se é pequena E arredondada, provavelmente é avatar
+  if (isSmall && isRounded) return true;
+  
+  // Verifica se a imagem tem tamanho fixo pequeno nos estilos
+  const width = parseInt(cs?.width || '0');
+  const height = parseInt(cs?.height || '0');
+  if (width > 0 && width < 150 && height > 0 && height < 150) return true;
+  
+  return false;
+};
+
 /** ========= Math ========= */
 export const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 export const computeCoverBleed = (natW: number, natH: number, contW: number, contH: number, bleedPx = 2) => {

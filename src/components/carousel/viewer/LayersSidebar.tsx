@@ -59,6 +59,7 @@ export const LayersSidebar: React.FC<LayersSidebarProps> = ({
       <div className="flex-1 overflow-y-auto">
         {slides.map((_, index) => {
           const conteudo = (carouselData as any).conteudos[index];
+          const dadosGerais = (carouselData as any).dados_gerais;
           const isExpanded = expandedLayers.has(index);
           const isFocused = focusedSlide === index;
           return (
@@ -115,6 +116,33 @@ export const LayersSidebar: React.FC<LayersSidebarProps> = ({
                     >
                       <Type className="w-4 h-4 text-gray-600" />
                       <span className="text-gray-700 text-xs">Subtitle</span>
+                    </button>
+                  )}
+                  {/* Nome e Arroba aparecem apenas no Slide 1, mas podem ser editados em qualquer slide */}
+                  {index === 0 && dadosGerais?.nome && (
+                    <button
+                      onClick={() => onElementClick(index, 'nome')}
+                      className={`w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-gray-100 transition-colors ${
+                        selectedElement.slideIndex === index && selectedElement.element === 'nome'
+                          ? 'bg-blue-50 border-l-2 border-blue-500'
+                          : ''
+                      }`}
+                    >
+                      <Type className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-700 text-xs">Nome</span>
+                    </button>
+                  )}
+                  {index === 0 && dadosGerais?.arroba && (
+                    <button
+                      onClick={() => onElementClick(index, 'arroba')}
+                      className={`w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-gray-100 transition-colors ${
+                        selectedElement.slideIndex === index && selectedElement.element === 'arroba'
+                          ? 'bg-blue-50 border-l-2 border-blue-500'
+                          : ''
+                      }`}
+                    >
+                      <Type className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-700 text-xs">Arroba</span>
                     </button>
                   )}
                 </div>

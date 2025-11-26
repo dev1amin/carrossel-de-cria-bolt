@@ -7,7 +7,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { X, Loader2, ZoomIn, ZoomOut, CircleSlash, PanelsTopLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TemplateConfig, AVAILABLE_TEMPLATES } from "../../types/carousel";
+import { TemplateConfig, AVAILABLE_TEMPLATES, TEMPLATE_DIMENSIONS } from "../../types/carousel";
 import { templateService, templateRenderer } from "../../services/carousel";
 import { TEMPLATE_PREVIEW_DATA } from "../../data/templatePreviews";
 
@@ -84,6 +84,11 @@ const MODAL_MAX_W_PX = 1200;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const round2 = (v: number) => Number(v.toFixed(2));
+
+// Retorna as dimensões do template (usa padrão ou específico do template)
+const getTemplateDimensions = (templateId: string): { width: number; height: number } => {
+  return TEMPLATE_DIMENSIONS[templateId] || { width: SLIDE_W, height: SLIDE_H };
+};
 
 function ZoomControls({
   zoom,
@@ -259,8 +264,9 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   // Bounds pan
   const getContentDims = useCallback(() => {
     const count = Math.max(1, slidesHtml.length);
-    const contentW = count * SLIDE_W + Math.max(0, count - 1) * GAP_X;
-    const contentH = SLIDE_H;
+    const dims = getTemplateDimensions(selectedTemplate.id);
+    const contentW = count * dims.width + Math.max(0, count - 1) * GAP_X;
+    const contentH = dims.height;
     const scaledW = contentW * zoom;
     const scaledH = contentH * zoom;
     const vp = viewportRef.current;
@@ -269,7 +275,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     const minX = Math.min(0, vpW - scaledW);
     const minY = Math.min(0, vpH - scaledH);
     return { minX, minY };
-  }, [slidesHtml.length, zoom]);
+  }, [slidesHtml.length, zoom, selectedTemplate.id]);
 
   const clampPan = useCallback((nx: number, ny: number) => {
     const { minX, minY } = getContentDims();
@@ -281,10 +287,11 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     const vp = viewportRef.current;
     if (!vp) return;
     const usable = vp.clientHeight;
-    const newZoom = clamp(usable / SLIDE_H, ZOOM_MIN, ZOOM_MAX);
+    const dims = getTemplateDimensions(selectedTemplate.id);
+    const newZoom = clamp(usable / dims.height, ZOOM_MIN, ZOOM_MAX);
     setZoom(round2(newZoom));
     setPan(clampPan(0, 0));
-  }, [clampPan]);
+  }, [clampPan, selectedTemplate.id]);
 
   // Centraliza os slides no viewport
   const centerSlides = useCallback(() => {
@@ -292,8 +299,9 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     if (!vp) return;
     
     const count = Math.max(1, slidesHtml.length);
-    const contentW = count * SLIDE_W + Math.max(0, count - 1) * GAP_X;
-    const contentH = SLIDE_H;
+    const dims = getTemplateDimensions(selectedTemplate.id);
+    const contentW = count * dims.width + Math.max(0, count - 1) * GAP_X;
+    const contentH = dims.height;
     
     const scaledW = contentW * zoom;
     const scaledH = contentH * zoom;
@@ -306,7 +314,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     
     const clamped = clampPan(centerX, centerY);
     setPan(clamped);
-  }, [zoom, slidesHtml.length, clampPan]);
+  }, [zoom, slidesHtml.length, clampPan, selectedTemplate.id]);
 
   // ResizeObserver para responsividade - não chama fitToHeight automaticamente
   useEffect(() => {
@@ -413,7 +421,8 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   if (!isOpen || !modalRootRef.current) return null;
 
   const count = Math.max(1, slidesHtml.length);
-  const contentW = count * SLIDE_W + Math.max(0, count - 1) * GAP_X;
+  const templateDimensions = getTemplateDimensions(selectedTemplate.id);
+  const contentW = count * templateDimensions.width + Math.max(0, count - 1) * GAP_X;
 
   const modal = (
     <AnimatePresence>
@@ -596,28 +605,31 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                         className="flex"
                         style={{
                           gap: GAP_X,
-                          height: SLIDE_H,
+                          height: getTemplateDimensions(selectedTemplate.id).height,
                           width: contentW,
                           marginTop: "34px",
                           marginLeft: "60px",
                           marginRight: "100px",
                         }}
                       >
-                        {slidesHtml.map((html, idx) => (
-                          <div
-                            key={idx}
-                            className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-gray-300"
-                            style={{ width: SLIDE_W, height: SLIDE_H, zIndex: 10000001 }}
-                          >
-                            <iframe
-                              title={`Slide ${idx + 1}`}
-                              srcDoc={html}
-                              className="w-full h-full pointer-events-none"
-                              sandbox="allow-scripts"
-                              style={{ zIndex: 10000002 }}
-                            />
-                          </div>
-                        ))}
+                        {slidesHtml.map((html, idx) => {
+                          const { width, height } = getTemplateDimensions(selectedTemplate.id);
+                          return (
+                            <div
+                              key={idx}
+                              className="relative shadow-lg rounded-lg overflow-hidden bg-white border border-gray-300"
+                              style={{ width, height, zIndex: 10000001 }}
+                            >
+                              <iframe
+                                title={`Slide ${idx + 1}`}
+                                srcDoc={html}
+                                className="w-full h-full pointer-events-none"
+                                sandbox="allow-scripts"
+                                style={{ zIndex: 10000002 }}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : (
                       !isLoadingPreview && (

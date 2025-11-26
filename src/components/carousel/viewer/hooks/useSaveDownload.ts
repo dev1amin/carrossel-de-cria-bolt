@@ -1,0 +1,277 @@
+/**
+ * Hook para gerenciar operações de salvamento e download do carrossel
+ */
+
+import { useCallback } from 'react';
+import type { CarouselData, ElementStyles } from '../../../../types/carousel';
+import { updateGeneratedContent } from '../../../../services/generatedContent';
+import { downloadSlidesAsPNG } from '../../../../services/carousel/download.service';
+import { applyStylesFromState } from './useSlideRender';
+
+export interface UseSaveDownloadParams {
+  data: CarouselData;
+  slides: string[];
+  renderedSlides: string[];
+  editedContent: Record<string, any>;
+  elementStyles: Record<string, ElementStyles>;
+  uploadedImages: Record<number, string>;
+  contentId: number | null | undefined;
+  iframeRefs: React.MutableRefObject<(HTMLIFrameElement | null)[]>;
+  
+  // Setters
+  setEditedContent: React.Dispatch<React.SetStateAction<Record<string, any>>>;
+  setUploadedImages: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  setHasUnsavedChanges: (value: boolean) => void;
+  setIsSaving: (value: boolean) => void;
+  
+  // Callbacks
+  addToast: (message: string, type: 'success' | 'error') => void;
+  onSaveSuccess?: () => void;
+}
+
+export function useSaveDownload({
+  data,
+  slides,
+  renderedSlides,
+  editedContent,
+  elementStyles,
+  uploadedImages,
+  contentId,
+  iframeRefs,
+  setEditedContent,
+  setUploadedImages,
+  setHasUnsavedChanges,
+  setIsSaving,
+  addToast,
+  onSaveSuccess,
+}: UseSaveDownloadParams) {
+  
+  /**
+   * Salva as alterações na API
+   */
+  const handleSave = useCallback(async () => {
+    console.log('💾 Iniciando salvamento...', { contentId });
+    
+    if (!contentId) {
+      addToast('Não é possível salvar: ID do conteúdo não encontrado.', 'error');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const PLACEHOLDER_IMAGE = "https://i.imgur.com/kFVf8q3.png";
+      
+      // Construir o objeto result com os dados atualizados
+      const updatedConteudos = data.conteudos.map((conteudo: any, index: number) => {
+        const titleKey = `${index}-title`;
+        const subtitleKey = `${index}-subtitle`;
+        const backgroundKey = `${index}-background`;
+        
+        // Criar cópia do conteúdo original
+        const updatedConteudo = { ...conteudo };
+        
+        // Atualizar título e subtítulo
+        updatedConteudo.title = editedContent[titleKey] ?? conteudo.title;
+        updatedConteudo.subtitle = editedContent[subtitleKey] ?? conteudo.subtitle;
+        
+        // Determinar qual imagem de fundo usar e reorganizar as imagens
+        const selectedBackground = editedContent[backgroundKey] || uploadedImages[index];
+        
+        if (selectedBackground) {
+          // Coletar todas as imagens disponíveis (excluindo placeholder)
+          const allImages = [
+            conteudo.imagem_fundo,
+            conteudo.imagem_fundo2,
+            conteudo.imagem_fundo3,
+            conteudo.imagem_fundo4,
+            conteudo.imagem_fundo5,
+            conteudo.imagem_fundo6,
+          ].filter(img => img && img !== PLACEHOLDER_IMAGE);
+          
+          if (allImages.includes(selectedBackground)) {
+            const otherImages = allImages.filter(img => img !== selectedBackground);
+            updatedConteudo.imagem_fundo = selectedBackground;
+            updatedConteudo.imagem_fundo2 = otherImages[0] || undefined;
+            updatedConteudo.imagem_fundo3 = otherImages[1] || undefined;
+            updatedConteudo.imagem_fundo4 = otherImages[2] || undefined;
+            updatedConteudo.imagem_fundo5 = otherImages[3] || undefined;
+            updatedConteudo.imagem_fundo6 = otherImages[4] || undefined;
+          } else {
+            updatedConteudo.imagem_fundo = selectedBackground;
+          }
+        } else {
+          const hasAnyImage = conteudo.imagem_fundo || conteudo.imagem_fundo2 || conteudo.imagem_fundo3;
+          if (!hasAnyImage) {
+            updatedConteudo.imagem_fundo = PLACEHOLDER_IMAGE;
+          }
+        }
+        
+        // Remove campos undefined para não poluir o JSON
+        Object.keys(updatedConteudo).forEach(key => {
+          if (updatedConteudo[key] === undefined) {
+            delete updatedConteudo[key];
+          }
+        });
+        
+        return updatedConteudo;
+      });
+
+      // Organizar os estilos por slide
+      const styles: Record<string, any> = {};
+      
+      Object.entries(elementStyles).forEach(([key, styleObj]) => {
+        const [slideIndexStr, elementType] = key.split('-');
+        const slideIndex = parseInt(slideIndexStr, 10);
+        
+        if (!styles[slideIndex]) {
+          styles[slideIndex] = {};
+        }
+        
+        styles[slideIndex][elementType] = styleObj;
+      });
+
+      const result = {
+        dados_gerais: data.dados_gerais,
+        conteudos: updatedConteudos,
+        styles: styles,
+      };
+
+      // Log específico para posições de imagens salvas
+      const positionStyles = Object.entries(elementStyles)
+        .filter(([key]) => key.includes('-background'))
+        .map(([key, style]) => ({
+          key,
+          objectPosition: style.objectPosition,
+          backgroundPositionX: style.backgroundPositionX,
+          backgroundPositionY: style.backgroundPositionY
+        }));
+      
+      if (positionStyles.length > 0) {
+        console.log('📐 Posições de imagens/vídeos sendo salvas:', positionStyles);
+      }
+
+      console.log('💾 Enviando para API:', { contentId, result });
+      
+      const response = await updateGeneratedContent(contentId, { result });
+      
+      console.log('✅ Resposta da API:', response);
+      
+      // Limpa os estados de edição pois os dados foram salvos
+      setEditedContent({});
+      setUploadedImages({});
+      setHasUnsavedChanges(false);
+      
+      addToast('Alterações salvas com sucesso!', 'success');
+      
+      // Notificar o componente pai para recarregar a galeria
+      if (onSaveSuccess) {
+        onSaveSuccess();
+      }
+    } catch (error) {
+      console.error('❌ Erro ao salvar alterações:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      addToast(`Erro ao salvar: ${errorMessage}`, 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    contentId, 
+    data, 
+    editedContent, 
+    elementStyles, 
+    uploadedImages, 
+    addToast, 
+    onSaveSuccess,
+    setEditedContent,
+    setUploadedImages,
+    setHasUnsavedChanges,
+    setIsSaving,
+  ]);
+
+  /**
+   * Faz o download de todos os slides como PNG
+   */
+  const handleDownloadAll = useCallback(async () => {
+    console.log('🎯 handleDownloadAll chamado - iniciando processo de download');
+    try {
+      console.log('📥 Iniciando download...');
+      console.log('📊 Número de slides originais:', slides.length);
+      console.log('📊 Número de renderedSlides:', renderedSlides.length);
+
+      // 1. Aplica todos os estilos salvos em todos os iframes antes de capturar o srcdoc
+      iframeRefs.current.forEach((ifr, slideIdx) => {
+        if (ifr) {
+          applyStylesFromState(ifr, slideIdx, editedContent, elementStyles);
+        }
+      });
+
+      // 2. Atualiza o srcdoc de cada iframe com o HTML atual do DOM (após aplicar estilos)
+      iframeRefs.current.forEach((ifr) => {
+        if (ifr && ifr.contentDocument) {
+          const doc = ifr.contentDocument;
+          const html = doc.documentElement.outerHTML;
+          ifr.srcdoc = html;
+        }
+      });
+
+      // 3. Captura o srcDoc de cada iframe
+      const capturedSlides: string[] = [];
+
+      for (let i = 0; i < iframeRefs.current.length; i++) {
+        const ifr = iframeRefs.current[i];
+        if (!ifr) {
+          console.warn(`⚠️ Iframe ${i} não encontrado`);
+          continue;
+        }
+
+        const srcDocHTML = ifr.srcdoc;
+        
+        if (!srcDocHTML) {
+          console.warn(`⚠️ srcDoc não disponível para o slide ${i + 1}, tentando usar renderedSlides`);
+          if (renderedSlides[i]) {
+            capturedSlides.push(renderedSlides[i]);
+            console.log(`✅ Usando renderedSlides para slide ${i + 1}`);
+            continue;
+          } else {
+            console.warn(`⚠️ renderedSlides também não disponível para slide ${i + 1}`);
+            continue;
+          }
+        }
+        
+        const iframeHTML = `<iframe srcdoc="${srcDocHTML.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
+        capturedSlides.push(iframeHTML);
+        console.log(`✅ Capturado iframe completo do slide ${i + 1}`);
+      }
+
+      console.log('📊 Slides capturados:', capturedSlides.length);
+
+      // Se nenhum slide foi capturado dos iframes, tenta criar iframes dos renderedSlides
+      if (capturedSlides.length === 0 && renderedSlides.length > 0) {
+        console.log('🔄 Nenhum slide capturado dos iframes, criando iframes dos renderedSlides');
+        renderedSlides.forEach((slide, i) => {
+          const iframeHTML = `<iframe srcdoc="${slide.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
+          capturedSlides.push(iframeHTML);
+        });
+        console.log('📊 Iframes criados dos renderedSlides:', capturedSlides.length);
+      }
+
+      if (capturedSlides.length === 0) {
+        throw new Error('Nenhum slide capturado para download');
+      }
+      
+      // Usa o serviço de download
+      console.log('📥 Iniciando download de', capturedSlides.length, 'slides...');
+      await downloadSlidesAsPNG(capturedSlides, (current, total) => {
+        console.log(`📊 Progresso: ${current}/${total}`);
+      });
+      
+      addToast(`${capturedSlides.length} slides baixados com sucesso!`, 'success');
+    } catch (error) {
+      console.error('❌ Erro ao baixar slides:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      addToast(`Erro ao baixar slides: ${errorMessage}`, 'error');
+    }
+  }, [slides, renderedSlides, editedContent, elementStyles, iframeRefs, addToast]);
+
+  return { handleSave, handleDownloadAll };
+}

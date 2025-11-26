@@ -479,5 +479,237 @@ export const TEMPLATE_PREVIEW_DATA: Record<string, any> = {
       "template": "6",
       "foto_perfil": "https://i.imgur.com/Burtq0n.png"
     }
+  },
+
+  '7': {
+    "dados_gerais": {
+      "nome": "Workez AI",
+      "arroba": "workez.ai",
+      "template": "7",
+      "foto_perfil": "https://i.imgur.com/Burtq0n.png"
+    },
+    "conteudos": [
+      {
+        "title": "Você abre o Waze todo dia e em segundos sabe onde ir, qto tempo levar e qual rua evitar.",
+        "subtitle": "Mas aposto que vc não sabe como esse app foi criado. E quando descobrir, vai entender por que o Google pagou US$ 1,3 bilhão nele.\nSegue.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2"
+      },
+      {
+        "title": "",
+        "subtitle": "Era 2007 e 3 caras em Israel tiveram uma ideia (inicialmente) maluca: vamos criar o melhor GPS do mundo?\nDetalhe: Google Maps já existia, TomTom dominava o mercado e GPS era basicamente uma commodity. E eles não tinham nenhum mapa. Zero ruas, zero dados..",
+        "imagem_fundo": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1451187580459-43490279c0fa"
+      },
+      {
+        "title": "",
+        "subtitle": "Esses 3 eram Uri Levine, Ehud Shabtai e Amir Shinar. Uri tinha 42 anos e já tinha falhado em outra startup. Ehud era desenvolvedor e Amir tbm.\nNenhum deles era cartógrafo e nenhum tinha experiência em mapas.\nMas tinham uma tese radical e trabalhavam duro.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
+      },
+      {
+        "title": "Essa tese era simples: o motorista na sua frente sabe algo que você precisa saber.",
+        "subtitle": "Ele tá preso no trânsito? Vc quer saber.\nTem radar à frente? Vc quer saber.\nRua tá bloqueada? Vc quer saber.\n\nMas como capturar isso? Crowdsourcing.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1502877338535-766e1452684a",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d"
+      },
+      {
+        "title": "Quando o Waze lançou, o mapa era literalmente em branco.",
+        "subtitle": "Você abria o app e via: nada. Uma tela branca igual essa da imagem.\nNenhuma rua, nenhuma indicação, porcaria nenhuma. Como isso ia funcionar?\nSimples: os próprios usuárioos iam criar o mapa.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
+      },
+      {
+        "title": "",
+        "subtitle": "Funcionou (e ainda funciona) assim:\nVc dirige com o app aberto e o GPS captura sua rota. Se 10 pessoas passam pela mesma rua, o app identifica:  isso é uma rua. Se 100 pessoas viram à direita ali, mas ninguém vira à esquerda: Converão proibida... e por aí vai, vc já entendeu. O algoritmo criava o mapa sozinho.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1488646953014-85cb44e25828"
+      },
+      {
+        "title": "Mas não era só o mapa.",
+        "subtitle": "Trânsito? Se alguém tá devagar, há congestionamento.\n\nRadar? Usuário reporta, todo mundo é avisado.\n\nAcidente? Alguém marca, app redireciona os outros.\n\nPor isso ele fica te perguntando: Ainda existe carro parado? E aí vc pode confirmar ou negar a info.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1530099486328-e021101a494a",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1502877338535-766e1452684a"
+      },
+      {
+        "title": "Quanto mais gente usava, melhor o mapa ficava.",
+        "subtitle": "Porém... no começo, ninguém usava. Outros apps eram mais completos e o mapa tava uma 💩.\n\nEntão Uri e a equipe fizeram algo bizarro: começaram a criar o mapa manualmente até ficar bom o suficiente.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1552664730-d307ca884978",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8"
+      },
+      {
+        "title": "",
+        "subtitle": "Uri Levine falava: Bom o suficiente, e ainda grátis? Imbatível.\n\nTomTom cobrava caro. Google Maps era estático (não mostrava trânsito em tempo real).\n\nWaze era gratuito e ainda mostrava onde tinha trânsito agora. Não precisava ser perfeito, só precisava ser útil.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+      },
+      {
+        "title": "",
+        "subtitle": "Em 6 meses, o mapa de uma cidade ficava completo.\n\nJaneiro: mapa vazio.\nJunho: mapa completo, ruas, nomes, tudo.\n\nSem pagar ninguém, um negócio infinitamente escalável. Realmente imbatível.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1524508762098-fd966ffb6ef9",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
+      },
+      {
+        "title": "",
+        "subtitle": "Google não resistiu e desceu a boleta, 1.3bi.\n\nComprou um modelo alimentado por + 150 milhões de usuários que continuavam a gerar dados em tempo real. Ninguém connseguia replicar isso do zero.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1519003722824-194d4455a60c"
+      },
+      {
+        "title": "",
+        "subtitle": "Hj, toda vez que você abre o Waze: Vc tá alimentando o algoritmo, atualizando o mapa, reportando trânsito…\n\nVc é praticamente um funcionário do Waze e não recebe nada hahah mas você ganha: tempo economizado, rota melhor, radar avisado. Troca justa, pô.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1530099486328-e021101a494a"
+      },
+      {
+        "title": "",
+        "subtitle": "Toda essa história mostra que vc não precisa inventar tudo. Basta usar e/ou ouvir seus clientes.\n\nWikipedia não escreve artigos. Usuários escrevem. YouTube não cria vídeo. Criadores criam. Airbnb não tem imóvel. Anfritriões têm. Waze não mapeia rua. Você mapeia.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1552664730-d307ca884978",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
+      },
+      {
+        "title": "Foi pensando a entender o que está por trás de negócios assim e traduzir para seu negócio que criamos o G4 Gestão e Estratégia.",
+        "subtitle": "São 4 dias presenciais comigo, Alfredo e Nardon, onde você aprende a criar sistemas escaláveis, onde clientes geram valor, e efeito de rede se torna vantagem competitiva.\n\nPassamos por 7 módulos: estratégia, comando, escala, legado e aliança. Depois, 12 meses de acompanhamento.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
+      },
+      {
+        "title": "A próxima turma tem vagas limitadas porque o formato é presencial.",
+        "subtitle": "Se você fatura entre R$ 10M e R$ 500M por ano e quer construir um negócio onde clientes fazem o trabalho pesado de graça (e ficam felizes com isso), tem um processo seletivo no link da bio.\n\nSão as últimas vagas do ano.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+      }
+    ]
+  },
+
+  '8': {
+    "dados_gerais": {
+      "nome": "Workez AI",
+      "arroba": "workez.ai",
+      "template": "8",
+      "foto_perfil": "https://i.imgur.com/Burtq0n.png"
+    },
+    "conteudos": [
+      {
+        "title": "A GenZ ficou bolada quando percebeu que essa atriz sumiu da Disney...",
+        "subtitle": "Mas mal sabiam, enquanto uns se matavam pra ficar famosos, foi ela quem abriu mão de tudo para entrar no MIT e fundar uma startup espacial avaliada em milhões de doletas americanas.\nSe liga nessa história.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1485846234645-a62644f84728",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba"
+      },
+      {
+        "title": "",
+        "subtitle": "Essa aqui é a Bridgit Mendler.\nComeçando sua carreira como atriz, ela ficou famosa por estrelar alguns dos principais shows da Disney nos anos 2010.\nA menina era um talento nato, mas…\nem 2016, no auge da fama, ela decidiu sumir pra seguir um plano que ninguém entendeu.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1516714819001-8ee7a13b71d7",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1478720568477-152d9b164e26",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+      },
+      {
+        "title": "",
+        "subtitle": "Tendo a influência dos pais cientistas, enquanto o público se perguntava por que ela sumiu, Bridgit estava em Boston, entrando no MIT.\n\nAli, começou a estudar mídia, tecnologia e engenharia. E, anos depois, também se formaria em Direito em Harvard.\n\nImagina ser primo dela?",
+        "imagem_fundo": "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f"
+      },
+      {
+        "title": "",
+        "subtitle": "Durante a pandemia, ela e o marido, Griffin Cleverly, engenheiro aeroespacial, decidiram brincar de cientistas em casa.\nCom peças da Home Depot, construíram uma antena no quintal.\nE conseguiram captar uma imagem do Lago Michigan direto do espaço. Ali começou algo gigante.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1516849841032-87cbac4d88f7",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa"
+      },
+      {
+        "title": "",
+        "subtitle": "O que era um experimento de casal virou a semente da Northwood Space, uma empresa que promete conectar qualquer satélite à Terra em tempo real.\nE resolver um dos maiores gargalos da nova corrida espacial.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1516849677043-ef67c9557e16",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1454789548928-9efd52dc4031"
+      },
+      {
+        "title": "Pra você entender: existem hoje mais de 10 mil satélites orbitando a Terra.",
+        "subtitle": "Mas o número de antenas capazes de se comunicar com eles ainda é ridiculamente pequeno.\nResultado? Dados presos no espaço.\nE bilhões perdidos em eficiência.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1446776653964-20c1d3a81b06",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1516849841032-87cbac4d88f7"
+      },
+      {
+        "title": "",
+        "subtitle": "A Northwood criou o Portal, uma antena modular capaz de se instalar em qualquer lugar do planeta e conectar dezenas de satélites ao mesmo tempo.\n10x mais rápida, 10x mais barata.\nO tipo de disrupção que faz gigante tremer. E tem mais.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1516849677043-ef67c9557e16",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a"
+      },
+      {
+        "title": "",
+        "subtitle": "Em 2024, a empresa recebeu investimento do Founders Fund e da Andreessen Horowitz.\nEm 2025, levantou mais de US$ 30 milhões.\nTudo isso com uma CEO que, há poucos anos, cantava hits da Disney. Parece loucura, não é?",
+        "imagem_fundo": "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3"
+      },
+      {
+        "title": "Bridgit não é ex-atriz que virou empreendedora.",
+        "subtitle": "É engenheira, advogada e CEO de uma das startups mais promissoras do setor aeroespacial.\nFalar que ela era só uma atriz da Disney é resumir muito sua história, que literalmente, está só começando.\nOlha os próximos planos dela:",
+        "imagem_fundo": "https://images.unsplash.com/photo-1573164574511-73c773193279",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1485846234645-a62644f84728",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba"
+      },
+      {
+        "title": "",
+        "subtitle": "Hoje, a Northwood já fabrica suas próprias antenas na Califórnia e pretende lançar sites em todos os continentes até o fim do ano.\nEnquanto isso, Bridgit se prepara para subir ao palco do TechCrunch Disrupt ao lado de gigantes da SpaceX e da Anduril. Calma, que não acabou.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1451187580459-43490279c0fa",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1516849841032-87cbac4d88f7"
+      },
+      {
+        "title": "Agora, segura essa: ela começou com uma antena feita no quintal com peças de loja de ferragem.",
+        "subtitle": "Do improviso nasceu um negócio que pode redefinir a infraestrutura de comunicação global.\nE agora vai o playbook fresquinho, pra você aprender com essa gênia que saiu de Hollywood.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1516849677043-ef67c9557e16"
+      },
+      {
+        "title": "Anota essas 5 ideias:",
+        "subtitle": "1️⃣ Foco em resolver um problema real, não em fazer a mesma coisa que todo mundo com uma embalagem nova.\n2️⃣ Conhecimento técnico importa muito. Use sua formação para criar novo. Ela veio do MIT, lembra?\n3️⃣ Tenha uma CURIOSIDADE INSANA!",
+        "imagem_fundo": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1552664730-d307ca884978",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
+      },
+      {
+        "title": "",
+        "subtitle": "4️⃣ Preste atenção em detalhes. Enquanto o mundo olhava pros foguetes, ela construiu o que faz os foguetes funcionarem.\n5️⃣ Grandes ideias começam pequenas e às vezes até no quintal de casa.\nCurtiu? Pensa o seguinte...  ",
+        "imagem_fundo": "https://images.unsplash.com/photo-1498243691581-b145c3f54a5a",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f"
+      },
+      {
+        "title": "A Bridgit é a prova viva de que reinventar sua trajetória é possível.",
+        "subtitle": "De estrela teen a cientista do MIT.\nDe Hollywood ao espaço.\nE tudo isso guiado por uma ideia simmples: o futuro precisa de infraestrutura.",
+        "imagem_fundo": "https://images.unsplash.com/photo-1516714819001-8ee7a13b71d7",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1478720568477-152d9b164e26",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1"
+      },
+      {
+        "title": "Moral da história?",
+        "subtitle": "Não é sobre fama, sorte ou talento, é sobre ter coragem de aprender tudo de novo, mesmo quando todo mundo acha que você já chegou lá.\nE, se ela conseguiu transformar antenas em bilhões, o que te impede?",
+        "imagem_fundo": "https://images.unsplash.com/photo-1573164574511-73c773193279",
+        "imagem_fundo2": "https://images.unsplash.com/photo-1485846234645-a62644f84728",
+        "imagem_fundo3": "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e"
+      }
+    ]
   }
 };
