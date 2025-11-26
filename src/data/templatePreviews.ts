@@ -489,112 +489,112 @@ export const TEMPLATE_PREVIEW_DATA: Record<string, any> = {
       "foto_perfil": "https://i.imgur.com/Burtq0n.png"
     },
     "conteudos": [
-      {
-        "title": "Você abre o Waze todo dia e em segundos sabe onde ir, qto tempo levar e qual rua evitar.",
-        "subtitle": "Mas aposto que vc não sabe como esse app foi criado. E quando descobrir, vai entender por que o Google pagou US$ 1,3 bilhão nele.\nSegue.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2"
-      },
-      {
-        "title": "",
-        "subtitle": "Era 2007 e 3 caras em Israel tiveram uma ideia (inicialmente) maluca: vamos criar o melhor GPS do mundo?\nDetalhe: Google Maps já existia, TomTom dominava o mercado e GPS era basicamente uma commodity. E eles não tinham nenhum mapa. Zero ruas, zero dados..",
-        "imagem_fundo": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1451187580459-43490279c0fa"
-      },
-      {
-        "title": "",
-        "subtitle": "Esses 3 eram Uri Levine, Ehud Shabtai e Amir Shinar. Uri tinha 42 anos e já tinha falhado em outra startup. Ehud era desenvolvedor e Amir tbm.\nNenhum deles era cartógrafo e nenhum tinha experiência em mapas.\nMas tinham uma tese radical e trabalhavam duro.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
-      },
-      {
-        "title": "Essa tese era simples: o motorista na sua frente sabe algo que você precisa saber.",
-        "subtitle": "Ele tá preso no trânsito? Vc quer saber.\nTem radar à frente? Vc quer saber.\nRua tá bloqueada? Vc quer saber.\n\nMas como capturar isso? Crowdsourcing.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1502877338535-766e1452684a",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d"
-      },
-      {
-        "title": "Quando o Waze lançou, o mapa era literalmente em branco.",
-        "subtitle": "Você abria o app e via: nada. Uma tela branca igual essa da imagem.\nNenhuma rua, nenhuma indicação, porcaria nenhuma. Como isso ia funcionar?\nSimples: os próprios usuárioos iam criar o mapa.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
-      },
-      {
-        "title": "",
-        "subtitle": "Funcionou (e ainda funciona) assim:\nVc dirige com o app aberto e o GPS captura sua rota. Se 10 pessoas passam pela mesma rua, o app identifica:  isso é uma rua. Se 100 pessoas viram à direita ali, mas ninguém vira à esquerda: Converão proibida... e por aí vai, vc já entendeu. O algoritmo criava o mapa sozinho.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1488646953014-85cb44e25828"
-      },
-      {
-        "title": "Mas não era só o mapa.",
-        "subtitle": "Trânsito? Se alguém tá devagar, há congestionamento.\n\nRadar? Usuário reporta, todo mundo é avisado.\n\nAcidente? Alguém marca, app redireciona os outros.\n\nPor isso ele fica te perguntando: Ainda existe carro parado? E aí vc pode confirmar ou negar a info.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1530099486328-e021101a494a",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1502877338535-766e1452684a"
-      },
-      {
-        "title": "Quanto mais gente usava, melhor o mapa ficava.",
-        "subtitle": "Porém... no começo, ninguém usava. Outros apps eram mais completos e o mapa tava uma 💩.\n\nEntão Uri e a equipe fizeram algo bizarro: começaram a criar o mapa manualmente até ficar bom o suficiente.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1552664730-d307ca884978",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8"
-      },
-      {
-        "title": "",
-        "subtitle": "Uri Levine falava: Bom o suficiente, e ainda grátis? Imbatível.\n\nTomTom cobrava caro. Google Maps era estático (não mostrava trânsito em tempo real).\n\nWaze era gratuito e ainda mostrava onde tinha trânsito agora. Não precisava ser perfeito, só precisava ser útil.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
-      },
-      {
-        "title": "",
-        "subtitle": "Em 6 meses, o mapa de uma cidade ficava completo.\n\nJaneiro: mapa vazio.\nJunho: mapa completo, ruas, nomes, tudo.\n\nSem pagar ninguém, um negócio infinitamente escalável. Realmente imbatível.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1524508762098-fd966ffb6ef9",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
-      },
-      {
-        "title": "",
-        "subtitle": "Google não resistiu e desceu a boleta, 1.3bi.\n\nComprou um modelo alimentado por + 150 milhões de usuários que continuavam a gerar dados em tempo real. Ninguém connseguia replicar isso do zero.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1519003722824-194d4455a60c"
-      },
-      {
-        "title": "",
-        "subtitle": "Hj, toda vez que você abre o Waze: Vc tá alimentando o algoritmo, atualizando o mapa, reportando trânsito…\n\nVc é praticamente um funcionário do Waze e não recebe nada hahah mas você ganha: tempo economizado, rota melhor, radar avisado. Troca justa, pô.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1530099486328-e021101a494a"
-      },
-      {
-        "title": "",
-        "subtitle": "Toda essa história mostra que vc não precisa inventar tudo. Basta usar e/ou ouvir seus clientes.\n\nWikipedia não escreve artigos. Usuários escrevem. YouTube não cria vídeo. Criadores criam. Airbnb não tem imóvel. Anfritriões têm. Waze não mapeia rua. Você mapeia.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1552664730-d307ca884978",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
-      },
-      {
-        "title": "Foi pensando a entender o que está por trás de negócios assim e traduzir para seu negócio que criamos o G4 Gestão e Estratégia.",
-        "subtitle": "São 4 dias presenciais comigo, Alfredo e Nardon, onde você aprende a criar sistemas escaláveis, onde clientes geram valor, e efeito de rede se torna vantagem competitiva.\n\nPassamos por 7 módulos: estratégia, comando, escala, legado e aliança. Depois, 12 meses de acompanhamento.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
-      },
-      {
-        "title": "A próxima turma tem vagas limitadas porque o formato é presencial.",
-        "subtitle": "Se você fatura entre R$ 10M e R$ 500M por ano e quer construir um negócio onde clientes fazem o trabalho pesado de graça (e ficam felizes com isso), tem um processo seletivo no link da bio.\n\nSão as últimas vagas do ano.",
-        "imagem_fundo": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7",
-        "imagem_fundo2": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
-        "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
-      }
-    ]
+    {
+      "title": "Você abre o Waze e instantaneamente sabe por onde ir, quanto vai demorar e o que evitar.",
+      "subtitle": "O que quase ninguém entende é como isso foi construído. E quando você entende, o cheque de US$ 1,3 bilhão do Google deixa de parecer exagero.\nContinua.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2"
+    },
+    {
+      "title": "",
+      "subtitle": "Em 2007, três caras em Israel decidiram disputar um mercado teoricamente morto.\nGoogle Maps já existia. TomTom dominava. GPS era commodity.\nDetalhe crítico: eles não tinham mapa nenhum. Zero ruas. Zero dados. Nada.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1488646953014-85cb44e25828",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1451187580459-43490279c0fa"
+    },
+    {
+      "title": "",
+      "subtitle": "Os três: Uri Levine, Ehud Shabtai e Amir Shinar.\nUri já tinha passado dos 40 e já tinha quebrado antes.\nEhud e Amir eram devs. Nenhum era especialista em mapas.\nExperiência irrelevante. Tese certa.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
+    },
+    {
+      "title": "A tese era brutalmente simples:",
+      "subtitle": "O motorista à sua frente sabe algo que você precisa saber.\n\nSe ele travou, tem trânsito.\nSe freou do nada, tem radar.\nSe desviou, algo tá errado.\n\nO problema nunca foi a informação. Foi capturar ela. A resposta: crowdsourcing.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1502877338535-766e1452684a",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d"
+    },
+    {
+      "title": "O Waze nasceu com o mapa vazio.",
+      "subtitle": "Literalmente vazio.\nVocê abria o app e não via rua, nome, rota. Nada.\nQualquer produto tradicional morreria aí.\nA diferença: eles decidiram que o usuário construiria tudo.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
+    },
+    {
+      "title": "",
+      "subtitle": "Funciona assim:\nUsuários dirigem, o GPS coleta trajetos.\nRepetição vira rua.\nPadrão de curva vira regra.\nAusência de movimento vira proibição.\n\nO algoritmo não desenhava o mapa. As pessoas desenhavam sem perceber.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1519003722824-194d4455a60c",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1488646953014-85cb44e25828"
+    },
+    {
+      "title": "Mapa era só o começo.",
+      "subtitle": "Trânsito surge do comportamento.\nRadar surge do relato.\nAcidente surge do alerta.\n\nPor isso o app insiste em confirmar eventos.\nCada clique seu melhora o sistema pra todos.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1530099486328-e021101a494a",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1502877338535-766e1452684a"
+    },
+    {
+      "title": "O paradoxo:",
+      "subtitle": "Quanto mais gente usava, melhor ficava.\nMas ninguém queria usar porque ainda era ruim.\n\nSolução nada romântica: o time mapeou manualmente até ficar aceitável.\nNão perfeito. Aceitável.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1552664730-d307ca884978",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8"
+    },
+    {
+      "title": "",
+      "subtitle": "Uri repetia uma ideia-chave:\n\nBom o suficiente + gratuito vence perfeito + caro.\n\nTomTom cobrava.\nGoogle Maps não reagia em tempo real.\nWaze resolvia o agora.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+    },
+    {
+      "title": "",
+      "subtitle": "Em seis meses:\nMapa inexistente vira mapa completo.\nRuas, nomes, regras.\n\nSem contratar cartógrafo.\nSem time inchado.\nEscala absurda.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1524508762098-fd966ffb6ef9",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1557318041-1ce374d55ebf",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1603791440384-56cd371ee9a7"
+    },
+    {
+      "title": "",
+      "subtitle": "O Google entendeu rápido.\nPagou US$ 1,3 bilhão por um sistema vivo, alimentado por mais de 150 milhões de usuários.\n\nNenhuma empresa consegue copiar isso do zero.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1573804633927-bfcbcd909acd",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1519003722824-194d4455a60c"
+    },
+    {
+      "title": "",
+      "subtitle": "Hoje, toda vez que você abre o Waze:\nVocê treina o algoritmo.\nAtualiza o mapa.\nConfirma eventos.\n\nVocê trabalha de graça.\nEm troca: tempo, eficiência e menos stress.\nNegócio justo.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1483791424735-e9ad0209eea2",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1530099486328-e021101a494a"
+    },
+    {
+      "title": "",
+      "subtitle": "Negócios vencedores não produzem tudo.\nEles criam sistemas onde usuários produzem.\n\nWikipedia não escreve.\nYouTube não grava.\nAirbnb não constrói.\nWaze não mapeia.\nVocê faz o trabalho.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1552664730-d307ca884978",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f"
+    },
+    {
+      "title": "Foi entendendo arquiteturas como essa que criamos o G4 Gestão e Estratégia.",
+      "subtitle": "Quatro dias presenciais comigo, Alfredo e Nardon.\nFoco obsessivo em sistemas escaláveis, efeito de rede e vantagem estrutural.\n\nDepois: 12 meses de acompanhamento.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1542744173-8e7e53415bb0",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1531206715517-5c0ba140b2b8",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
+    },
+    {
+      "title": "Formato presencial limita vagas.",
+      "subtitle": "Se você fatura entre R$10M e R$500M e quer parar de crescer na força bruta,\nexiste um processo seletivo no link da bio.\n\nÚltimas vagas do ano.",
+      "imagem_fundo": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7",
+      "imagem_fundo2": "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d",
+      "imagem_fundo3": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d"
+    }
+  ]
   },
 
   '8': {
