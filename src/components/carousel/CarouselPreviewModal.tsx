@@ -4,6 +4,7 @@ import { X, Edit, Save, MessageCircle, Loader2, ZoomIn, ZoomOut } from 'lucide-r
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CarouselData } from '../../types/carousel';
 import { templateService, templateRenderer } from '../../services/carousel';
+import { TEMPLATE_DIMENSIONS } from '../../types/carousel';
 
 interface CarouselPreviewModalProps {
   isOpen: boolean;
@@ -27,6 +28,11 @@ const MODAL_MAX_H_PX = 860;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 const round2 = (v: number) => Number(v.toFixed(2));
+
+// Retorna as dimensões do template (usa padrão ou específico do template)
+const getTemplateDimensions = (templateId: string): { width: number; height: number } => {
+  return TEMPLATE_DIMENSIONS[templateId] || { width: SLIDE_W, height: SLIDE_H };
+};
 
 function ZoomControls({
   zoom,

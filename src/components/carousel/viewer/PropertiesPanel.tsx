@@ -172,14 +172,19 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {(selectedElement.element === 'title' || selectedElement.element === 'subtitle') && (
+            {(selectedElement.element === 'title' || selectedElement.element === 'subtitle' || selectedElement.element === 'nome' || selectedElement.element === 'arroba') && (
               <>
                 <div>
                   <label className="text-neutral-400 text-xs mb-2 block font-medium">Text Content</label>
                   <textarea
                     className="w-full bg-white border border-gray-300 rounded px-3 py-2 text-gray-900 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    rows={selectedElement.element === 'title' ? 4 : 3}
+                    rows={selectedElement.element === 'title' ? 4 : (selectedElement.element === 'nome' || selectedElement.element === 'arroba' ? 2 : 3)}
                     value={(() => {
+                      // Nome e arroba vêm de dados_gerais, não de conteudos
+                      if (selectedElement.element === 'nome' || selectedElement.element === 'arroba') {
+                        const defaultValue = data.dados_gerais?.[selectedElement.element] || '';
+                        return editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? defaultValue;
+                      }
                       const v = data.conteudos[selectedElement.slideIndex]?.[selectedElement.element] || '';
                       return editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? v;
                     })()}
