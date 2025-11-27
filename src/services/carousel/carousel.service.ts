@@ -1,5 +1,6 @@
 import { getCarouselConfig } from '../../config/carousel';
 import { CarouselResponse } from '../../types/carousel';
+import type { GenerationOptions } from '../../components/carousel/TemplateSelectionModal';
 
 interface GenerateCarouselParams {
   code: string;
@@ -19,6 +20,14 @@ interface GenerateCarouselParams {
     niche: string;
     type: 'news';
   };
+  // New generation options
+  content_type?: string;
+  screen_count?: number;
+  description_length?: string;
+  dimension?: string;
+  has_cta?: boolean;
+  cta_type?: string;
+  cta_intention?: string;
 }
 
 export async function generateCarousel(
@@ -26,7 +35,8 @@ export async function generateCarousel(
   templateId?: string, 
   jwtToken?: string, 
   postId?: number,
-  newsData?: GenerateCarouselParams['news_data']
+  newsData?: GenerateCarouselParams['news_data'],
+  generationOptions?: GenerationOptions
 ): Promise<CarouselResponse[]> {
   const config = getCarouselConfig();
   const webhookUrl = config.webhook.generateCarousel;
@@ -49,7 +59,28 @@ export async function generateCarousel(
     requestBody.news_data = newsData;
   }
 
+  // Add generation options if provided
+  if (generationOptions) {
+    console.log('📋 Generation options received:', generationOptions);
+    requestBody.content_type = generationOptions.contentType;
+    requestBody.screen_count = generationOptions.screenCount;
+    requestBody.description_length = generationOptions.descriptionLength;
+    requestBody.dimension = generationOptions.dimension;
+    requestBody.has_cta = generationOptions.hasCTA;
+    
+    if (generationOptions.ctaType) {
+      requestBody.cta_type = generationOptions.ctaType;
+    }
+    
+    if (generationOptions.ctaIntention) {
+      requestBody.cta_intention = generationOptions.ctaIntention;
+    }
+  } else {
+    console.log('⚠️ No generation options provided');
+  }
+
   console.log('📤 generateCarousel request:', requestBody);
+  console.log('📤 Full request body JSON:', JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(webhookUrl, {

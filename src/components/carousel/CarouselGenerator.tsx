@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import CarouselViewer from './viewer/CarouselViewer';
-import TemplateSelectionModal from './TemplateSelectionModal';
+import TemplateSelectionModal, { GenerationOptions } from './TemplateSelectionModal';
 import GenerationQueue from './GenerationQueue';
 import { useCarousel } from '../../hooks/carousel';
 
@@ -33,9 +33,9 @@ const CarouselGenerator: React.FC<CarouselGeneratorProps> = ({
     }
   };
 
-  const handleSelectTemplate = async (templateId: string) => {
+  const handleSelectTemplate = async (templateId: string, options?: GenerationOptions) => {
     try {
-      await handleGenerateCarousel(postCode, templateId);
+      await handleGenerateCarousel(postCode, templateId, options);
     } catch (error) {
       console.error('Error generating carousel:', error);
     }

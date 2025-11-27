@@ -11,7 +11,7 @@ import { ToneSetupModal } from '../components/ToneSetupModal';
 import { getNews } from '../services/news';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
-import type { GenerationQueueItem } from '../carousel';
+import type { GenerationQueueItem, GenerationOptions } from '../carousel';
 import {
   templateService,
   templateRenderer,
@@ -119,7 +119,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
     // If tone setup is not needed, the modal will be opened by the NewsPostCard component
   };
 
-  const handleGenerateCarousel = async (newsData: NewsItem, templateId: string) => {
+  const handleGenerateCarousel = async (newsData: NewsItem, templateId: string, options?: GenerationOptions) => {
     // Check if tone setup is needed before generating carousel
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
     if (needsToneSetup === 'true') {
@@ -127,7 +127,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
       return;
     }
 
-    console.log('🚀 NewsPage: handleGenerateCarousel iniciado', { newsData, templateId });
+    console.log('🚀 NewsPage: handleGenerateCarousel iniciado', { newsData, templateId, options });
     
     const template = AVAILABLE_TEMPLATES.find(t => t.id === templateId);
     const queueItem: GenerationQueueItem = {
@@ -163,7 +163,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
       console.log(`⏳ Chamando generateCarousel para notícia: ${newsData.id} com template: ${templateId}`);
       console.log('📦 Payload:', newsPayload);
       
-      const result = await generateCarousel(newsData.id, templateId, jwtToken || undefined, undefined, newsPayload);
+      const result = await generateCarousel(newsData.id, templateId, jwtToken || undefined, undefined, newsPayload, options);
       console.log('✅ Carousel generated successfully:', result);
 
       if (!result) {
