@@ -14,7 +14,16 @@ export {
   CarouselViewer
 } from './components/carousel';
 
-export type { CarouselTab } from './components/carousel';
+export type { 
+  CarouselTab,
+  GenerationOptions,
+  ContentType,
+  ScreenCount,
+  DescriptionLength,
+  CarouselDimension,
+  CTAType,
+  CTAIntention
+} from './components/carousel';
 
 // ==================== Services ====================
 export * from './services/carousel';

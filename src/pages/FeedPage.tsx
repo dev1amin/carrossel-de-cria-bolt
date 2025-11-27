@@ -10,7 +10,7 @@ import { MouseFollowLight } from '../components/MouseFollowLight';
 import { ToneSetupModal } from '../components/ToneSetupModal';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
-import type { GenerationQueueItem } from '../carousel';
+import type { GenerationQueueItem, GenerationOptions } from '../carousel';
 import { getFeed, createFeed, saveContent, unsaveContent } from '../services/feed';
 import {
   templateService,
@@ -141,7 +141,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
     // If tone setup is not needed, the modal will be opened by the PostCard component
   };
 
-  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number) => {
+  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number, options?: GenerationOptions) => {
     // Check if tone setup is needed before generating carousel
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
     if (needsToneSetup === 'true') {
@@ -149,7 +149,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
       return;
     }
 
-    console.log('🚀 FeedPage: handleGenerateCarousel iniciado', { code, templateId, postId });
+    console.log('🚀 FeedPage: handleGenerateCarousel iniciado', { code, templateId, postId, options });
 
     const template = AVAILABLE_TEMPLATES.find((t) => t.id === templateId);
     const queueItem: GenerationQueueItem = {
@@ -172,7 +172,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
           jwtToken ? 'presente' : 'ausente'
         }`
       );
-      const result = await generateCarousel(code, templateId, jwtToken || undefined, postId);
+      const result = await generateCarousel(code, templateId, jwtToken || undefined, postId, undefined, options);
       console.log('✅ Carousel generated successfully:', result);
 
       if (!result) {

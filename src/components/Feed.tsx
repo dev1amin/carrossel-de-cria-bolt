@@ -5,6 +5,7 @@ import PostCard from './PostCard';
 import {
   CarouselViewer,
   type CarouselData as CarouselDataType,
+  type GenerationOptions,
   generateCarousel,
   templateService,
   templateRenderer
@@ -14,7 +15,7 @@ interface FeedProps {
   posts: Post[];
   searchTerm: string;
   activeSort: SortOption;
-  onGenerateCarousel?: (code: string, templateId: string, postId?: number) => void;
+  onGenerateCarousel?: (code: string, templateId: string, postId?: number, options?: GenerationOptions) => void;
   onGenerateClick?: () => void;
   feedId?: string | null;
   onSavePost?: (postId: number) => void;
@@ -57,15 +58,16 @@ const Feed: React.FC<FeedProps> = ({
     return sortedByScore.findIndex(p => p.id === post.id);
   };
 
-  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number) => {
+  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number, options?: GenerationOptions) => {
     if (onGenerateCarouselProp) {
-      onGenerateCarouselProp(code, templateId, postId);
+      onGenerateCarouselProp(code, templateId, postId, options);
       return;
     }
 
     try {
       console.log(`Generating carousel for post: ${code} with template: ${templateId}`);
-      const result = await generateCarousel(code, templateId);
+      console.log('Generation options:', options);
+      const result = await generateCarousel(code, templateId, undefined, postId, undefined, options);
       console.log('Carousel generated successfully:', result);
 
       if (result && result.length > 0) {

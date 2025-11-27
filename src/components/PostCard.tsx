@@ -12,7 +12,7 @@ import {
   MessageCircle,
   Share2
 } from 'lucide-react';
-import { TemplateSelectionModal } from '../carousel';
+import { TemplateSelectionModal, GenerationOptions } from '../carousel';
 import { Post, SortOption } from '../types';
 import { formatNumber, isPostOld, getDaysAgo } from '../utils/formatters';
 import { saveContent, unsaveContent } from '../services/feed';
@@ -21,7 +21,7 @@ interface PostCardProps {
   post: Post;
   index: number;
   activeSort: SortOption; // filtro atual
-  onGenerateCarousel?: (code: string, templateId: string, postId?: number) => void;
+  onGenerateCarousel?: (code: string, templateId: string, postId?: number, options?: GenerationOptions) => void;
   onGenerateClick?: () => void;
   feedId?: string | null;
   onSavePost?: (postId: number) => void;
@@ -69,9 +69,15 @@ const PostCard: React.FC<PostCardProps> = ({
     setIsModalOpen(true);
   };
 
-  const handleSelectTemplate = (templateId: string) => {
+  const handleSelectTemplate = (templateId: string, options?: GenerationOptions) => {
+    console.log('🔄 PostCard - handleSelectTemplate called');
+    console.log('🔄 Template ID:', templateId);
+    console.log('🔄 Options:', options);
     if (onGenerateCarousel) {
-      onGenerateCarousel(post.code, templateId, post.id);
+      console.log('🔄 Calling onGenerateCarousel with:', post.code, templateId, post.id, options);
+      onGenerateCarousel(post.code, templateId, post.id, options);
+    } else {
+      console.log('⚠️ onGenerateCarousel is not defined!');
     }
   };
 

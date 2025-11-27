@@ -6,7 +6,7 @@ import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
-import { CarouselEditorTabs, type CarouselTab } from '../carousel';
+import { CarouselEditorTabs, type CarouselTab, type GenerationOptions } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
@@ -487,14 +487,14 @@ const GalleryPage = () => {
     closeEditorTab(`gallery-${carouselId}`);
   };
 
-  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number) => {
+  const handleGenerateCarousel = async (code: string, templateId: string, postId?: number, options?: GenerationOptions) => {
     // Check if tone setup is needed before generating carousel
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
     if (needsToneSetup === 'true') {
       // Para posts salvos, não temos tone setup modal, então continua
     }
 
-    console.log('🚀 GalleryPage: handleGenerateCarousel iniciado', { code, templateId, postId });
+    console.log('🚀 GalleryPage: handleGenerateCarousel iniciado', { code, templateId, postId, options });
 
     const template = AVAILABLE_TEMPLATES.find((t) => t.id === templateId);
     const queueItem: GenerationQueueItem = {
@@ -517,7 +517,7 @@ const GalleryPage = () => {
           jwtToken ? 'presente' : 'ausente'
         }`
       );
-      const result = await generateCarousel(code, templateId, jwtToken || undefined, postId);
+      const result = await generateCarousel(code, templateId, jwtToken || undefined, postId, undefined, options);
       console.log('✅ Carousel generated successfully:', result);
 
       if (!result) {

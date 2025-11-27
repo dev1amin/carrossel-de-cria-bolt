@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Sparkles, Newspaper, Bookmark, Trophy, Medal } from 'lucide-react';
-import { TemplateSelectionModal } from '../carousel';
+import { TemplateSelectionModal, GenerationOptions } from '../carousel';
 import type { NewsItem } from '../types/news';
 import { motion } from 'framer-motion';
 
 interface NewsPostCardProps {
   news: NewsItem;
   index: number;
-  onGenerateCarousel?: (newsData: NewsItem, templateId: string) => void;
+  onGenerateCarousel?: (newsData: NewsItem, templateId: string, options?: GenerationOptions) => void;
   onGenerateClick?: () => void;
 }
 
@@ -38,9 +38,9 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
     setIsModalOpen(true);
   };
 
-  const handleSelectTemplate = (templateId: string) => {
+  const handleSelectTemplate = (templateId: string, options?: GenerationOptions) => {
     if (onGenerateCarousel) {
-      onGenerateCarousel(news, templateId);
+      onGenerateCarousel(news, templateId, options);
     }
   };
 

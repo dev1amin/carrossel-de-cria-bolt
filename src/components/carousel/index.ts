@@ -6,3 +6,12 @@ export { default as CarouselViewer } from './viewer/CarouselViewer';
 export { CarouselPreviewModal } from './CarouselPreviewModal';
 
 export type { CarouselTab } from './CarouselEditorTabs';
+export type { 
+  GenerationOptions, 
+  ContentType, 
+  ScreenCount, 
+  DescriptionLength, 
+  CarouselDimension, 
+  CTAType, 
+  CTAIntention 
+} from './TemplateSelectionModal';
