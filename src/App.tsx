@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { configureCarousel, CarouselEditorTabs, type CarouselTab } from './carousel';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { configureCarousel, type CarouselTab } from './carousel';
 import { EditorTabsProvider, useEditorTabs } from './contexts/EditorTabsContext';
 import { GenerationQueueProvider, useGenerationQueue } from './contexts/GenerationQueueContext';
 import { GenerationQueue } from './carousel';
@@ -15,20 +15,15 @@ import StatsPage from './pages/StatsPage';
 import SettingsPageContainer from './pages/SettingsPageContainer';
 import CreateCarouselPage from './pages/CreateCarouselPage';
 import ChatBotPageWithConversations from './pages/ChatBotPageWithConversations';
+import EditorPage from './pages/EditorPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Componente interno para usar o hook da fila
 function AppContent() {
   const { generationQueue, removeFromQueue } = useGenerationQueue();
-  const { 
-    editorTabs, 
-    addEditorTab, 
-    closeEditorTab, 
-    closeAllEditorTabs, 
-    shouldShowEditor, 
-    setShouldShowEditor 
-  } = useEditorTabs();
+  const navigate = useNavigate();
+  const { addEditorTab } = useEditorTabs();
 
   const handleViewCarousel = (item: GenerationQueueItem) => {
     console.log('👁️ handleViewCarousel chamado:', { 
@@ -50,35 +45,30 @@ function AppContent() {
       slides: item.slides,
       carouselData: item.carouselData,
       title: item.templateName,
-      generatedContentId: item.generatedContentId, // Passa o ID se existir
+      generatedContentId: item.generatedContentId,
     };
 
-    console.log('✅ Abrindo editor GLOBAL na mesma página:', {
+    console.log('✅ Abrindo editor na rota /editor:', {
       id: newTab.id,
       title: newTab.title,
       slidesLength: newTab.slides.length,
       hasCarouselData: !!newTab.carouselData,
       generatedContentId: newTab.generatedContentId,
-      conteudosLength: (newTab.carouselData as any)?.conteudos?.length,
-      dadosGerais: (newTab.carouselData as any)?.dados_gerais,
-      firstContent: (newTab.carouselData as any)?.conteudos?.[0],
     });
     
     addEditorTab(newTab);
-    setShouldShowEditor(true);
-  };
-
-  const handleEditorsClosed = () => {
-    setShouldShowEditor(false);
+    // Navega para a rota do editor com o ID da aba
+    navigate(`/editor/${encodeURIComponent(newTab.id)}`);
   };
 
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const isEditorPage = location.pathname.startsWith('/editor');
 
   return (
     <>
-      {/* Luz global que acompanha o mouse - não aparece no login */}
-      {!isLoginPage && <MouseFollowLight zIndex={5} />}
+      {/* Luz global que acompanha o mouse - não aparece no login e editor */}
+      {!isLoginPage && !isEditorPage && <MouseFollowLight zIndex={5} />}
 
       {/* Fila global - renderizada fora das rotas */}
       <GenerationQueue 
@@ -86,16 +76,6 @@ function AppContent() {
         onRemoveItem={removeFromQueue}
         onViewCarousel={handleViewCarousel}
       />
-
-      {/* Editor global - renderizado sobre qualquer página */}
-      {shouldShowEditor && editorTabs.length > 0 && (
-        <CarouselEditorTabs
-          tabs={editorTabs}
-          onCloseTab={closeEditorTab}
-          onCloseAll={closeAllEditorTabs}
-          onEditorsClosed={handleEditorsClosed}
-        />
-      )}
       
       <Routes>
         {/* Rota de Login */}
@@ -115,6 +95,8 @@ function AppContent() {
           <Route path="/chatbot/:conversationId" element={<ChatBotPageWithConversations />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPageContainer />} />
+          <Route path="/editor" element={<EditorPage />} />
+          <Route path="/editor/:tabId" element={<EditorPage />} />
         </Route>
 
         {/* Página 404 para rotas não encontradas */}

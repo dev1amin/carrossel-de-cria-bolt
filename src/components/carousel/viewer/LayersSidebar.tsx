@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, Layers as LayersIcon, Image as ImageIcon, Type } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers as LayersIcon, Image as ImageIcon, Type, User } from 'lucide-react';
 import type { CarouselData, ElementType } from '../../../types/carousel';
 
 interface LayersSidebarProps {
@@ -143,6 +143,20 @@ export const LayersSidebar: React.FC<LayersSidebarProps> = ({
                     >
                       <Type className="w-4 h-4 text-gray-600" />
                       <span className="text-gray-700 text-xs">Arroba</span>
+                    </button>
+                  )}
+                  {/* Avatar - aparece no primeiro slide (templates geralmente têm avatar) */}
+                  {index === 0 && (
+                    <button
+                      onClick={() => onElementClick(index, 'avatar')}
+                      className={`w-full px-3 py-1.5 flex items-center space-x-2 hover:bg-gray-100 transition-colors ${
+                        selectedElement.slideIndex === index && selectedElement.element === 'avatar'
+                          ? 'bg-blue-50 border-l-2 border-blue-500'
+                          : ''
+                      }`}
+                    >
+                      <User className="w-4 h-4 text-gray-600" />
+                      <span className="text-gray-700 text-xs">Avatar</span>
                     </button>
                   )}
                 </div>

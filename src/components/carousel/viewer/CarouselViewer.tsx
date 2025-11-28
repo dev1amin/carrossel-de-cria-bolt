@@ -943,6 +943,46 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({
     reader.readAsDataURL(file);
   };
 
+  // Upload de Avatar - aplica em todos os slides
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target?.result as string;
+      
+      // Atualiza o avatar em dados_gerais
+      updateEditedValue(0, 'avatar_url', url);
+      
+      // Aplica o avatar em todos os iframes
+      iframeRefs.current.forEach((ifr, slideIndex) => {
+        const doc = ifr?.contentDocument || ifr?.contentWindow?.document;
+        if (!doc) return;
+        
+        // Encontra todas as imagens de avatar/logo (protegidas)
+        const avatarImgs = doc.querySelectorAll('img[data-protected="true"]');
+        avatarImgs.forEach((img) => {
+          const imgEl = img as HTMLImageElement;
+          // Verifica se é realmente um avatar (pequeno e circular)
+          const rect = imgEl.getBoundingClientRect();
+          const cs = doc.defaultView?.getComputedStyle(imgEl);
+          const borderRadius = cs?.borderRadius || '';
+          const isRounded = borderRadius.includes('50%') || borderRadius.includes('9999') || parseInt(borderRadius) > 50;
+          const isSmall = rect.width < 150 && rect.height < 150;
+          
+          if (isSmall && isRounded) {
+            imgEl.src = url;
+            console.log(`🎭 Avatar atualizado no slide ${slideIndex}`);
+          }
+        });
+      });
+      
+      setHasUnsavedChanges(true);
+      addToast('Avatar atualizado em todos os slides!', 'success');
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Detecta mudanças
   useEffect(() => {
     const hasContentChanges = Object.keys(editedContent).length > 0;
@@ -1101,6 +1141,7 @@ const CarouselViewer: React.FC<CarouselViewerProps> = ({
         onUpdateEditedValue={updateEditedValue}
         onUpdateElementStyle={updateElementStyle}
         onBackgroundImageChange={handleBackgroundImageChange}
+        onAvatarUpload={handleAvatarUpload}
         onSearchKeywordChange={setSearchKeyword}
         onSearchImages={handleSearchImages}
         onImageUpload={handleImageUpload}

@@ -35,7 +35,7 @@ const StatsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen bg-light">
+      <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
         <div className="flex-1 ml-16 flex items-center justify-center">
@@ -50,7 +50,7 @@ const StatsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex h-screen bg-light">
+      <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
         <div className="flex-1 ml-16 flex items-center justify-center p-4">
@@ -70,7 +70,7 @@ const StatsPage: React.FC = () => {
 
   if (!stats) {
     return (
-      <div className="flex h-screen bg-light">
+      <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
         <div className="flex-1 ml-16 flex items-center justify-center">
@@ -81,7 +81,7 @@ const StatsPage: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-light">
+    <div className="flex bg-light">
       <Navigation currentPage="settings" />
       <MouseFollowLight />
       <div className="flex-1 ml-16 overflow-y-auto">

@@ -11,8 +11,10 @@ import {
   Settings,
   Briefcase,
   LogOut,
+  Layers,
 } from 'lucide-react';
 import { logout } from '../services/auth';
+import { useEditorTabs } from '../contexts/EditorTabsContext';
 
 interface NavigationProps {
   currentPage?: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools';
@@ -103,6 +105,9 @@ const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const { editorTabs, activeTabId } = useEditorTabs();
+
+  const hasOpenEditor = editorTabs.length > 0;
 
   const getUserName = (): string => {
     try {
@@ -209,6 +214,34 @@ const Navigation: React.FC<NavigationProps> = ({
             </button>
           );
         })}
+
+        {/* Botão do Editor - aparece apenas quando há abas abertas */}
+        {hasOpenEditor && (
+          <button
+            onClick={() => {
+              // Navega para a rota do editor com a aba ativa ou a primeira aba
+              const targetTabId = activeTabId || editorTabs[0]?.id;
+              if (targetTabId) {
+                navigate(`/editor/${encodeURIComponent(targetTabId)}`);
+              } else {
+                navigate('/editor');
+              }
+            }}
+            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative ${
+              window.location.pathname.startsWith('/editor')
+                ? 'bg-purple-100 text-purple-600'
+                : 'text-gray hover:text-dark hover:bg-light'
+            }`}
+          >
+            <Layers className="w-5 h-5 flex-shrink-0" />
+            <span className="text-[10px] font-medium text-center whitespace-nowrap">
+              Editor
+            </span>
+            <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+              {editorTabs.length}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* User + opções embaixo, mesmo estilo dos itens de cima */}

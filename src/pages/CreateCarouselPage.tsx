@@ -227,7 +227,7 @@ const CreateCarouselPage: React.FC = () => {
 
         {/* Light Orbs */}
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '10%',
             left: '8%',
@@ -242,7 +242,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '5%',
             right: '12%',
@@ -257,7 +257,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '40%',
             left: '5%',
@@ -272,7 +272,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '45%',
             right: '8%',
@@ -287,7 +287,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             bottom: '15%',
             left: '15%',
@@ -302,7 +302,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             bottom: '20%',
             right: '20%',
@@ -317,7 +317,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '25%',
             left: '45%',
@@ -332,7 +332,7 @@ const CreateCarouselPage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '70%',
             left: '35%',

@@ -9,6 +9,8 @@ interface EditorTabsContextType {
   closeAllEditorTabs: () => void;
   shouldShowEditor: boolean;
   setShouldShowEditor: (show: boolean) => void;
+  activeTabId: string | null;
+  setActiveTabId: (tabId: string | null) => void;
 }
 
 const EditorTabsContext = createContext<EditorTabsContextType | undefined>(undefined);
@@ -25,6 +27,16 @@ export const EditorTabsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
   
   const [shouldShowEditor, setShouldShowEditor] = useState(false);
+  const [activeTabId, setActiveTabId] = useState<string | null>(() => {
+    // Inicializa com a primeira aba se existir
+    try {
+      const saved = localStorage.getItem('editorTabs');
+      const tabs = saved ? JSON.parse(saved) : [];
+      return tabs.length > 0 ? tabs[0].id : null;
+    } catch {
+      return null;
+    }
+  });
 
   // Persiste abas no localStorage sempre que mudar
   useEffect(() => {
@@ -44,6 +56,7 @@ export const EditorTabsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       console.log('🔄 Aba já existe, atualizando dados:', tab.id);
       setEditorTabs(prev => prev.map(t => t.id === tab.id ? tab : t));
       setShouldShowEditor(true);
+      setActiveTabId(tab.id);
       
       // Aguarda o próximo ciclo de renderização para ativar
       requestAnimationFrame(() => {
@@ -57,6 +70,7 @@ export const EditorTabsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     console.log('➕ Criando nova aba:', tab.id);
     setEditorTabs(prev => [...prev, tab]);
     setShouldShowEditor(true);
+    setActiveTabId(tab.id);
     
     // IMPORTANTE: Aguarda o React finalizar a renderização usando requestAnimationFrame
     // Isso garante que a nova aba foi adicionada ao DOM antes de ativar
@@ -74,12 +88,22 @@ export const EditorTabsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const closeEditorTab = (tabId: string) => {
-    setEditorTabs(prev => prev.filter(tab => tab.id !== tabId));
+    setEditorTabs(prev => {
+      const newTabs = prev.filter(tab => tab.id !== tabId);
+      // Se a aba fechada era a ativa, ativa outra
+      if (tabId === activeTabId && newTabs.length > 0) {
+        setActiveTabId(newTabs[0].id);
+      } else if (newTabs.length === 0) {
+        setActiveTabId(null);
+      }
+      return newTabs;
+    });
   };
 
   const closeAllEditorTabs = () => {
     setEditorTabs([]);
     setShouldShowEditor(false);
+    setActiveTabId(null);
   };
 
   return (
@@ -91,7 +115,9 @@ export const EditorTabsProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         closeEditorTab, 
         closeAllEditorTabs,
         shouldShowEditor,
-        setShouldShowEditor
+        setShouldShowEditor,
+        activeTabId,
+        setActiveTabId
       }}
     >
       {children}
