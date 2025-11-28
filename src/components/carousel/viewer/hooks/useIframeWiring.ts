@@ -308,8 +308,20 @@ export function useIframeWiring({
         ev.stopPropagation();
 
         const wrapper = target.closest('.img-crop-wrapper') as HTMLElement | null;
-        const clickedImg = (wrapper?.querySelector('img[data-editable="image"]') ??
-                            target.closest('img')) as HTMLImageElement | null;
+        let clickedImg = (wrapper?.querySelector('img[data-editable="image"]') ??
+                            target.closest('img[data-editable="image"]')) as HTMLImageElement | null;
+        
+        // Se não encontrou imagem editável, verifica se clicou em avatar/logo
+        const clickedAvatar = !clickedImg ? target.closest('img[data-protected="true"]') as HTMLImageElement | null : null;
+        
+        if (clickedAvatar) {
+          // Avatar/Logo - seleciona mas não aplica wrapper de crop
+          setSelectedElement({ slideIndex, element: 'avatar' });
+          setFocusedSlide(slideIndex);
+          if (!expandedLayers.has(slideIndex)) setExpandedLayers(s => new Set(s).add(slideIndex));
+          logc('select avatar', { slideIndex, src: clickedAvatar.src.substring(0, 50) });
+          return;
+        }
 
         if (clickedImg) {
           const { wrapper: w } = ensureImgCropWrapper(doc, clickedImg);

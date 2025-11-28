@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Gallery from '../components/Gallery';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
@@ -6,7 +7,7 @@ import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
-import { CarouselEditorTabs, type CarouselTab, type GenerationOptions } from '../carousel';
+import { type CarouselTab, type GenerationOptions } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
@@ -41,17 +42,13 @@ const GalleryPage = () => {
   const [isLoadingFromAPI, setIsLoadingFromAPI] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [activeSort, setActiveSort] = useState<'recent' | 'template' | 'saved'>('recent');
+  const navigate = useNavigate();
 
   // Usa o contexto compartilhado de abas
-  const { editorTabs, addEditorTab: addTab, closeEditorTab, closeAllEditorTabs, shouldShowEditor, setShouldShowEditor } = useEditorTabs();
+  const { addEditorTab: addTab, editorTabs, closeEditorTab } = useEditorTabs();
 
   // Usa o contexto global da fila
   const { generationQueue, addToQueue, updateQueueItem } = useGenerationQueue();
-
-  // Esconde o editor ao entrar na página
-  useEffect(() => {
-    setShouldShowEditor(false);
-  }, [setShouldShowEditor]);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -418,11 +415,11 @@ const GalleryPage = () => {
     });
 
     // Check if tab already exists - if so, skip API call and just activate it
-    const existingTab = editorTabs.find(t => t.id === tabId);
+    const existingTab = editorTabs.find((t: CarouselTab) => t.id === tabId);
     if (existingTab) {
       console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
       addTab(existingTab);
-      setShouldShowEditor(true);
+      navigate(`/editor/${encodeURIComponent(tabId)}`);
       return;
     }
 
@@ -473,6 +470,8 @@ const GalleryPage = () => {
     };
 
     addTab(newTab);
+    // Navega para o editor após adicionar a aba
+    navigate(`/editor/${encodeURIComponent(tabId)}`);
   };
 
   const handleDeleteCarousel = (carouselId: string) => {
@@ -632,18 +631,9 @@ const GalleryPage = () => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="gallery" />, []);
 
   return (
-    <div className="flex h-screen bg-light">
+    <div className="flex bg-light">
       {memoizedNavigation}
       <div className="flex-1">
-        {shouldShowEditor && (
-          <CarouselEditorTabs
-            tabs={editorTabs}
-            onCloseTab={closeEditorTab}
-            onCloseAll={closeAllEditorTabs}
-            onEditorsClosed={() => setShouldShowEditor(false)}
-            onSaveSuccess={handleSaveSuccess}
-          />
-        )}
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoadingFromAPI} />
 
@@ -651,7 +641,7 @@ const GalleryPage = () => {
           <section className="relative pb-[5rem]">
             <MouseFollowLight zIndex={-1} />
             <div
-              className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
+              className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
                 background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
                 filter: "blur(70px)",
@@ -668,7 +658,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '10%',
                 left: '8%',
@@ -683,7 +673,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '5%',
                 right: '12%',
@@ -698,7 +688,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '40%',
                 left: '5%',
@@ -713,7 +703,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '45%',
                 right: '8%',
@@ -728,7 +718,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '15%',
                 left: '15%',
@@ -743,7 +733,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '20%',
                 right: '20%',
@@ -758,7 +748,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '25%',
                 left: '45%',
@@ -773,7 +763,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '70%',
                 left: '35%',
@@ -788,7 +778,7 @@ const GalleryPage = () => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '55%',
                 right: '15%',

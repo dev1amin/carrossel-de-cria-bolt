@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Feed from '../components/Feed';
 import Navigation from '../components/Navigation';
@@ -10,14 +11,13 @@ import { MouseFollowLight } from '../components/MouseFollowLight';
 import { ToneSetupModal } from '../components/ToneSetupModal';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { SortOption, Post } from '../types';
-import type { GenerationQueueItem, GenerationOptions } from '../carousel';
+import type { GenerationQueueItem, GenerationOptions, CarouselTab } from '../carousel';
 import { getFeed, createFeed, saveContent, unsaveContent } from '../services/feed';
 import {
   templateService,
   templateRenderer,
   generateCarousel,
   AVAILABLE_TEMPLATES,
-  CarouselEditorTabs
 } from '../carousel';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
@@ -34,21 +34,12 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedId, setFeedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const {
-    editorTabs,
-    closeEditorTab,
-    closeAllEditorTabs,
-    shouldShowEditor,
-    setShouldShowEditor
-  } = useEditorTabs();
+  const { addEditorTab } = useEditorTabs();
 
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
   const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
-
-  useEffect(() => {
-    setShouldShowEditor(false);
-  }, [setShouldShowEditor]);
 
   const handleRefreshFeed = async () => {
     setIsLoading(true);
@@ -379,17 +370,9 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="feed" unviewedCount={unviewedCount} />, [unviewedCount]);
 
   return (
-    <div className="flex h-screen bg-light">
+    <div className="flex bg-light">
       {memoizedNavigation}
       <div className="flex-1">
-        {shouldShowEditor && (
-          <CarouselEditorTabs
-            tabs={editorTabs}
-            onCloseTab={closeEditorTab}
-            onCloseAll={closeAllEditorTabs}
-            onEditorsClosed={() => setShouldShowEditor(false)}
-          />
-        )}
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
@@ -397,7 +380,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
           <section className="relative pb-[5rem]">
             <MouseFollowLight zIndex={5} />
             <div
-              className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
+              className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
                 background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
                 filter: "blur(70px)",
@@ -414,7 +397,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '10%',
                 left: '8%',
@@ -429,7 +412,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '5%',
                 right: '12%',
@@ -444,7 +427,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '20%',
                 left: '15%',
@@ -459,7 +442,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '10%',
                 right: '8%',
@@ -474,7 +457,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '40%',
                 left: '5%',
@@ -489,7 +472,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '60%',
                 right: '18%',
@@ -504,7 +487,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '25%',
                 right: '25%',
@@ -519,7 +502,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '35%',
                 left: '35%',

@@ -9,7 +9,9 @@ export const API_ENDPOINTS = {
   verify: `${API_BASE_URL}/auth/verify`,
   // Users
   profile: `${API_BASE_URL}/user/profile`,
-  influencers: `${API_BASE_URL}/user/influencers`,
+  profileInfluencers: `${API_BASE_URL}/user/profile/influencers`,
+  profileInfluencer: (influencerId: string) => `${API_BASE_URL}/user/profile/influencers/${influencerId}`,
+  profileNiches: `${API_BASE_URL}/user/profile/niches`,
   // Feed
   feed: `${API_BASE_URL}/feed`,
   feedSave: `${API_BASE_URL}/feed/save`,

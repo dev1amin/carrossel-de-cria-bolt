@@ -38,7 +38,7 @@ const HomePage: React.FC = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const [userName, setUserName] = useState<string>('Usuário');
-  const { editorTabs, addEditorTab, setShouldShowEditor } = useEditorTabs();
+  const { editorTabs, addEditorTab } = useEditorTabs();
 
   // Get user name from localStorage (already populated by verify/login)
   useEffect(() => {
@@ -350,7 +350,7 @@ const HomePage: React.FC = () => {
     if (existingTab) {
       console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
       addEditorTab(existingTab);
-      setShouldShowEditor(true);
+      navigate(`/editor/${encodeURIComponent(tabId)}`);
       return;
     }
 
@@ -396,7 +396,7 @@ const HomePage: React.FC = () => {
     };
 
     addEditorTab(newTab);
-    setShouldShowEditor(true);
+    navigate(`/editor/${encodeURIComponent(tabId)}`);
   };
 
   const handleDownload = async (carousel: GalleryCarousel) => {
@@ -535,7 +535,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '10%',
             left: '8%',
@@ -550,7 +550,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '5%',
             right: '12%',
@@ -565,7 +565,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '40%',
             left: '5%',
@@ -580,7 +580,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '45%',
             right: '8%',
@@ -595,7 +595,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             bottom: '15%',
             left: '15%',
@@ -610,7 +610,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             bottom: '20%',
             right: '20%',
@@ -625,7 +625,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '25%',
             left: '45%',
@@ -640,7 +640,7 @@ const HomePage: React.FC = () => {
         />
 
         <div
-          className="absolute pointer-events-none"
+          className="fixed pointer-events-none"
           style={{
             top: '70%',
             left: '35%',

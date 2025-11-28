@@ -30,7 +30,7 @@ export interface CarouselResponse extends CarouselData {}
 
 // ==================== Element Types ====================
 
-export type ElementType = 'title' | 'subtitle' | 'background' | 'nome' | 'arroba' | null;
+export type ElementType = 'title' | 'subtitle' | 'background' | 'nome' | 'arroba' | 'avatar' | null;
 
 export interface ElementStyles {
   fontSize?: string;

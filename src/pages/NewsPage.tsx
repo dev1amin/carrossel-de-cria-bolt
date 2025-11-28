@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
@@ -11,13 +12,12 @@ import { ToneSetupModal } from '../components/ToneSetupModal';
 import { getNews } from '../services/news';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import type { NewsItem, NewsFilters as NewsFiltersType, NewsPagination } from '../types/news';
-import type { GenerationQueueItem, GenerationOptions } from '../carousel';
+import type { GenerationQueueItem, GenerationOptions, CarouselTab } from '../carousel';
 import {
   templateService,
   templateRenderer,
   generateCarousel,
   AVAILABLE_TEMPLATES,
-  CarouselEditorTabs
 } from '../carousel';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
@@ -41,22 +41,13 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const navigate = useNavigate();
 
-  const {
-    editorTabs,
-    closeEditorTab,
-    closeAllEditorTabs,
-    shouldShowEditor,
-    setShouldShowEditor
-  } = useEditorTabs();
+  const { addEditorTab } = useEditorTabs();
   
   const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
   
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
-
-  useEffect(() => {
-    setShouldShowEditor(false);
-  }, [setShouldShowEditor]);
 
   const loadNews = async (page: number = 1) => {
     const cacheKey = `${CACHE_KEYS.NEWS}_${JSON.stringify({ page, country: selectedCountry, lang: selectedLanguage })}`;
@@ -325,14 +316,6 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
     <div className="flex h-screen bg-white">
       {memoizedNavigation}
       <div className="flex-1">
-        {shouldShowEditor && (
-          <CarouselEditorTabs
-            tabs={editorTabs}
-            onCloseTab={closeEditorTab}
-            onCloseAll={closeAllEditorTabs}
-            onEditorsClosed={() => setShouldShowEditor(false)}
-          />
-        )}
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
@@ -340,7 +323,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         <section className="relative pb-[5rem]">
           <MouseFollowLight zIndex={-1} />
             <div
-              className="absolute top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
+              className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
                 background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
                 filter: "blur(70px)",
@@ -357,7 +340,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '10%',
                 left: '8%',
@@ -372,7 +355,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '5%',
                 right: '12%',
@@ -387,7 +370,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '40%',
                 left: '5%',
@@ -402,7 +385,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '45%',
                 right: '8%',
@@ -417,7 +400,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '15%',
                 left: '15%',
@@ -432,7 +415,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 bottom: '20%',
                 right: '20%',
@@ -447,7 +430,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '25%',
                 left: '45%',
@@ -462,7 +445,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '70%',
                 left: '35%',
@@ -477,7 +460,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             />
 
             <div
-              className="absolute pointer-events-none"
+              className="fixed pointer-events-none"
               style={{
                 top: '55%',
                 right: '15%',

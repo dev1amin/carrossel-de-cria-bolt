@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, Upload, Search, Play, ChevronLeft } from 'lucide-react';
+import { Type, Upload, Search, Play, ChevronLeft, User } from 'lucide-react';
 import type { CarouselData, ElementType, ElementStyles, TemplateCompatibility } from '../../../types/carousel';
 import { isVideoUrl } from './viewerUtils';
 
@@ -21,9 +21,11 @@ interface PropertiesPanelProps {
   onUpdateEditedValue: (slideIndex: number, field: string, value: any) => void;
   onUpdateElementStyle: (slideIndex: number, element: ElementType, prop: keyof ElementStyles, value: string) => void;
   onBackgroundImageChange: (slideIndex: number, imageUrl: string) => void;
+  onAvatarChange?: (imageUrl: string) => void; // Novo: para mudar avatar em todos os slides
   onSearchKeywordChange: (keyword: string) => void;
   onSearchImages: () => void;
   onImageUpload: (slideIndex: number, e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Novo: upload de avatar
   getElementStyle: (slideIndex: number, element: ElementType) => ElementStyles;
   getEditedValue: (slideIndex: number, field: string, def: any) => any;
 }
@@ -100,9 +102,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   onUpdateEditedValue,
   onUpdateElementStyle,
   onBackgroundImageChange,
+  onAvatarChange,
   onSearchKeywordChange,
   onSearchImages,
   onImageUpload,
+  onAvatarUpload,
   getElementStyle,
   getEditedValue,
 }) => {
@@ -492,6 +496,58 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   </>
                 )}
               </>
+            )}
+
+            {selectedElement.element === 'avatar' && (
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 mb-4">
+                  <User className="w-5 h-5 text-blue-500" />
+                  <h4 className="text-gray-900 font-medium">Avatar</h4>
+                </div>
+                
+                <p className="text-gray-600 text-xs mb-4">
+                  O avatar é replicado em todos os slides automaticamente.
+                </p>
+
+                {/* Avatar atual */}
+                <div className="mb-4">
+                  <label className="text-gray-600 text-xs mb-2 block font-medium">Avatar Atual</label>
+                  <div className="bg-white border border-gray-300 rounded p-3 flex items-center justify-center">
+                    {data.dados_gerais?.avatar_url ? (
+                      <img 
+                        src={data.dados_gerais.avatar_url} 
+                        alt="Avatar atual" 
+                        className="w-20 h-20 rounded-full object-cover border-2 border-blue-200"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                        <User className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  {!data.dados_gerais?.avatar_url && (
+                    <p className="text-gray-500 text-xs mt-2 text-center">Nenhum avatar definido</p>
+                  )}
+                </div>
+
+                {/* Upload de novo avatar */}
+                <div>
+                  <label className="text-gray-600 text-xs mb-2 block font-medium">Trocar Avatar</label>
+                  <label className="flex items-center justify-center w-full h-32 px-4 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Upload className="w-8 h-8 text-gray-500 mb-2" />
+                      <p className="text-xs text-gray-600">Click to upload new avatar</p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG (square recommended)</p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => onAvatarUpload?.(e)}
+                    />
+                  </label>
+                </div>
+              </div>
             )}
           </div>
         )}
