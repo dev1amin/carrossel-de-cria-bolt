@@ -355,20 +355,32 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
 
     const convId = await ensureConversationId();
 
-    if (convId) {
-      try {
-        await createConversationMessage(convId, {
-          sender_type: 'user',
-          message_text: userMessage.content,
-        });
-      } catch (err) {
-        console.error('Erro ao salvar mensagem do usuário:', err);
-      }
+    // Garante que temos um conversationId válido antes de continuar
+    if (!convId) {
+      console.error('❌ Não foi possível criar/obter conversationId');
+      const errorMessage: ChatMessage = {
+        id: generateMessageId(),
+        role: 'assistant',
+        content: 'Desculpe, ocorreu um erro ao iniciar a conversa. Por favor, tente novamente.',
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      setIsLoading(false);
+      return;
     }
 
     try {
-      // manda tbm conversationId pro agente (mesmo que o service ainda ignore)
-      const responses = await (sendChatMessage as any)(
+      await createConversationMessage(convId, {
+        sender_type: 'user',
+        message_text: userMessage.content,
+      });
+    } catch (err) {
+      console.error('Erro ao salvar mensagem do usuário:', err);
+    }
+
+    try {
+      // manda conversationId pro agente - agora garantido não ser null
+      const responses = await sendChatMessage(
         userId,
         userMessage.content,
         convId
@@ -393,15 +405,13 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
           setHasGeneratedCarousel(true);
           setIsCarouselPreviewOpen(true);
 
-          if (convId) {
-            try {
-              await createConversationMessage(convId, {
-                sender_type: 'bot',
-                message_text: followUpMessage.content,
-              });
-            } catch (err) {
-              console.error('Erro ao salvar mensagem do bot (carrossel):', err);
-            }
+          try {
+            await createConversationMessage(convId, {
+              sender_type: 'bot',
+              message_text: followUpMessage.content,
+            });
+          } catch (err) {
+            console.error('Erro ao salvar mensagem do bot (carrossel):', err);
           }
 
           return;
@@ -421,15 +431,13 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
 
         setMessages((prev) => [...prev, assistantMessage]);
 
-        if (convId) {
-          try {
-            await createConversationMessage(convId, {
-              sender_type: 'bot',
-              message_text: assistantMessage.content,
-            });
-          } catch (err) {
-            console.error('Erro ao salvar mensagem do bot:', err);
-          }
+        try {
+          await createConversationMessage(convId, {
+            sender_type: 'bot',
+            message_text: assistantMessage.content,
+          });
+        } catch (err) {
+          console.error('Erro ao salvar mensagem do bot:', err);
         }
 
         if (hasTemplateTrigger) {
@@ -448,15 +456,14 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
       };
       setMessages((prev) => [...prev, errorMessage]);
 
-      if (currentConversationId) {
-        try {
-          await createConversationMessage(currentConversationId, {
-            sender_type: 'bot',
-            message_text: errorMessage.content,
-          });
-        } catch (err) {
-          console.error('Erro ao salvar mensagem de erro do bot:', err);
-        }
+      // convId foi validado no início, então podemos salvar a mensagem de erro
+      try {
+        await createConversationMessage(convId, {
+          sender_type: 'bot',
+          message_text: errorMessage.content,
+        });
+      } catch (err) {
+        console.error('Erro ao salvar mensagem de erro do bot:', err);
       }
     } finally {
       setIsLoading(false);
