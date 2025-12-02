@@ -52,13 +52,19 @@ export const createConversationMessage = async (
 /**
  * Envia mensagem para o chatbot e retorna a resposta
  * Agora também envia conversationId para o mainAgentInsta
+ * IMPORTANTE: conversationId é obrigatório e nunca deve ser null
  */
 export const sendChatMessage = async (
   userId: string,
   message: string,
-  conversationId?: string
+  conversationId: string
 ): Promise<ChatbotResponse[]> => {
   const webhookUrl = 'https://api.workez.online/webhook/mainAgentInsta';
+
+  // Validação de segurança - conversationId é obrigatório
+  if (!conversationId) {
+    throw new Error('conversationId é obrigatório para enviar mensagem ao agente');
+  }
 
   try {
     const response = await fetch(webhookUrl, {
@@ -69,7 +75,7 @@ export const sendChatMessage = async (
       body: JSON.stringify({
         userID: userId,
         message: message,
-        conversationId: conversationId ?? null, // enviado pro agente
+        conversationId: conversationId, // sempre será uma string válida
       }),
     });
 
