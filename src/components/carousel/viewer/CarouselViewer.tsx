@@ -1,5 +1,5 @@
 // CarouselViewer.tsx
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import type { CarouselData, ElementType, ElementStyles } from '../../../types/carousel';
 import { AVAILABLE_TEMPLATES, TEMPLATE_DIMENSIONS } from '../../../types/carousel';
 import { searchImages, templateRenderer } from '../../../services/carousel';
@@ -9,6 +9,7 @@ import { TopBar } from './TopBar';
 import { LayersSidebar } from './LayersSidebar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { CanvasArea } from './CanvasArea';
+import MobileCarouselViewer from './MobileCarouselViewer';
 import {
   logd,
   readAndStoreComputedTextStyles,
@@ -40,7 +41,40 @@ interface CarouselViewerProps {
   autoDownload?: boolean;
 }
 
-const CarouselViewer: React.FC<CarouselViewerProps> = ({
+// Hook para detectar dispositivos móveis - FORA do componente
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768 || 
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(mobile);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
+// Wrapper que decide qual viewer usar baseado no dispositivo
+const CarouselViewer: React.FC<CarouselViewerProps> = (props) => {
+  const isMobile = useIsMobile();
+
+  // Renderizar versão mobile se for dispositivo móvel
+  if (isMobile) {
+    return <MobileCarouselViewer {...props} />;
+  }
+
+  // Renderizar versão desktop
+  return <DesktopCarouselViewer {...props} />;
+};
+
+// Componente Desktop - mantém toda a lógica original
+const DesktopCarouselViewer: React.FC<CarouselViewerProps> = ({
   slides,
   carouselData,
   onClose,

@@ -460,7 +460,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ setIsLoading }) => {
     <div className="flex h-screen bg-white">
       <Navigation currentPage="settings" unviewedCount={0} />
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden relative ml-16">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden relative ml-0 md:ml-16">
         {/* Grid Background */}
         <div
           className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"

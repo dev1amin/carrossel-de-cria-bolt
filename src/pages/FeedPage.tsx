@@ -368,17 +368,51 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
   );
 
   const memoizedNavigation = useMemo(() => <Navigation currentPage="feed" unviewedCount={unviewedCount} />, [unviewedCount]);
+  
+  // Detecta se é mobile
+  const isMobile = window.innerWidth <= 768;
 
   return (
-    <div className="flex bg-light">
+    <div className="flex bg-light min-h-screen overflow-x-hidden">
       {memoizedNavigation}
-      <div className="flex-1">
+      <div className="flex-1 md:ml-20">
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0`}>
-          <section className="relative pb-[5rem]">
-            <MouseFollowLight zIndex={5} />
+        {/* Mobile Layout */}
+        {isMobile ? (
+          <main className="min-h-screen pb-16">
+            {isLoading && posts.length === 0 ? (
+              <div className="p-4 pt-8">
+                <SkeletonGrid count={4} type="post" />
+              </div>
+            ) : needsInfluencers ? (
+              <div className="p-4 pt-8">
+                <InfluencersWarning />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="p-4 pt-8">
+                <EmptyState />
+              </div>
+            ) : (
+              <Feed
+                posts={posts}
+                searchTerm=""
+                activeSort={activeSort}
+                onGenerateCarousel={handleGenerateCarousel}
+                onGenerateClick={handleGenerateClick}
+                feedId={feedId}
+                showSaveButtons={true}
+                onSavePost={handleSavePost}
+                onUnsavePost={handleUnsavePost}
+              />
+            )}
+          </main>
+        ) : (
+          /* Desktop Layout */
+          <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0`}>
+            <section className="relative pb-[5rem]">
+              <MouseFollowLight zIndex={5} />
             <div
               className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -580,6 +614,7 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
             </div>
           </section>
         </main>
+        )}
       </div>
       
       <ToneSetupModal

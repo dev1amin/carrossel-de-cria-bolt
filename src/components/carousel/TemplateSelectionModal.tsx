@@ -670,11 +670,47 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute inset-0 grid grid-cols-1 md:grid-cols-[18rem,1fr]"
+                  className="absolute inset-0 flex flex-col md:grid md:grid-cols-[18rem,1fr]"
                 >
-                  {/* Sidebar */}
+                  {/* Mobile: Horizontal scroll template selector */}
+                  <div className="md:hidden flex-shrink-0 bg-gray-50 border-b border-gray-200 overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-2 p-3 min-w-max">
+                      {AVAILABLE_TEMPLATES.map((template, idx) => {
+                        const isActive = selectedTemplate.id === template.id;
+                        return (
+                          <button
+                            key={template.id}
+                            ref={idx === 0 ? firstFocusableRef : undefined}
+                            onClick={() => setSelectedTemplate(template)}
+                            className={`
+                              flex-shrink-0 w-32 p-3 rounded-xl border-2 transition-all text-left
+                              ${isActive 
+                                ? "bg-purple-50 border-purple-500 shadow-lg shadow-purple-100" 
+                                : "bg-white border-gray-200 active:scale-95"
+                              }
+                            `}
+                          >
+                            <h3 className={`font-semibold text-xs truncate ${isActive ? 'text-purple-700' : 'text-gray-900'}`}>
+                              {template.name}
+                            </h3>
+                            <p className="text-[10px] text-gray-500 line-clamp-2 mt-1">
+                              {template.description}
+                            </p>
+                            <span className={`mt-2 inline-flex items-center rounded-md px-1.5 py-0.5 text-[8px] font-medium ${
+                              isActive ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {template.compatibilityLabel}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Desktop: Sidebar */}
                   <aside
                     className={`
+                      hidden md:block
                       ${showSidebar ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
                       transition-transform duration-200 ease-out
                       bg-gray-50 border-r border-gray-200
@@ -729,8 +765,8 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                     </div>
                   </aside>
 
-                  {/* Canvas */}
-                  <section className="relative bg-gray-100 overflow-hidden">
+                  {/* Canvas - ocupa espaço restante */}
+                  <section className="flex-1 relative bg-gray-100 overflow-hidden min-h-[300px] md:min-h-0">
                     {/* BG grid pattern */}
                     <div className="absolute inset-0 z-0 pointer-events-none">
                       <div className="w-full h-full bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.03)_1px,transparent_1px)] [background-size:20px_20px]" />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Grid,
   Newspaper,
@@ -7,11 +7,10 @@ import {
   User,
   PlusCircle,
   Home,
-  ChevronDown,
   Settings,
-  Briefcase,
   LogOut,
   Layers,
+  X,
 } from 'lucide-react';
 import { logout } from '../services/auth';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
@@ -38,7 +37,7 @@ type MenuItem =
       onClick: () => void;
     };
 
-// Logo com o SVG que você mandou
+// Logo SVG
 const LogoIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
     viewBox="0 0 300 328"
@@ -104,7 +103,8 @@ const Navigation: React.FC<NavigationProps> = ({
   unviewedCount = 0,
 }) => {
   const navigate = useNavigate();
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const location = useLocation();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { editorTabs, activeTabId } = useEditorTabs();
 
   const hasOpenEditor = editorTabs.length > 0;
@@ -127,6 +127,7 @@ const Navigation: React.FC<NavigationProps> = ({
   const handlePageChange = (
     page: 'home' | 'feed' | 'settings' | 'gallery' | 'news' | 'chatbot' | 'tools',
   ) => {
+    setIsUserMenuOpen(false);
     onPageChange?.(page);
 
     switch (page) {
@@ -154,7 +155,8 @@ const Navigation: React.FC<NavigationProps> = ({
     }
   };
 
-  const menuItems: MenuItem[] = [
+  // Itens principais do menu (visíveis na barra)
+  const mainMenuItems: MenuItem[] = [
     { id: 'home', label: 'Início', icon: Home, page: 'home' },
     { id: 'feed', label: 'Feed', icon: Grid, page: 'feed' },
     {
@@ -167,150 +169,283 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: 'gallery', label: 'Galeria', icon: Image, page: 'gallery' },
   ];
 
+  // Verifica se uma página está ativa
+  const isPageActive = (item: MenuItem): boolean => {
+    if ('page' in item && currentPage === item.page) return true;
+    if (item.id === 'tools' && location.pathname === '/create-carousel') return true;
+    return false;
+  };
+
   return (
-    <nav
-      className="fixed md:left-0 md:top-0 md:bottom-0 bottom-0 left-0 right-0 md:w-20 w-full bg-white border-r md:border-r border-t md:border-t-0 border-gray-light z-50 flex md:flex-col flex-row"
-    >
-      {/* Topo: Logo (apenas desktop) */}
-      <div className="hidden md:flex border-b border-gray-light p-4 items-center justify-center">
-        <LogoIcon className="w-6 h-6 flex-shrink-0" />
-      </div>
+    <>
+      {/* ============= DESKTOP NAVIGATION ============= */}
+      <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-20 bg-white border-r border-gray-200 z-50 flex-col">
+        {/* Logo */}
+        <div className="flex border-b border-gray-200 p-4 items-center justify-center">
+          <LogoIcon className="w-6 h-6 flex-shrink-0" />
+        </div>
 
-      {/* Menu Items */}
-      <div className="flex-1 flex md:flex-col flex-row md:py-4 py-0 md:space-y-2 space-y-0 md:space-x-0 space-x-0 md:px-2 px-0 justify-around md:justify-start">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            ('page' in item && currentPage === item.page) ||
-            (item.id === 'tools' && window.location.pathname === '/create-carousel');
+        {/* Menu Items */}
+        <div className="flex-1 flex flex-col py-4 space-y-2 px-2">
+          {mainMenuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isPageActive(item);
 
-          const handleClick = () => {
-            if ('onClick' in item) {
-              item.onClick();
-            } else if ('page' in item) {
-              handlePageChange(item.page);
-            }
-          };
+            const handleClick = () => {
+              if ('onClick' in item) {
+                item.onClick();
+              } else if ('page' in item) {
+                handlePageChange(item.page);
+              }
+            };
 
-          return (
+            return (
+              <button
+                key={item.id}
+                onClick={handleClick}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-[10px] font-medium text-center whitespace-nowrap">
+                  {item.label}
+                </span>
+                {item.id === 'gallery' && unviewedCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                    {unviewedCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Botão do Editor - Desktop */}
+          {hasOpenEditor && (
             <button
-              key={item.id}
-              onClick={handleClick}
+              onClick={() => {
+                const targetTabId = activeTabId || editorTabs[0]?.id;
+                if (targetTabId) {
+                  navigate(`/editor/${encodeURIComponent(targetTabId)}`);
+                } else {
+                  navigate('/editor');
+                }
+              }}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative ${
-                isActive
-                  ? 'bg-blue-light text-blue'
-                  : 'text-gray hover:text-dark hover:bg-light'
+                location.pathname.startsWith('/editor')
+                  ? 'bg-purple-100 text-purple-600'
+                  : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
+              <Layers className="w-5 h-5 flex-shrink-0" />
               <span className="text-[10px] font-medium text-center whitespace-nowrap">
-                {item.label}
+                Editor
               </span>
-              {item.id === 'gallery' && unviewedCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
-                  {unviewedCount}
-                </span>
-              )}
+              <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                {editorTabs.length}
+              </span>
             </button>
-          );
-        })}
+          )}
+        </div>
 
-        {/* Botão do Editor - aparece apenas quando há abas abertas */}
-        {hasOpenEditor && (
-          <button
-            onClick={() => {
-              // Navega para a rota do editor com a aba ativa ou a primeira aba
-              const targetTabId = activeTabId || editorTabs[0]?.id;
-              if (targetTabId) {
-                navigate(`/editor/${encodeURIComponent(targetTabId)}`);
-              } else {
-                navigate('/editor');
+        {/* User Menu - Desktop */}
+        <div className="border-t border-gray-200 p-2">
+          <div className="relative">
+            <button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-gray-100 transition-colors w-full"
+            >
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <User className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-[10px] font-medium text-center whitespace-nowrap text-gray-700">
+                {userName.split(' ')[0]}
+              </span>
+            </button>
+
+            {/* Dropdown Menu Desktop */}
+            {isUserMenuOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <button
+                  onClick={() => {
+                    navigate('/settings');
+                    setIsUserMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 px-4 py-2 w-full text-left text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="text-sm">Configurações</span>
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                  className="flex items-center gap-3 px-4 py-2 w-full text-left text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm">Sair</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* ============= MOBILE NAVIGATION ============= */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-bottom">
+        <div className="flex items-center justify-around h-16 px-1 max-w-full overflow-hidden">
+          {mainMenuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isPageActive(item);
+
+            const handleClick = () => {
+              if ('onClick' in item) {
+                item.onClick();
+              } else if ('page' in item) {
+                handlePageChange(item.page);
               }
-            }}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative ${
-              window.location.pathname.startsWith('/editor')
-                ? 'bg-purple-100 text-purple-600'
-                : 'text-gray hover:text-dark hover:bg-light'
-            }`}
-          >
-            <Layers className="w-5 h-5 flex-shrink-0" />
-            <span className="text-[10px] font-medium text-center whitespace-nowrap">
-              Editor
-            </span>
-            <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
-              {editorTabs.length}
-            </span>
-          </button>
-        )}
-      </div>
+            };
 
-      {/* User + opções embaixo, mesmo estilo dos itens de cima */}
-      <div className="md:border-t border-t-0 md:border-l-0 border-l border-gray-light md:p-2 p-0 md:w-auto w-16">
-        <div className="flex flex-col items-stretch">
-          <button
-            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-light transition-colors w-full"
-          >
-            <div className="w-8 h-8 rounded-full bg-light flex items-center justify-center">
-              <User className="w-4 h-4 text-blue" />
-            </div>
-            <span className="text-[10px] font-medium text-center whitespace-nowrap">
-              {userName.split(' ')[0]}
-            </span>
-            <ChevronDown
-              className={`w-3 h-3 text-gray transition-transform ${
-                isUserDropdownOpen ? 'rotate-180' : ''
+            return (
+              <button
+                key={item.id}
+                onClick={handleClick}
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 transition-colors relative ${
+                  isActive
+                    ? 'text-blue-600'
+                    : 'text-gray-500'
+                }`}
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-600' : 'text-gray-500'}`} />
+                <span className={`text-[10px] font-medium truncate ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+                  {item.label}
+                </span>
+                {item.id === 'gallery' && unviewedCount > 0 && (
+                  <span className="absolute top-1 right-1/4 bg-red-500 text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center">
+                    {unviewedCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Botão do Editor - Mobile (se houver) */}
+          {hasOpenEditor && (
+            <button
+              onClick={() => {
+                const targetTabId = activeTabId || editorTabs[0]?.id;
+                if (targetTabId) {
+                  navigate(`/editor/${encodeURIComponent(targetTabId)}`);
+                } else {
+                  navigate('/editor');
+                }
+              }}
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 transition-colors relative ${
+                location.pathname.startsWith('/editor')
+                  ? 'text-purple-600'
+                  : 'text-gray-500'
               }`}
-            />
-          </button>
+            >
+              <Layers className="w-5 h-5 flex-shrink-0" />
+              <span className="text-[10px] font-medium truncate">Editor</span>
+              <span className="absolute top-1 right-1/4 bg-purple-500 text-white text-[8px] rounded-full w-4 h-4 flex items-center justify-center">
+                {editorTabs.length}
+              </span>
+            </button>
+          )}
 
-          {isUserDropdownOpen && (
-            <div className="mt-1 flex flex-col items-center space-y-1">
+          {/* User Button - Mobile */}
+          <button
+            onClick={() => setIsUserMenuOpen(true)}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 transition-colors text-gray-500"
+          >
+            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <User className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <span className="text-[10px] font-medium truncate">Perfil</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile User Menu Modal */}
+      {isUserMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[100]">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50" 
+            onClick={() => setIsUserMenuOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl safe-area-bottom animate-slide-up">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+
+            {/* User Info */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 truncate">{userName}</p>
+                <p className="text-sm text-gray-500">Minha conta</p>
+              </div>
+              <button
+                onClick={() => setIsUserMenuOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-100 flex-shrink-0"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Menu Options */}
+            <div className="py-2">
               <button
                 onClick={() => {
                   navigate('/settings');
-                  setIsUserDropdownOpen(false);
+                  setIsUserMenuOpen(false);
                 }}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-gray hover:text-dark hover:bg-light w-full"
+                className="flex items-center gap-4 px-4 py-3 w-full text-left hover:bg-gray-50 transition-colors"
               >
-                <Settings className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-medium text-center whitespace-nowrap">
-                  Configurações
-                </span>
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <Settings className="w-5 h-5 text-gray-600" />
+                </div>
+                <span className="text-base font-medium text-gray-700">Configurações</span>
               </button>
-
-              {/* 
-              <button
-                onClick={() => {
-                  navigate('/create-business');
-                  setIsUserDropdownOpen(false);
-                }}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-gray hover:text-dark hover:bg-light w-full"
-              >
-                <Briefcase className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-medium text-center whitespace-nowrap">
-                  Criar Business
-                </span>
-              </button>
-              */}
 
               <button
                 onClick={() => {
                   logout();
                   navigate('/login');
                 }}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-colors text-red-600 hover:text-red-700 hover:bg-red-50 w-full"
+                className="flex items-center gap-4 px-4 py-3 w-full text-left hover:bg-red-50 transition-colors"
               >
-                <LogOut className="w-5 h-5 flex-shrink-0" />
-                <span className="text-[10px] font-medium text-center whitespace-nowrap">
-                  Sair
-                </span>
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                  <LogOut className="w-5 h-5 text-red-600" />
+                </div>
+                <span className="text-base font-medium text-red-600">Sair da conta</span>
               </button>
             </div>
-          )}
+
+            {/* Bottom Spacing */}
+            <div className="h-6" />
+          </div>
         </div>
-      </div>
-    </nav>
+      )}
+
+      {/* Overlay para fechar dropdown desktop */}
+      {isUserMenuOpen && (
+        <div 
+          className="hidden md:block fixed inset-0 z-40" 
+          onClick={() => setIsUserMenuOpen(false)} 
+        />
+      )}
+    </>
   );
 };
 

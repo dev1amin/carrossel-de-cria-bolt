@@ -38,7 +38,7 @@ const StatsPage: React.FC = () => {
       <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
-        <div className="flex-1 ml-16 flex items-center justify-center">
+        <div className="flex-1 ml-0 md:ml-16 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue"></div>
             <p className="text-gray">Carregando estatísticas...</p>
@@ -53,7 +53,7 @@ const StatsPage: React.FC = () => {
       <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
-        <div className="flex-1 ml-16 flex items-center justify-center p-4">
+        <div className="flex-1 ml-0 md:ml-16 flex items-center justify-center p-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
             <p className="text-red-500 mb-4">{error}</p>
             <button
@@ -73,7 +73,7 @@ const StatsPage: React.FC = () => {
       <div className="flex bg-light">
         <Navigation currentPage="settings" />
         <MouseFollowLight />
-        <div className="flex-1 ml-16 flex items-center justify-center">
+        <div className="flex-1 ml-0 md:ml-16 flex items-center justify-center">
           <p className="text-gray">Nenhuma estatística disponível</p>
         </div>
       </div>
@@ -84,7 +84,7 @@ const StatsPage: React.FC = () => {
     <div className="flex bg-light">
       <Navigation currentPage="settings" />
       <MouseFollowLight />
-      <div className="flex-1 ml-16 overflow-y-auto">
+      <div className="flex-1 ml-0 md:ml-16 overflow-y-auto">
         <div>
           <PageTitle title="Estatísticas" />
         </div>

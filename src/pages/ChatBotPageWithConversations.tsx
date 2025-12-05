@@ -125,8 +125,7 @@ const ChatBotPageWithConversations: React.FC = () => {
 
         {/* Área principal depois da navbar */}
         <div
-          className="relative flex-1 flex min-h-0 overflow-hidden"
-          style={{ marginLeft: '5.1rem' }}
+          className="relative flex-1 flex min-h-0 overflow-hidden ml-0 md:ml-20"
         >
           <MouseFollowLight zIndex={-1} />
 

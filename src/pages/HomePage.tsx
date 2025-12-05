@@ -17,7 +17,6 @@ import { templateRenderer } from '../services/carousel/templateRenderer.service'
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { downloadSlidesAsPNG } from '../services/carousel/download.service';
 import { useToneSetup } from '../hooks/useToneSetup';
-import { API_ENDPOINTS } from '../config/api';
 
 interface GalleryCarousel {
   id: string;
@@ -520,20 +519,32 @@ const HomePage: React.FC = () => {
     <div className="flex h-screen">
       <Navigation currentPage="home" />
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-16">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-0 md:ml-16">
+        {/* MouseFollowLight - sempre atrás de tudo */}
         <MouseFollowLight zIndex={-1} />
 
+        {/* Grid de quadrados - igual ao Feed */}
         <div
           className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
           style={{
-            backgroundImage: `
-              linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)
-            `,
-            backgroundSize: '50px 50px',
+            backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
+            backgroundSize: "50px 50px",
+            zIndex: 0,
           }}
         />
 
+        {/* Glow superior - igual ao Feed */}
+        <div
+          className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
+          style={{
+            background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
+            filter: "blur(70px)",
+            animation: "glowDown 3s ease-in-out infinite",
+            zIndex: 0,
+          }}
+        />
+
+        {/* Orbs decorativas - igual ao Feed */}
         <div
           className="fixed pointer-events-none"
           style={{
@@ -543,54 +554,10 @@ const HomePage: React.FC = () => {
             height: '300px',
             borderRadius: '50%',
             background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.3,
+            opacity: 0.15,
             filter: 'blur(80px)',
             animation: 'float 8s ease-in-out infinite',
-          }}
-        />
-
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            top: '5%',
-            right: '12%',
-            width: '250px',
-            height: '250px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.25,
-            filter: 'blur(70px)',
-            animation: 'float 10s ease-in-out infinite reverse',
-          }}
-        />
-
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            top: '40%',
-            left: '5%',
-            width: '280px',
-            height: '280px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.2,
-            filter: 'blur(75px)',
-            animation: 'float 11s ease-in-out infinite',
-          }}
-        />
-
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            top: '45%',
-            right: '8%',
-            width: '220px',
-            height: '220px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.28,
-            filter: 'blur(65px)',
-            animation: 'float 9s ease-in-out infinite reverse',
+            zIndex: 0,
           }}
         />
 
@@ -598,173 +565,181 @@ const HomePage: React.FC = () => {
           className="fixed pointer-events-none"
           style={{
             bottom: '15%',
-            left: '15%',
-            width: '260px',
-            height: '260px',
+            right: '10%',
+            width: '250px',
+            height: '250px',
             borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.22,
-            filter: 'blur(70px)',
-            animation: 'float 12s ease-in-out infinite',
-          }}
-        />
-
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            bottom: '20%',
-            right: '20%',
-            width: '240px',
-            height: '240px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.26,
-            filter: 'blur(68px)',
-            animation: 'float 13s ease-in-out infinite reverse',
-          }}
-        />
-
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            top: '25%',
-            left: '45%',
-            width: '200px',
-            height: '200px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.18,
+            background: 'linear-gradient(to bottom left, #6a82fb, #fc9d9a)',
+            opacity: 0.12,
             filter: 'blur(60px)',
-            animation: 'float 10s ease-in-out infinite',
+            animation: 'float 6s ease-in-out infinite reverse',
+            zIndex: 0,
           }}
         />
 
-        <div
-          className="fixed pointer-events-none"
-          style={{
-            top: '70%',
-            left: '35%',
-            width: '230px',
-            height: '230px',
-            borderRadius: '50%',
-            background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-            opacity: 0.24,
-            filter: 'blur(72px)',
-            animation: 'float 14s ease-in-out infinite reverse',
-          }}
-        />
-
-        <div className="max-w-7xl mx-auto px-6 py-12 relative">
-          <div className="text-center mb-8">
-            <h1
-              className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-12"
-              style={{ fontFamily: '"Shadows Into Light", cursive' }}
+        {/* Hero Section - Impactante */}
+        <section className="relative px-4 md:px-8 pt-8 pb-6 md:pt-16 md:pb-12 z-10">
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue/10 border border-blue/20 rounded-full mb-6"
             >
-              Bem-vindo de volta, {userName}!
-            </h1>
+              <Sparkles className="w-4 h-4 text-blue" />
+              <span className="text-sm font-medium text-blue">Powered by AI</span>
+            </motion.div>
 
-            <form onSubmit={handleAISubmit} className="max-w-4xl mx-auto mb-16 relative z-10">
-              <div
-                className="absolute -z-10 pointer-events-none"
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '500px',
-                  height: '500px',
-                  background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 40%, rgba(255,255,255,0) 70%)',
-                  filter: 'blur(60px)',
-                }}
-              />
-              <div className="relative bg-white rounded-2xl border-2 border-gray-200 shadow-lg hover:border-blue-300 transition-colors z-10">
-                <div className="flex items-center gap-3 px-6 py-4">
-                  <Sparkles className="w-6 h-6 text-blue-500 flex-shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="O que você gostaria de criar hoje?"
-                    value={aiMessage}
-                    onChange={(e) => setAiMessage(e.target.value)}
-                    className="flex-1 text-base md:text-lg outline-none bg-transparent"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!aiMessage.trim()}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Send className="w-4 h-4" />
-                    <span className="hidden sm:inline">Enviar</span>
-                  </button>
+            {/* Título principal */}
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-3xl md:text-5xl lg:text-6xl font-bold text-dark mb-4 md:mb-6 leading-tight"
+            >
+              Olá, <span className="text-blue">{userName}</span>! 👋
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-lg md:text-xl text-gray-dark mb-8 md:mb-10 max-w-2xl mx-auto"
+            >
+              Crie carrosséis incríveis para suas redes sociais em segundos com inteligência artificial
+            </motion.p>
+
+            {/* CTA Principal - Input de AI */}
+            <motion.form
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              onSubmit={handleAISubmit}
+              className="max-w-2xl mx-auto mb-8"
+            >
+              <div className="relative group">
+                {/* Glow effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
+                
+                <div className="relative bg-white rounded-2xl border-2 border-gray-200 shadow-xl group-hover:border-blue/50 transition-colors">
+                  <div className="flex items-center gap-3 p-2 md:p-3">
+                    <div className="hidden md:flex w-12 h-12 bg-gradient-to-br from-blue to-purple-500 rounded-xl items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Ex: Crie um carrossel sobre dicas de produtividade..."
+                      value={aiMessage}
+                      onChange={(e) => setAiMessage(e.target.value)}
+                      className="flex-1 text-base md:text-lg outline-none bg-transparent placeholder:text-gray-400 py-2"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!aiMessage.trim()}
+                      className="flex items-center gap-2 px-4 md:px-6 py-3 bg-gradient-to-r from-blue to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue/25"
+                    >
+                      <Send className="w-5 h-5" />
+                      <span className="hidden sm:inline">Criar</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </form>
+            </motion.form>
 
-            <div className="flex flex-wrap items-center justify-center gap-6 mb-12 relative z-10">
-              {menuItems.map((item) => {
+            {/* Quick actions - Mais visíveis */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-wrap justify-center gap-3 md:gap-4"
+            >
+              {menuItems.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <motion.button
                     key={item.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
                     onClick={() => handleMenuClick(item.route)}
-                    className="group flex flex-col items-center gap-2 transition-transform hover:scale-105"
+                    className="group flex items-center gap-2 px-4 md:px-5 py-2.5 md:py-3 bg-white hover:bg-gray-50 rounded-xl border border-gray-200 hover:border-blue/30 shadow-sm hover:shadow-md transition-all"
                   >
-                    <div
-                      className={`w-16 h-16 rounded-full bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`}
-                    >
-                      <Icon className="w-8 h-8 text-white" />
+                    <div className={`w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                      <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {item.label}
-                    </span>
-                  </button>
+                    <span className="text-sm md:text-base font-medium text-gray-700">{item.label}</span>
+                  </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
+        </section>
 
-          <div className="bg-white/40 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/50 min-h-[600px] relative z-10">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Recentes</h2>
-              {carousels.length > 0 && (
-                <button
-                  onClick={() => navigate('/gallery')}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  Ver todos
-                </button>
-              )}
-            </div>
-
-            {isLoading ? (
-              <SkeletonGrid count={4} type="home" />
-            ) : carousels.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                  <Image className="w-12 h-12 text-gray-400" />
+        {/* Seção de Carrosséis Recentes */}
+        <section className="relative px-4 md:px-8 py-8 md:py-12 z-10">
+          <div className="max-w-7xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8"
+            >
+              {/* Header da seção */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue to-purple-500 rounded-xl flex items-center justify-center">
+                    <Image className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900">Seus Carrosséis</h2>
+                    <p className="text-sm text-gray-500">Criações recentes</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Nenhum design criado ainda
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Comece criando seu primeiro carrossel
-                </p>
-                <button
-                  onClick={() => navigate('/create-carousel')}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-shadow"
-                >
-                  Criar Carrossel
-                </button>
+                {carousels.length > 0 && (
+                  <button
+                    onClick={() => navigate('/gallery')}
+                    className="text-blue hover:text-blue-dark font-medium text-sm flex items-center gap-1 hover:gap-2 transition-all"
+                  >
+                    Ver todos
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            ) : (
-              <CarouselSlider
-                carousels={carousels}
-                onEdit={handleViewCarousel}
-                onDownload={handleDownload}
-                downloadingId={downloadingId}
-                downloadProgress={downloadProgress}
-              />
-            )}
+
+              {/* Conteúdo */}
+              {isLoading ? (
+                <SkeletonGrid count={4} type="home" />
+              ) : carousels.length === 0 ? (
+                <div className="text-center py-12 md:py-16">
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue/10 to-purple-500/10 flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-blue" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Comece sua jornada criativa
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    Use o campo acima para descrever o carrossel que você quer criar. Nossa IA faz o resto!
+                  </p>
+                  <button
+                    onClick={() => navigate('/create-carousel')}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-blue/25 transition-all"
+                  >
+                    <Wrench className="w-5 h-5" />
+                    Criar Primeiro Carrossel
+                  </button>
+                </div>
+              ) : (
+                <CarouselSlider
+                  carousels={carousels}
+                  onEdit={handleViewCarousel}
+                  onDownload={handleDownload}
+                  downloadingId={downloadingId}
+                  downloadProgress={downloadProgress}
+                />
+              )}
+            </motion.div>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

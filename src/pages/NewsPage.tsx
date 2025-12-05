@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
 import NewsPostCard from '../components/NewsPostCard';
+import NewsFeedMobile from '../components/NewsFeedMobile';
 import NewsFilters from '../components/NewsFilters';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
@@ -41,6 +42,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const navigate = useNavigate();
 
   const { addEditorTab } = useEditorTabs();
@@ -48,6 +50,15 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
   
   const { addToQueue, updateQueueItem, generationQueue } = useGenerationQueue();
+  
+  // Detecta mudanças de tamanho de tela
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadNews = async (page: number = 1) => {
     const cacheKey = `${CACHE_KEYS.NEWS}_${JSON.stringify({ page, country: selectedCountry, lang: selectedLanguage })}`;
@@ -313,15 +324,36 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const memoizedNavigation = useMemo(() => <Navigation currentPage="news" unviewedCount={unviewedCount} />, [unviewedCount]);
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex min-h-screen bg-white overflow-x-hidden">
       {memoizedNavigation}
-      <div className="flex-1">
+      <div className="flex-1 md:ml-20">
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0 bg-white`}>
-        <section className="relative pb-[5rem]">
-          <MouseFollowLight zIndex={-1} />
+        {/* Mobile Layout */}
+        {isMobile ? (
+          <main className="min-h-screen pb-16">
+            {isLoading && news.length === 0 ? (
+              <div className="p-4 pt-8">
+                <SkeletonGrid count={4} type="news" />
+              </div>
+            ) : news.length === 0 ? (
+              <div className="p-4 pt-8">
+                <EmptyState />
+              </div>
+            ) : (
+              <NewsFeedMobile
+                news={news}
+                onGenerateCarousel={handleGenerateCarousel}
+                onGenerateClick={handleGenerateClick}
+              />
+            )}
+          </main>
+        ) : (
+          /* Desktop Layout */
+          <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0 bg-white`}>
+          <section className="relative pb-[5rem]">
+            <MouseFollowLight zIndex={-1} />
             <div
               className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
               style={{
@@ -556,6 +588,7 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
             </div>
           </section>
         </main>
+        )}
       </div>
       
       <ToneSetupModal
