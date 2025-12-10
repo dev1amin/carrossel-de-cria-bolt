@@ -5,6 +5,13 @@ export { PropertiesPanel } from './PropertiesPanel';
 export { CanvasArea } from './CanvasArea';
 export { default as CarouselViewer } from './CarouselViewer';
 
+// New UI Components
+export { SlidesSidebar } from './SlidesSidebar';
+export { EditorToolbar } from './EditorToolbar';
+export { CanvasPreview } from './CanvasPreview';
+export { RightPropertiesPanel } from './RightPropertiesPanel';
+export { default as NewCarouselViewer } from './NewCarouselViewer';
+
 // Types
 export * from './types';
 

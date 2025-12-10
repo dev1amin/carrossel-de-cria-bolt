@@ -35,6 +35,8 @@ export type ElementType = 'title' | 'subtitle' | 'background' | 'nome' | 'arroba
 export interface ElementStyles {
   fontSize?: string;
   fontWeight?: string;
+  fontStyle?: string; // 'normal' | 'italic'
+  textDecoration?: string; // 'none' | 'underline' | 'line-through'
   textAlign?: string;
   color?: string;
   objectPosition?: string; // Para imagens e vídeos

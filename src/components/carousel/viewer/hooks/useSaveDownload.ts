@@ -3,10 +3,13 @@
  */
 
 import { useCallback } from 'react';
-import type { CarouselData, ElementStyles } from '../../../../types/carousel';
+import type { CarouselData, ElementStyles, TEMPLATE_DIMENSIONS } from '../../../../types/carousel';
+import type { BlockSlideContent } from '../../../../types/blocks';
+import { isBlockSlide } from '../../../../types/blocks';
 import { updateGeneratedContent } from '../../../../services/generatedContent';
 import { downloadSlidesAsPNG } from '../../../../services/carousel/download.service';
 import { applyStylesFromState } from './useSlideRender';
+import { renderBlocksToHtml } from '../../blocks/utils/renderBlocksToHtml';
 
 export interface UseSaveDownloadParams {
   data: CarouselData;
@@ -17,6 +20,8 @@ export interface UseSaveDownloadParams {
   uploadedImages: Record<number, string>;
   contentId: number | null | undefined;
   iframeRefs: React.MutableRefObject<(HTMLIFrameElement | null)[]>;
+  slideWidth?: number;
+  slideHeight?: number;
   
   // Setters
   setEditedContent: React.Dispatch<React.SetStateAction<Record<string, any>>>;
@@ -38,6 +43,8 @@ export function useSaveDownload({
   uploadedImages,
   contentId,
   iframeRefs,
+  slideWidth = 1080,
+  slideHeight = 1350,
   setEditedContent,
   setUploadedImages,
   setHasUnsavedChanges,
@@ -48,6 +55,8 @@ export function useSaveDownload({
   
   /**
    * Salva as alterações na API
+   * - Salva HTML formatado diretamente em title/subtitle
+   * - Salva styles DENTRO de cada conteudo
    */
   const handleSave = useCallback(async () => {
     console.log('💾 Iniciando salvamento...', { contentId });
@@ -63,16 +72,64 @@ export function useSaveDownload({
       
       // Construir o objeto result com os dados atualizados
       const updatedConteudos = data.conteudos.map((conteudo: any, index: number) => {
-        const titleKey = `${index}-title`;
-        const subtitleKey = `${index}-subtitle`;
+        // Se for um slide baseado em blocos, manter como está
+        if (isBlockSlide(conteudo)) {
+          return conteudo;
+        }
+
+        // Lógica original para slides de template
         const backgroundKey = `${index}-background`;
         
         // Criar cópia do conteúdo original
         const updatedConteudo = { ...conteudo };
         
-        // Atualizar título e subtítulo
-        updatedConteudo.title = editedContent[titleKey] ?? conteudo.title;
-        updatedConteudo.subtitle = editedContent[subtitleKey] ?? conteudo.subtitle;
+        // Capturar o conteúdo formatado diretamente do DOM do iframe
+        // Salva HTML inline (bold, italic, etc) diretamente em title/subtitle
+        const ifr = iframeRefs.current[index];
+        const doc = ifr?.contentDocument || ifr?.contentWindow?.document;
+        
+        if (doc) {
+          // Captura título com formatação HTML - salva diretamente em title
+          const titleEl = doc.querySelector('[data-editable="title"]');
+          if (titleEl) {
+            const titleHtml = titleEl.innerHTML;
+            // Salva o HTML diretamente (com ou sem formatação)
+            updatedConteudo.title = titleHtml || conteudo.title;
+          }
+          
+          // Captura subtítulo com formatação HTML - salva diretamente em subtitle
+          const subtitleEl = doc.querySelector('[data-editable="subtitle"]');
+          if (subtitleEl) {
+            const subtitleHtml = subtitleEl.innerHTML;
+            updatedConteudo.subtitle = subtitleHtml || conteudo.subtitle;
+          }
+          
+          // Captura cor de fundo do slide
+          const slideEl = doc.querySelector('.slide') as HTMLElement;
+          const targetEl = slideEl || doc.body;
+          const cs = doc.defaultView?.getComputedStyle(targetEl);
+          const bgColor = cs?.backgroundColor;
+          
+          if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+            updatedConteudo.slideBackground = bgColor;
+          }
+        }
+        
+        // Coleta os estilos deste slide e salva DENTRO do conteudo
+        const slideStyles: Record<string, any> = {};
+        Object.entries(elementStyles).forEach(([key, styleObj]) => {
+          const [slideIndexStr, elementType] = key.split('-');
+          const slideIndex = parseInt(slideIndexStr, 10);
+          
+          if (slideIndex === index) {
+            slideStyles[elementType] = styleObj;
+          }
+        });
+        
+        // Salva estilos dentro do conteudo
+        if (Object.keys(slideStyles).length > 0) {
+          updatedConteudo.styles = slideStyles;
+        }
         
         // Determinar qual imagem de fundo usar e reorganizar as imagens
         const selectedBackground = editedContent[backgroundKey] || uploadedImages[index];
@@ -116,24 +173,10 @@ export function useSaveDownload({
         return updatedConteudo;
       });
 
-      // Organizar os estilos por slide
-      const styles: Record<string, any> = {};
-      
-      Object.entries(elementStyles).forEach(([key, styleObj]) => {
-        const [slideIndexStr, elementType] = key.split('-');
-        const slideIndex = parseInt(slideIndexStr, 10);
-        
-        if (!styles[slideIndex]) {
-          styles[slideIndex] = {};
-        }
-        
-        styles[slideIndex][elementType] = styleObj;
-      });
-
       const result = {
         dados_gerais: data.dados_gerais,
         conteudos: updatedConteudos,
-        styles: styles,
+        // NÃO salva styles separado - cada conteudo tem seus próprios styles
       };
 
       // Log específico para posições de imagens salvas
@@ -180,6 +223,9 @@ export function useSaveDownload({
     editedContent, 
     elementStyles, 
     uploadedImages, 
+    renderedSlides,
+    slideWidth,
+    slideHeight,
     addToast, 
     onSaveSuccess,
     setEditedContent,
@@ -214,13 +260,34 @@ export function useSaveDownload({
         }
       });
 
-      // 3. Captura o srcDoc de cada iframe
+      // 3. Captura o srcDoc de cada iframe ou gera HTML para slides de blocos
       const capturedSlides: string[] = [];
 
-      for (let i = 0; i < iframeRefs.current.length; i++) {
+      for (let i = 0; i < data.conteudos.length; i++) {
+        const conteudo = data.conteudos[i];
+        
+        // Para slides de blocos, gera HTML diretamente
+        if (isBlockSlide(conteudo)) {
+          const blockHtml = renderBlocksToHtml(conteudo.blocks || [], {
+            width: slideWidth,
+            height: slideHeight,
+            backgroundColor: (conteudo as BlockSlideContent).backgroundColor || '#ffffff',
+          });
+          const iframeHTML = `<iframe srcdoc="${blockHtml.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
+          capturedSlides.push(iframeHTML);
+          console.log(`✅ Gerado HTML de blocos para slide ${i + 1}`);
+          continue;
+        }
+
+        // Para slides de template, usa iframe
         const ifr = iframeRefs.current[i];
         if (!ifr) {
           console.warn(`⚠️ Iframe ${i} não encontrado`);
+          if (renderedSlides[i]) {
+            const iframeHTML = `<iframe srcdoc="${renderedSlides[i].replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
+            capturedSlides.push(iframeHTML);
+            console.log(`✅ Usando renderedSlides para slide ${i + 1}`);
+          }
           continue;
         }
 
@@ -245,9 +312,9 @@ export function useSaveDownload({
 
       console.log('📊 Slides capturados:', capturedSlides.length);
 
-      // Se nenhum slide foi capturado dos iframes, tenta criar iframes dos renderedSlides
+      // Se nenhum slide foi capturado, tenta criar iframes dos renderedSlides
       if (capturedSlides.length === 0 && renderedSlides.length > 0) {
-        console.log('🔄 Nenhum slide capturado dos iframes, criando iframes dos renderedSlides');
+        console.log('🔄 Nenhum slide capturado, criando iframes dos renderedSlides');
         renderedSlides.forEach((slide, i) => {
           const iframeHTML = `<iframe srcdoc="${slide.replace(/"/g, '&quot;')}" class="w-full h-full border-0" title="Slide ${i + 1}" sandbox="allow-same-origin allow-scripts allow-autoplay" style="pointer-events: auto;"></iframe>`;
           capturedSlides.push(iframeHTML);
@@ -271,7 +338,7 @@ export function useSaveDownload({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       addToast(`Erro ao baixar slides: ${errorMessage}`, 'error');
     }
-  }, [slides, renderedSlides, editedContent, elementStyles, iframeRefs, addToast]);
+  }, [slides, renderedSlides, editedContent, elementStyles, iframeRefs, data, slideWidth, slideHeight, addToast]);
 
   return { handleSave, handleDownloadAll };
 }

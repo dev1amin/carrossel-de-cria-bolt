@@ -118,6 +118,8 @@ export function applyStylesFromState(
 
       if (sty.fontSize) el.style.fontSize = sty.fontSize;
       if (sty.fontWeight) el.style.fontWeight = String(sty.fontWeight);
+      if (sty.fontStyle) el.style.fontStyle = sty.fontStyle;
+      if (sty.textDecoration) el.style.textDecoration = sty.textDecoration;
       if (sty.textAlign) el.style.textAlign = sty.textAlign as any;
       if (sty.color) el.style.color = sty.color;
     }

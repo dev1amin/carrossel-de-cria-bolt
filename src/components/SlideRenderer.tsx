@@ -122,6 +122,8 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
     if (!el) return;
     if (styles.fontSize)   el.style.setProperty('font-size', styles.fontSize, 'important');
     if (styles.fontWeight) el.style.setProperty('font-weight', styles.fontWeight, 'important');
+    if (styles.fontStyle)  el.style.setProperty('font-style', styles.fontStyle, 'important');
+    if (styles.textDecoration) el.style.setProperty('text-decoration', styles.textDecoration, 'important');
     if (styles.textAlign)  el.style.setProperty('text-align', styles.textAlign, 'important');
     if (styles.color)      el.style.setProperty('color', styles.color, 'important');
   };
