@@ -6,10 +6,24 @@ import { getIframeDocument } from '../utils/iframeHelpers';
 
 /**
  * Aplica um estilo diretamente em um elemento HTML
+ * Usa setProperty com !important para garantir que sobrescreva estilos do tema
  */
 function applyStyleToElement(element: HTMLElement, property: string, value: any): void {
-  const style = element.style as any;
-  style[property] = value;
+  // Para color e background-color, usa !important para sobrepor temas
+  const importantProps = ['color', 'backgroundColor', 'background-color'];
+  const cssProperty = property.replace(/([A-Z])/g, '-$1').toLowerCase();
+  
+  if (importantProps.includes(property) || importantProps.includes(cssProperty)) {
+    element.style.setProperty(cssProperty, value, 'important');
+    // Também aplica nos filhos para garantir
+    const children = element.querySelectorAll('*');
+    children.forEach((child: Element) => {
+      (child as HTMLElement).style.setProperty(cssProperty, value, 'important');
+    });
+  } else {
+    const style = element.style as any;
+    style[property] = value;
+  }
 }
 
 /**

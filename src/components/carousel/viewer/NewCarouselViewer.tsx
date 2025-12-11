@@ -15,7 +15,7 @@ import { SlidesSidebar } from './SlidesSidebar';
 import { EditorToolbar } from './EditorToolbar';
 import { CanvasPreview } from './CanvasPreview';
 import { RightPropertiesPanel } from './RightPropertiesPanel';
-import MobileCarouselViewer from './MobileCarouselViewer';
+import { MobileCarouselViewerNew } from './mobile';
 import { SlideCloneModal } from './SlideCloneModal';
 
 // Block-based slide components
@@ -78,7 +78,7 @@ const NewCarouselViewer: React.FC<CarouselViewerProps> = (props) => {
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    return <MobileCarouselViewer {...props} />;
+    return <MobileCarouselViewerNew {...props} />;
   }
 
   return <DesktopCarouselViewer {...props} />;

@@ -31,15 +31,18 @@ const Toast: React.FC<ToastProps> = ({ toasts, onRemove }) => {
     };
   }, [toasts, onRemove]);
 
+  // Limitar a 2 toasts máximo
+  const visibleToasts = toasts.slice(-2);
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2">
+    <div className="fixed top-4 right-4 z-50 space-y-2">
       <AnimatePresence>
-        {toasts.map((toast) => (
+        {visibleToasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 400, opacity: 0 }}
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={`flex items-center space-x-3 px-4 py-3 rounded-xl shadow-card min-w-[300px] bg-white ${
               toast.type === 'success'
