@@ -22,7 +22,8 @@ export type {
   DescriptionLength,
   CarouselDimension,
   CTAType,
-  CTAIntention
+  CTAIntention,
+  SourceItem
 } from './components/carousel';
 
 // ==================== Services ====================

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Newspaper, Bookmark, Trophy, Medal } from 'lucide-react';
-import { TemplateSelectionModal, GenerationOptions } from '../carousel';
+import { TemplateSelectionModal, GenerationOptions, SourceItem } from '../carousel';
 import type { NewsItem } from '../types/news';
 import { motion } from 'framer-motion';
 
@@ -13,6 +13,16 @@ interface NewsPostCardProps {
 
 const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCarousel, onGenerateClick }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Cria o SourceItem inicial baseado na notícia
+  const createInitialSource = (): SourceItem => ({
+    type: 'news',
+    id: `news-${news.id}`,
+    code: news.url,
+    title: news.title?.substring(0, 50) || 'Notícia',
+    thumbnail: news.image,
+    newsData: news,
+  });
 
   const handleOpenModal = () => {
     // Verifica se o tone setup já foi completado
@@ -40,6 +50,7 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
 
   const handleSelectTemplate = (templateId: string, options?: GenerationOptions) => {
     if (onGenerateCarousel) {
+      // Chama onGenerateCarousel com as opções do template
       onGenerateCarousel(news, templateId, options);
     }
   };
@@ -203,11 +214,14 @@ const NewsPostCard: React.FC<NewsPostCardProps> = ({ news, index, onGenerateCaro
               <span>Gerar</span>
             </button>
           </div>
+          
+          {/* Modal de Seleção de Template com step de fontes integrado */}
           <TemplateSelectionModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onSelectTemplate={handleSelectTemplate}
             postCode={news.id}
+            initialSource={createInitialSource()}
           />
         </div>
       )}

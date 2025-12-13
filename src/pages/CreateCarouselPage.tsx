@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link2, MessageSquare, Instagram, ArrowRight, X } from 'lucide-react';
+import { Link2, MessageSquare, Instagram, ArrowRight, X, Plus, Trash2 } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import { MouseFollowLight } from '../components/MouseFollowLight';
 import { ToneSetupModal } from '../components/ToneSetupModal';
@@ -14,9 +14,11 @@ import type { GenerationQueueItem } from '../carousel';
 const CreateCarouselPage: React.FC = () => {
   const [activeModal, setActiveModal] = useState<'instagram' | 'website' | null>(null);
   const [linkInput, setLinkInput] = useState('');
+  const [multipleLinks, setMultipleLinks] = useState<string[]>([]); // Para múltiplos links
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [pendingInstagramCode, setPendingInstagramCode] = useState<string | null>(null);
   const [pendingWebsiteLink, setPendingWebsiteLink] = useState<string | null>(null);
+  const [pendingMultipleLinks, setPendingMultipleLinks] = useState<string[]>([]); // Links adicionais pendentes
   const navigate = useNavigate();
   const { addToQueue, updateQueueItem, removeFromQueue } = useGenerationQueue();
   const { showToneModal, checkToneSetupBeforeAction, closeToneModal, completeToneSetup } = useToneSetup();
@@ -31,11 +33,13 @@ const CreateCarouselPage: React.FC = () => {
 
     setActiveModal(type);
     setLinkInput('');
+    setMultipleLinks([]);
   };
 
   const handleCloseModal = () => {
     setActiveModal(null);
     setLinkInput('');
+    setMultipleLinks([]);
   };
 
   const extractInstagramCode = (url: string): string | null => {
@@ -48,8 +52,29 @@ const CreateCarouselPage: React.FC = () => {
     }
   };
 
-  const handleSubmitLink = () => {
+  const handleAddLink = () => {
     if (!linkInput.trim()) return;
+
+    if (activeModal === 'instagram') {
+      const code = extractInstagramCode(linkInput);
+      if (!code) {
+        alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
+        return;
+      }
+      setMultipleLinks(prev => [...prev, linkInput.trim()]);
+    } else {
+      setMultipleLinks(prev => [...prev, linkInput.trim()]);
+    }
+    setLinkInput('');
+  };
+
+  const handleRemoveLink = (index: number) => {
+    setMultipleLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmitLink = () => {
+    // Se não tem link atual nem links na lista, retorna
+    if (!linkInput.trim() && multipleLinks.length === 0) return;
 
     // Check tone setup before proceeding
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
@@ -59,17 +84,30 @@ const CreateCarouselPage: React.FC = () => {
       return;
     }
 
+    // Combina o link atual com os links da lista
+    const allLinks = [...multipleLinks];
+    if (linkInput.trim()) {
+      allLinks.push(linkInput.trim());
+    }
+
     if (activeModal === 'instagram') {
-      const code = extractInstagramCode(linkInput);
-      if (!code) {
-        alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
+      // Extrai os códigos de todos os links do Instagram
+      const codes = allLinks.map(extractInstagramCode).filter((code): code is string => code !== null);
+      if (codes.length === 0) {
+        alert('Nenhum link do Instagram válido. Use links como: https://www.instagram.com/p/CODE/');
         return;
       }
-      setPendingInstagramCode(code);
+      setPendingInstagramCode(codes[0]);
+      if (codes.length > 1) {
+        setPendingMultipleLinks(codes.slice(1));
+      }
       handleCloseModal();
       setIsTemplateModalOpen(true);
     } else if (activeModal === 'website') {
-      setPendingWebsiteLink(linkInput);
+      setPendingWebsiteLink(allLinks[0]);
+      if (allLinks.length > 1) {
+        setPendingMultipleLinks(allLinks.slice(1));
+      }
       handleCloseModal();
       setIsTemplateModalOpen(true);
     }
@@ -448,7 +486,11 @@ const CreateCarouselPage: React.FC = () => {
                 onChange={(e) => setLinkInput(e.target.value)}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
-                    handleSubmitLink();
+                    if (e.shiftKey || e.ctrlKey) {
+                      handleAddLink();
+                    } else {
+                      handleSubmitLink();
+                    }
                   }
                 }}
                 placeholder={activeModal === 'instagram' 
@@ -458,6 +500,41 @@ const CreateCarouselPage: React.FC = () => {
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-400"
                 autoFocus
               />
+
+              {/* Add Link Button */}
+              <button
+                onClick={handleAddLink}
+                disabled={!linkInput.trim()}
+                className="w-full px-4 py-2 border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-800 rounded-xl font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar mais um link (Ctrl+Enter)
+              </button>
+
+              {/* Links List */}
+              {multipleLinks.length > 0 && (
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Links adicionados ({multipleLinks.length}):
+                  </p>
+                  {multipleLinks.map((link, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200"
+                    >
+                      <span className="text-sm text-gray-600 truncate flex-1">
+                        {link}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveLink(index)}
+                        className="text-red-500 hover:text-red-700 transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Buttons */}
               <div className="flex gap-3">
@@ -469,10 +546,13 @@ const CreateCarouselPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSubmitLink}
-                  disabled={!linkInput.trim()}
+                  disabled={!linkInput.trim() && multipleLinks.length === 0}
                   className="flex-1 px-4 py-3 bg-gradient-to-r from-primary-500 to-accent-500 hover:from-primary-600 hover:to-accent-600 text-white rounded-xl font-semibold transition-all shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Processar Link
+                  {multipleLinks.length > 0 
+                    ? `Processar ${multipleLinks.length + (linkInput.trim() ? 1 : 0)} Links`
+                    : 'Processar Link'
+                  }
                 </button>
               </div>
             </div>
@@ -487,9 +567,11 @@ const CreateCarouselPage: React.FC = () => {
           setIsTemplateModalOpen(false);
           setPendingInstagramCode(null);
           setPendingWebsiteLink(null);
+          setPendingMultipleLinks([]);
         }}
         onSelectTemplate={handleTemplateSelect}
         postCode={pendingInstagramCode || pendingWebsiteLink || ''}
+        multipleLinks={pendingMultipleLinks}
       />
       
       <ToneSetupModal

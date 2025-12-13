@@ -12,7 +12,7 @@ import {
   MessageCircle,
   Share2
 } from 'lucide-react';
-import { TemplateSelectionModal, GenerationOptions } from '../carousel';
+import { TemplateSelectionModal, GenerationOptions, SourceItem } from '../carousel';
 import { Post, SortOption } from '../types';
 import { formatNumber, isPostOld, getDaysAgo } from '../utils/formatters';
 import { saveContent, unsaveContent } from '../services/feed';
@@ -51,11 +51,22 @@ const PostCard: React.FC<PostCardProps> = ({
     setIsSaved(post.is_saved || false);
   }, [post.is_saved]);
 
+  // Cria o SourceItem inicial baseado no post
+  const createInitialSource = (): SourceItem => ({
+    type: 'post',
+    id: `post-${post.id}`,
+    code: post.code,
+    title: post.text?.substring(0, 50) || `Post de @${post.username}`,
+    thumbnail: post.image_url,
+    postId: post.id,
+  });
+
   const handleOpenModal = () => {
     const needsToneSetup = localStorage.getItem('needs_tone_setup');
 
     if (needsToneSetup === 'false') {
       if (!onGenerateCarousel) return;
+      // Abre diretamente o modal de template com a fonte inicial
       setIsModalOpen(true);
       return;
     }
@@ -66,6 +77,7 @@ const PostCard: React.FC<PostCardProps> = ({
     }
 
     if (!onGenerateCarousel) return;
+    // Abre diretamente o modal de template com a fonte inicial
     setIsModalOpen(true);
   };
 
@@ -73,8 +85,10 @@ const PostCard: React.FC<PostCardProps> = ({
     console.log('🔄 PostCard - handleSelectTemplate called');
     console.log('🔄 Template ID:', templateId);
     console.log('🔄 Options:', options);
+    
     if (onGenerateCarousel) {
-      console.log('🔄 Calling onGenerateCarousel with:', post.code, templateId, post.id, options);
+      // As fontes já vem nas options do TemplateSelectionModal
+      // Chama onGenerateCarousel com as opções
       onGenerateCarousel(post.code, templateId, post.id, options);
     } else {
       console.log('⚠️ onGenerateCarousel is not defined!');
@@ -337,11 +351,14 @@ const PostCard: React.FC<PostCardProps> = ({
               </div>
             )}
           </div>
+          
+          {/* Modal de Seleção de Template com step de fontes integrado */}
           <TemplateSelectionModal
             isOpen={isModalOpen}
             onClose={() => setIsModalOpen(false)}
             onSelectTemplate={handleSelectTemplate}
             postCode={post.code}
+            initialSource={createInitialSource()}
           />
         </div>
       )}

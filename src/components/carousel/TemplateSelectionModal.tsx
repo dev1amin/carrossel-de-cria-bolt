@@ -5,11 +5,22 @@ import React, {
   useCallback,
 } from "react";
 import { createPortal } from "react-dom";
-import { X, Loader2, ZoomIn, ZoomOut, CircleSlash, PanelsTopLeft, ChevronRight, ChevronLeft, BookOpen, Briefcase, GraduationCap, Package, MessageSquare, Link2 } from "lucide-react";
+import { X, Loader2, ZoomIn, ZoomOut, CircleSlash, PanelsTopLeft, ChevronRight, ChevronLeft, BookOpen, Briefcase, GraduationCap, Package, MessageSquare, Link2, Smartphone, Monitor, Instagram, Trash2, Newspaper, Image, FileText, Sparkles, Check, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TemplateConfig, AVAILABLE_TEMPLATES, TEMPLATE_DIMENSIONS } from "../../types/carousel";
 import { templateService, templateRenderer } from "../../services/carousel";
 import { TEMPLATE_PREVIEW_DATA } from "../../data/templatePreviews";
+
+// ==================== Source Item Types ====================
+export interface SourceItem {
+  type: 'post' | 'news' | 'instagram' | 'website';
+  id: string;
+  code?: string; // Código do Instagram ou URL
+  title?: string;
+  thumbnail?: string;
+  postId?: number;
+  newsData?: any;
+}
 
 // ==================== Generation Options Types ====================
 export type ContentType = 'historias' | 'cases' | 'educacional' | 'produto';
@@ -28,9 +39,12 @@ export interface GenerationOptions {
   hasCTA: boolean;
   ctaType?: CTAType;
   ctaIntention?: CTAIntention;
+  context?: string; // Contexto/brisa do usuário para o carrossel
+  multipleLinks?: string[]; // Links adicionais para gerar carrossel com múltiplos itens
+  multifont?: boolean; // Indica geração com múltiplas fontes (envia cada link separadamente)
 }
 
-type GenerationStep = 'template' | 'content-type' | 'characteristics' | 'cta';
+type GenerationStep = 'sources' | 'template' | 'context' | 'content-type' | 'characteristics' | 'cta';
 
 interface UserData {
   name: string;
@@ -80,6 +94,8 @@ interface TemplateSelectionModalProps {
   onClose: () => void;
   onSelectTemplate: (templateId: string, options?: GenerationOptions) => void;
   postCode: string;
+  multipleLinks?: string[]; // Links adicionais para gerar carrossel com múltiplos itens
+  initialSource?: SourceItem; // Fonte inicial (post ou notícia selecionada)
   brand?: {
     bg?: string;
     card?: string;
@@ -148,9 +164,11 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   onClose,
   onSelectTemplate,
   postCode,
+  multipleLinks = [],
+  initialSource,
 }) => {
-  // Step management
-  const [currentStep, setCurrentStep] = useState<GenerationStep>('template');
+  // Step management - se tem initialSource, começa em sources
+  const [currentStep, setCurrentStep] = useState<GenerationStep>(initialSource ? 'sources' : 'template');
   
   // Template selection state
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateConfig>(
@@ -167,6 +185,79 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   const [hasCTA, setHasCTA] = useState<boolean | null>(null);
   const [ctaType, setCtaType] = useState<CTAType | null>(null);
   const [ctaIntention, setCtaIntention] = useState<CTAIntention | null>(null);
+  const [wantsContext, setWantsContext] = useState<boolean | null>(null); // Pergunta se quer adicionar contexto
+  const [context, setContext] = useState<string>(''); // Contexto/brisa do carrossel
+
+  // Sources state (multi-fonte)
+  const [sources, setSources] = useState<SourceItem[]>(initialSource ? [initialSource] : []);
+  const [linkInput, setLinkInput] = useState('');
+  const [addingType, setAddingType] = useState<'instagram' | 'website' | null>(null);
+
+  // Helpers para sources
+  const extractInstagramCode = (url: string): string | null => {
+    try {
+      const match = url.match(/instagram\.com\/p\/([A-Za-z0-9_-]+)/);
+      return match ? match[1] : null;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const handleAddSource = (type: 'instagram' | 'website') => {
+    setAddingType(type);
+    setLinkInput('');
+  };
+
+  const handleConfirmLink = () => {
+    if (!linkInput.trim()) return;
+
+    if (addingType === 'instagram') {
+      const code = extractInstagramCode(linkInput);
+      if (!code) {
+        alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
+        return;
+      }
+      setSources(prev => [...prev, {
+        type: 'instagram',
+        id: `instagram-${code}-${Date.now()}`,
+        code,
+        title: `Post Instagram: ${code}`,
+      }]);
+    } else if (addingType === 'website') {
+      setSources(prev => [...prev, {
+        type: 'website',
+        id: `website-${Date.now()}`,
+        code: linkInput.trim(),
+        title: linkInput.trim().substring(0, 50) + (linkInput.length > 50 ? '...' : ''),
+      }]);
+    }
+
+    setLinkInput('');
+    setAddingType(null);
+  };
+
+  const handleRemoveSource = (index: number) => {
+    if (sources.length <= 1) return; // Não permite remover a última fonte
+    setSources(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const getSourceIcon = (type: SourceItem['type']) => {
+    switch (type) {
+      case 'post': return <Image className="w-5 h-5" />;
+      case 'news': return <Newspaper className="w-5 h-5" />;
+      case 'instagram': return <Instagram className="w-5 h-5" />;
+      case 'website': return <Link2 className="w-5 h-5" />;
+    }
+  };
+
+  const getSourceLabel = (type: SourceItem['type']) => {
+    switch (type) {
+      case 'post': return 'Post do Feed';
+      case 'news': return 'Notícia';
+      case 'instagram': return 'Instagram';
+      case 'website': return 'Link Externo';
+    }
+  };
 
   // Canvas state
   const [zoom, setZoom] = useState(0.30); // 30% de zoom inicial
@@ -193,7 +284,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       // Reset all state when modal closes
-      setCurrentStep('template');
+      setCurrentStep(initialSource ? 'sources' : 'template');
       setContentType(null);
       setScreenCount(10);
       setDescriptionLength('curta');
@@ -201,14 +292,22 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
       setHasCTA(null);
       setCtaType(null);
       setCtaIntention(null);
+      setWantsContext(null);
+      setContext('');
       setIsInitialMount(true);
+      // Reset sources to initial
+      setSources(initialSource ? [initialSource] : []);
+      setLinkInput('');
+      setAddingType(null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialSource]);
 
   // Step navigation helpers
   const getStepTitle = () => {
     switch (currentStep) {
+      case 'sources': return 'Pronto para gerar!';
       case 'template': return 'Selecionar Template';
+      case 'context': return 'Contexto do Carrossel';
       case 'content-type': return 'Tipo de Conteúdo';
       case 'characteristics': return 'Características do Carrossel';
       case 'cta': return 'Configurar CTA';
@@ -216,19 +315,27 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   };
 
   const getStepNumber = () => {
+    const hasSourcesStep = !!initialSource;
     switch (currentStep) {
-      case 'template': return 1;
-      case 'content-type': return 2;
-      case 'characteristics': return 3;
-      case 'cta': return 4;
+      case 'sources': return 1;
+      case 'template': return hasSourcesStep ? 2 : 1;
+      case 'context': return hasSourcesStep ? 3 : 2;
+      case 'content-type': return hasSourcesStep ? 4 : 3;
+      case 'characteristics': return hasSourcesStep ? 5 : 4;
+      case 'cta': return hasSourcesStep ? 6 : 5;
     }
   };
 
-  const getTotalSteps = () => hasCTA === false ? 3 : 4;
+  const getTotalSteps = () => {
+    const baseSteps = hasCTA === false ? 4 : 5;
+    return initialSource ? baseSteps + 1 : baseSteps;
+  };
 
   const canAdvance = () => {
     switch (currentStep) {
+      case 'sources': return sources.length > 0 && !addingType; // Precisa ter ao menos uma fonte e não estar adicionando
       case 'template': return true;
+      case 'context': return wantsContext !== null; // Precisa escolher sim ou não
       case 'content-type': return contentType !== null;
       case 'characteristics': return hasCTA !== null;
       case 'cta': return ctaType !== null && ctaIntention !== null;
@@ -237,7 +344,13 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
 
   const handleNext = () => {
     switch (currentStep) {
+      case 'sources':
+        setCurrentStep('template');
+        break;
       case 'template':
+        setCurrentStep('context');
+        break;
+      case 'context':
         setCurrentStep('content-type');
         break;
       case 'content-type':
@@ -259,8 +372,26 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
 
   const handleBack = () => {
     switch (currentStep) {
+      case 'template':
+        // Volta para sources se veio de lá
+        if (initialSource) {
+          setCurrentStep('sources');
+        }
+        break;
+      case 'context':
+        // Se estiver no campo de texto, volta para a pergunta sim/não
+        if (wantsContext === true) {
+          setWantsContext(null);
+        } else {
+          setCurrentStep('template');
+        }
+        break;
       case 'content-type':
-        setCurrentStep('template');
+        // Se pulou o contexto, volta para a pergunta sim/não
+        if (wantsContext === false) {
+          setWantsContext(null);
+        }
+        setCurrentStep('context');
         break;
       case 'characteristics':
         setCurrentStep('content-type');
@@ -531,6 +662,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   };
 
   const handleGenerate = () => {
+    // Se tem sources, inclui as inform\u00e7\u00f5es de multi-fonte
+    const isMultifont = sources.length > 1;
+    const sourceLinks = sources.map(s => s.code || s.id);
+    
     const options: GenerationOptions = {
       templateId: selectedTemplate.id,
       contentType: contentType!,
@@ -540,11 +675,15 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
       hasCTA: hasCTA!,
       ...(hasCTA && ctaType && { ctaType }),
       ...(hasCTA && ctaIntention && { ctaIntention }),
+      ...(context.trim() && { context: context.trim() }),
+      ...(isMultifont && { multipleLinks: sourceLinks }),
+      ...(isMultifont && { multifont: true }),
     };
     
-    console.log('🎯 TemplateSelectionModal - handleGenerate called');
-    console.log('🎯 Generation options:', options);
-    console.log('🎯 Calling onSelectTemplate with:', selectedTemplate.id, options);
+    console.log('\ud83c\udfaf TemplateSelectionModal - handleGenerate called');
+    console.log('\ud83c\udfaf Generation options:', options);
+    console.log('\ud83c\udfaf Sources:', sources);
+    console.log('\ud83c\udfaf Calling onSelectTemplate with:', selectedTemplate.id, options);
     
     onSelectTemplate(selectedTemplate.id, options);
     onClose();
@@ -622,7 +761,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 bg-white/95 backdrop-blur-sm relative z-20 pointer-events-auto">
             <div className="flex items-center gap-3">
-              {currentStep !== 'template' && (
+              {currentStep !== 'sources' && currentStep !== 'template' && (
                 <button
                   onClick={handleBack}
                   className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors"
@@ -631,7 +770,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                   <ChevronLeft className="w-5 h-5 text-gray-700" />
                 </button>
               )}
-              {currentStep === 'template' && (
+              {currentStep === 'template' && !initialSource && (
                 <button
                   className="md:hidden p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors"
                   onClick={() => setShowSidebar((s) => !s)}
@@ -640,13 +779,28 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                   <PanelsTopLeft className="w-5 h-5 text-gray-700" />
                 </button>
               )}
+              {currentStep === 'template' && initialSource && (
+                <button
+                  onClick={handleBack}
+                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 ring-blue-500/30 transition-colors"
+                  aria-label="Voltar"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </button>
+              )}
               <div>
                 <h2 id="template-modal-title" className="text-lg md:text-xl font-semibold tracking-tight text-gray-900">
                   {getStepTitle()}
                 </h2>
-                <p className="text-xs text-gray-500">
-                  Etapa {getStepNumber()} de {getTotalSteps()}
-                </p>
+                {currentStep === 'sources' ? (
+                  <p className="text-xs text-gray-500">
+                    Voc\u00ea pode gerar agora ou adicionar mais fontes (opcional)
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Etapa {getStepNumber()} de {getTotalSteps()}
+                  </p>
+                )}
               </div>
             </div>
             <button
@@ -662,7 +816,193 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           {/* Body */}
           <div className="relative h-[600px] overflow-hidden">
             <AnimatePresence mode="wait">
-              {/* Step 1: Template Selection */}
+              {/* Step Sources: Multi-source selection */}
+              {currentStep === 'sources' && (
+                <motion.div
+                  key="step-sources"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 p-6 overflow-y-auto"
+                >
+                  <div className="w-full max-w-lg">
+                    {/* Header visual */}
+                    <div className="text-center mb-8">
+                      <div className="relative inline-flex">
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-200 mb-4">
+                          <Sparkles className="w-10 h-10 text-white" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Tudo pronto!</h3>
+                      <p className="text-gray-600">
+                        Sua fonte foi selecionada. Avance para escolher o template ou combine mais conteúdos.
+                      </p>
+                    </div>
+
+                    {/* Lista de fontes */}
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          {sources.length === 1 ? 'Fonte selecionada' : `${sources.length} fontes selecionadas`}
+                        </label>
+                      </div>
+                      {sources.map((source, index) => (
+                        <motion.div
+                          key={source.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                          className={`
+                            flex items-center gap-4 p-4 bg-white rounded-2xl border-2 shadow-sm
+                            ${index === 0 ? 'border-purple-200 ring-2 ring-purple-100' : 'border-gray-200'}
+                          `}
+                        >
+                          <div className={`
+                            p-3 rounded-xl shadow-sm
+                            ${source.type === 'instagram' ? 'bg-gradient-to-br from-pink-500 to-purple-500 text-white' : ''}
+                            ${source.type === 'website' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white' : ''}
+                            ${source.type === 'post' ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white' : ''}
+                            ${source.type === 'news' ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white' : ''}
+                          `}>
+                            {getSourceIcon(source.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {source.title || source.code || source.id}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                              {getSourceLabel(source.type)}
+                              {index === 0 && <span className="text-purple-500 font-medium">• Principal</span>}
+                            </p>
+                          </div>
+                          {sources.length > 1 && (
+                            <button
+                              onClick={() => handleRemoveSource(index)}
+                              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {/* Input de link (quando adicionando) */}
+                    {addingType && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-5 bg-white rounded-2xl border-2 border-dashed border-gray-300 shadow-sm"
+                      >
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className={`p-2 rounded-xl ${addingType === 'instagram' ? 'bg-gradient-to-br from-pink-500 to-purple-500' : 'bg-gradient-to-br from-blue-500 to-cyan-500'}`}>
+                            {addingType === 'instagram' ? (
+                              <Instagram className="w-5 h-5 text-white" />
+                            ) : (
+                              <Link2 className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <span className="font-semibold text-gray-900">
+                            {addingType === 'instagram' ? 'Adicionar Post do Instagram' : 'Adicionar Link Externo'}
+                          </span>
+                        </div>
+                        <input
+                          type="url"
+                          value={linkInput}
+                          onChange={(e) => setLinkInput(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && handleConfirmLink()}
+                          placeholder={addingType === 'instagram'
+                            ? 'https://www.instagram.com/p/...'
+                            : 'https://exemplo.com/artigo'
+                          }
+                          className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-400 mb-4 bg-gray-50"
+                          autoFocus
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setAddingType(null)}
+                            className="flex-1 px-4 py-2.5 border-2 border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleConfirmLink}
+                            disabled={!linkInput.trim()}
+                            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                          >
+                            Adicionar
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Botões de adicionar (quando não está adicionando) */}
+                    {!addingType && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Adicionar mais (opcional)</span>
+                          <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => handleAddSource('instagram')}
+                            className="group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100 transition-all"
+                          >
+                            <div className="p-2.5 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                              <Instagram className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="text-left">
+                              <p className="font-semibold text-gray-900">Instagram</p>
+                              <p className="text-xs text-gray-500">Post ou Reels</p>
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => handleAddSource('website')}
+                            className="group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 transition-all"
+                          >
+                            <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
+                              <Link2 className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="text-left">
+                              <p className="font-semibold text-gray-900">Link Externo</p>
+                              <p className="text-xs text-gray-500">Site ou Artigo</p>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Info sobre multi-fonte */}
+                    {sources.length > 1 && (
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mt-6 p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg shadow-purple-200"
+                      >
+                        <div className="flex items-center gap-3 text-white">
+                          <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <Layers className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <span className="font-bold">{sources.length} fontes combinadas</span>
+                            <p className="text-sm text-white/80">
+                              Conteúdo multi-fonte ativado
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step Template: Template Selection */}
               {currentStep === 'template' && (
                 <motion.div
                   key="step-template"
@@ -858,7 +1198,83 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 </motion.div>
               )}
 
-              {/* Step 2: Content Type Selection */}
+              {/* Step 2: Context Input */}
+              {currentStep === 'context' && (
+                <motion.div
+                  key="step-context"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 flex items-center justify-center bg-gray-50 p-6"
+                >
+                  <div className="w-full max-w-2xl">
+                    {/* Pergunta inicial: Quer adicionar contexto? */}
+                    {wantsContext === null ? (
+                      <>
+                        <div className="text-center mb-8">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-500/50 flex items-center justify-center mx-auto mb-4">
+                            <MessageSquare className="w-8 h-8 text-purple-500" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">Deseja adicionar contexto?</h3>
+                          <p className="text-gray-600">
+                            Adicionar contexto ajuda a IA a gerar um carrossel mais alinhado com sua ideia.
+                          </p>
+                        </div>
+                        <div className="flex gap-4 justify-center">
+                          <button
+                            onClick={() => setWantsContext(true)}
+                            className="flex-1 max-w-[200px] py-4 px-6 rounded-xl font-semibold transition-all bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-md"
+                          >
+                            Sim, quero
+                          </button>
+                          <button
+                            onClick={() => {
+                              setWantsContext(false);
+                              setCurrentStep('content-type');
+                            }}
+                            className="flex-1 max-w-[200px] py-4 px-6 rounded-xl font-semibold transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          >
+                            Não, pular
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      /* Campo de contexto quando wantsContext === true */
+                      <>
+                        <div className="text-center mb-8">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 border border-purple-500/50 flex items-center justify-center mx-auto mb-4">
+                            <MessageSquare className="w-8 h-8 text-purple-500" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-2">Qual é a brisa?</h3>
+                          <p className="text-gray-600">
+                            Descreva a ideia ou contexto do seu carrossel. Isso ajuda a IA a gerar conteúdo mais relevante.
+                          </p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-200 p-5">
+                          <label htmlFor="context-input" className="block font-semibold text-gray-900 mb-3">
+                            Contexto
+                          </label>
+                          <textarea
+                            id="context-input"
+                            value={context}
+                            onChange={(e) => setContext(e.target.value)}
+                            placeholder="Ex: Quero fazer um carrossel sobre produtividade para empreendedores que estão começando, focando em dicas práticas..."
+                            rows={5}
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder-gray-400 resize-none"
+                            autoFocus
+                          />
+                          <p className="text-xs text-gray-500 mt-2">
+                            Quanto mais detalhes você fornecer, melhor será o resultado.
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Content Type Selection */}
               {currentStep === 'content-type' && (
                 <motion.div
                   key="step-content-type"
@@ -904,7 +1320,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 </motion.div>
               )}
 
-              {/* Step 3: Carousel Characteristics */}
+              {/* Step 4: Carousel Characteristics */}
               {currentStep === 'characteristics' && (
                 <motion.div
                   key="step-characteristics"
@@ -963,21 +1379,44 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                     <div className="bg-white rounded-xl border border-gray-200 p-5">
                       <h3 className="font-semibold text-gray-900 mb-3">Dimensão do carrossel</h3>
                       <div className="flex gap-3">
-                        {(['1080x1350', '1170x1560'] as CarouselDimension[]).map((dim) => (
-                          <button
-                            key={dim}
-                            onClick={() => setDimension(dim)}
-                            className={`
-                              flex-1 py-3 px-4 rounded-lg font-medium transition-all
-                              ${dimension === dim
-                                ? 'bg-purple-600 text-white shadow-md'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }
-                            `}
-                          >
-                            {dim}
-                          </button>
-                        ))}
+                        <button
+                          onClick={() => setDimension('1080x1350')}
+                          className={`
+                            flex-1 py-4 px-4 rounded-lg font-medium transition-all flex flex-col items-center gap-2
+                            ${dimension === '1080x1350'
+                              ? 'bg-purple-600 text-white shadow-md'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Smartphone className={`w-5 h-5 ${dimension === '1080x1350' ? 'text-white' : 'text-gray-500'}`} />
+                            <span className="text-sm font-semibold">Feed</span>
+                          </div>
+                          <span className="text-xs opacity-80">1080x1350</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${dimension === '1080x1350' ? 'bg-white/20' : 'bg-gray-200'}`}>
+                            Padrão Instagram
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setDimension('1170x1560')}
+                          className={`
+                            flex-1 py-4 px-4 rounded-lg font-medium transition-all flex flex-col items-center gap-2
+                            ${dimension === '1170x1560'
+                              ? 'bg-purple-600 text-white shadow-md'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Monitor className={`w-5 h-5 ${dimension === '1170x1560' ? 'text-white' : 'text-gray-500'}`} />
+                            <span className="text-sm font-semibold">Full</span>
+                          </div>
+                          <span className="text-xs opacity-80">1170x1560</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${dimension === '1170x1560' ? 'bg-white/20' : 'bg-gray-200'}`}>
+                            Alta resolução
+                          </span>
+                        </button>
                       </div>
                     </div>
 
@@ -1015,7 +1454,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 </motion.div>
               )}
 
-              {/* Step 4: CTA Configuration */}
+              {/* Step 5: CTA Configuration */}
               {currentStep === 'cta' && (
                 <motion.div
                   key="step-cta"
@@ -1086,22 +1525,34 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           {/* Footer */}
           <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 bg-white/95 backdrop-blur-sm flex-shrink-0">
             <div className="flex items-center justify-between gap-3">
-              {/* Progress indicator */}
+              {/* Progress indicator ou info de fontes */}
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4].slice(0, getTotalSteps()).map((step) => (
-                  <div
-                    key={step}
-                    className={`
-                      w-2 h-2 rounded-full transition-all
-                      ${step === getStepNumber()
-                        ? 'w-6 bg-purple-600'
-                        : step < getStepNumber()
-                        ? 'bg-purple-400'
-                        : 'bg-gray-300'
-                      }
-                    `}
-                  />
-                ))}
+                {currentStep === 'sources' ? (
+                  <span className="text-sm text-gray-500">
+                    {sources.length === 1 
+                      ? 'Gere com esta fonte ou adicione mais acima'
+                      : <span className="flex items-center gap-1 text-purple-600 font-medium">
+                          <FileText className="w-4 h-4" />
+                          {sources.length} fontes combinadas
+                        </span>
+                    }
+                  </span>
+                ) : (
+                  Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((step) => (
+                    <div
+                      key={step}
+                      className={`
+                        w-2 h-2 rounded-full transition-all
+                        ${step === getStepNumber()
+                          ? 'w-6 bg-purple-600'
+                          : step < getStepNumber()
+                          ? 'bg-purple-400'
+                          : 'bg-gray-300'
+                        }
+                      `}
+                    />
+                  ))
+                )}
               </div>
 
               {/* Action button */}
@@ -1118,16 +1569,16 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 `}
               >
                 <span>
-                  {currentStep === 'characteristics' && hasCTA === false
+                  {currentStep === 'sources'
+                    ? (sources.length === 1 ? 'Gerar Carrossel' : `Gerar com ${sources.length} fontes`)
+                    : currentStep === 'characteristics' && hasCTA === false
                     ? 'Gerar Carrossel'
                     : currentStep === 'cta'
                     ? 'Gerar Carrossel'
                     : 'Avançar'
                   }
                 </span>
-                {currentStep !== 'cta' && hasCTA !== false && (
-                  <ChevronRight className="w-4 h-4" />
-                )}
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>

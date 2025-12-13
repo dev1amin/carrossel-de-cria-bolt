@@ -28,6 +28,9 @@ interface GenerateCarouselParams {
   has_cta?: boolean;
   cta_type?: string;
   cta_intention?: string;
+  context?: string; // Contexto/brisa do usuário
+  multiple_links?: string[]; // Links adicionais para geração com múltiplos itens
+  multifont?: boolean; // Indica geração com múltiplas fontes
 }
 
 export async function generateCarousel(
@@ -74,6 +77,18 @@ export async function generateCarousel(
     
     if (generationOptions.ctaIntention) {
       requestBody.cta_intention = generationOptions.ctaIntention;
+    }
+
+    if (generationOptions.context) {
+      requestBody.context = generationOptions.context;
+    }
+
+    if (generationOptions.multipleLinks && generationOptions.multipleLinks.length > 0) {
+      requestBody.multiple_links = generationOptions.multipleLinks;
+    }
+
+    if (generationOptions.multifont) {
+      requestBody.multifont = true;
     }
   } else {
     console.log('⚠️ No generation options provided');
