@@ -10,6 +10,7 @@ import { useToneSetupOnDemand as useToneSetup } from '../hooks/useToneSetupVaria
 import { generateCarousel, AVAILABLE_TEMPLATES } from '../carousel';
 import { templateService } from '../services/carousel';
 import type { GenerationQueueItem } from '../carousel';
+import type { GenerationOptions } from '../components/carousel/TemplateSelectionModal';
 
 const CreateCarouselPage: React.FC = () => {
   const [activeModal, setActiveModal] = useState<'instagram' | 'website' | null>(null);
@@ -113,11 +114,13 @@ const CreateCarouselPage: React.FC = () => {
     }
   };
 
-  const handleTemplateSelect = async (templateId: string) => {
+  const handleTemplateSelect = async (templateId: string, options?: GenerationOptions) => {
     setIsTemplateModalOpen(false);
     const template = AVAILABLE_TEMPLATES.find(t => t.id === templateId);
     const isInstagram = !!pendingInstagramCode;
     const postCode = pendingInstagramCode || pendingWebsiteLink || 'link';
+
+    console.log('🚀 CreateCarouselPage: handleTemplateSelect iniciado', { templateId, options });
 
     const queueItem: GenerationQueueItem = {
       id: `${isInstagram ? 'instagram' : 'website'}-${postCode}-${templateId}-${Date.now()}`,
@@ -135,7 +138,8 @@ const CreateCarouselPage: React.FC = () => {
       let result;
 
       if (isInstagram) {
-        result = await generateCarousel(pendingInstagramCode!, templateId, jwtToken || undefined);
+        // Passa as options do template para o generateCarousel
+        result = await generateCarousel(pendingInstagramCode!, templateId, jwtToken || undefined, undefined, undefined, options);
       } else {
         const newsData = {
           id: pendingWebsiteLink!,
@@ -150,7 +154,8 @@ const CreateCarouselPage: React.FC = () => {
           niche: '',
           type: 'news' as const,
         };
-        result = await generateCarousel(pendingWebsiteLink!, templateId, jwtToken || undefined, undefined, newsData);
+        // Passa as options do template para o generateCarousel
+        result = await generateCarousel(pendingWebsiteLink!, templateId, jwtToken || undefined, undefined, newsData, options);
       }
 
       if (!result) {

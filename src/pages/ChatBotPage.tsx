@@ -7,6 +7,7 @@ import ChatWelcomeScreen from '../components/ChatWelcomeScreen';
 import { TemplateSelectionModal } from '../components/carousel';
 import { CarouselPreviewModal } from '../components/carousel/CarouselPreviewModal';
 import { ToneSetupModal } from '../components/ToneSetupModal';
+import type { GenerationOptions } from '../components/carousel/TemplateSelectionModal';
 
 import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useChat } from '../contexts/ChatContext';
@@ -622,21 +623,66 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
     }
   };
 
-  const handleTemplateSelect = async (templateId: string) => {
+  const handleTemplateSelect = async (templateId: string, options?: GenerationOptions) => {
     setIsTemplateModalOpen(false);
     setWaitingForTemplate(false);
 
-    const templateName = `Template ${templateId}`;
+    console.log('🚀 ChatBotPage: handleTemplateSelect iniciado', { templateId, options });
+
+    // Constrói a mensagem com template e opções preenchidas
+    let templateMessage = `Template ${templateId}`;
+    
+    // Se tiver options, inclui todos os dados na mensagem
+    if (options) {
+      const optionsParts: string[] = [];
+      
+      if (options.contentType) {
+        optionsParts.push(`tipo_conteudo:${options.contentType}`);
+      }
+      if (options.screenCount) {
+        optionsParts.push(`quantidade_slides:${options.screenCount}`);
+      }
+      if (options.descriptionLength) {
+        optionsParts.push(`tamanho_descricao:${options.descriptionLength}`);
+      }
+      if (options.dimension) {
+        optionsParts.push(`dimensao:${options.dimension}`);
+      }
+      if (options.hasCTA !== undefined) {
+        optionsParts.push(`tem_cta:${options.hasCTA}`);
+      }
+      if (options.ctaType) {
+        optionsParts.push(`tipo_cta:${options.ctaType}`);
+      }
+      if (options.ctaIntention) {
+        optionsParts.push(`intencao_cta:${options.ctaIntention}`);
+      }
+      if (options.context) {
+        optionsParts.push(`contexto:${options.context}`);
+      }
+      if (options.multipleLinks && options.multipleLinks.length > 0) {
+        optionsParts.push(`links_multiplos:${options.multipleLinks.join(',')}`);
+      }
+      if (options.multifont) {
+        optionsParts.push(`multifont:true`);
+      }
+      
+      if (optionsParts.length > 0) {
+        templateMessage = `Template ${templateId} [${optionsParts.join(' | ')}]`;
+      }
+    }
+
+    console.log('📤 Mensagem do template:', templateMessage);
 
     const userId = getUserId();
-    const templateMessage: ChatMessage = {
+    const userMessage: ChatMessage = {
       id: generateMessageId(),
       role: 'user',
-      content: templateName,
+      content: templateMessage,
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, templateMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     const convId = currentConversationId || (await ensureConversationId());
@@ -645,7 +691,7 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
       try {
         await createConversationMessage(convId, {
           sender_type: 'user',
-          message_text: templateMessage.content,
+          message_text: userMessage.content,
         });
       } catch (err) {
         console.error('Erro ao salvar mensagem de template do usuário:', err);
@@ -655,7 +701,7 @@ const ChatBotPage: React.FC<ChatBotPageProps> = ({ conversationId, newChatKey })
     try {
       const responses = await (sendChatMessage as any)(
         userId,
-        templateName,
+        templateMessage,
         convId
       );
 
