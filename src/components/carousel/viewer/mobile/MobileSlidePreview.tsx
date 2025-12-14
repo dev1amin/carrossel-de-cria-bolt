@@ -128,27 +128,47 @@ export const MobileSlidePreview: React.FC<MobileSlidePreviewProps> = ({
     // Handler para cliques em elementos editáveis
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const editable = target.closest('[data-editable]') as HTMLElement;
+      let editable = target.closest('[data-editable]') as HTMLElement;
+      
+      // Se não encontrou elemento com data-editable, verifica background-image CSS
+      if (!editable) {
+        let bgImageElement: HTMLElement | null = target;
+        let bgDepth = 0;
+        while (bgImageElement && bgImageElement !== doc.body.parentElement && bgDepth < 15) {
+          const computedStyle = doc.defaultView?.getComputedStyle(bgImageElement);
+          const bgImage = computedStyle?.backgroundImage || '';
+          if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+            // Encontrou elemento com background-image - usa ele como editável
+            editable = bgImageElement;
+            break;
+          }
+          bgImageElement = bgImageElement.parentElement;
+          bgDepth++;
+        }
+      }
       
       if (editable) {
         e.preventDefault();
         e.stopPropagation();
         
-        const editableType = editable.getAttribute('data-editable') as ElementType;
+        // Se não tem data-editable, assume que é background-image
+        const editableType = (editable.getAttribute('data-editable') || 'background') as ElementType;
         const editableId = editable.id;
         
         // Remove seleção anterior de todos os iframes
         iframeRefs.current.forEach((ifr) => {
           const d = ifr?.contentDocument || ifr?.contentWindow?.document;
           if (d) {
-            d.querySelectorAll('[data-editable].selected').forEach((el) => {
+            d.querySelectorAll('[data-editable].selected, [data-cv-selected]').forEach((el) => {
               el.classList.remove('selected');
+              el.removeAttribute('data-cv-selected');
             });
           }
         });
         
         // Adiciona seleção
         editable.classList.add('selected');
+        editable.setAttribute('data-cv-selected', '1');
         
         console.log('📱 [Mobile] Click:', { slideIndex, editableType, editableId });
         onElementClick(slideIndex, editableType, editableId);

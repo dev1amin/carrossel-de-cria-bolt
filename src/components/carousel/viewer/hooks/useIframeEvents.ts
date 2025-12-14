@@ -159,7 +159,30 @@ export function useIframeEvents({
 
         // === SELEÇÃO DE TEXTO ===
         const el = target.closest<HTMLElement>('[data-editable]');
-        if (!el) return;
+        
+        // Se não encontrou elemento com data-editable, verifica background-image CSS
+        if (!el) {
+          let bgImageElement: HTMLElement | null = target;
+          let bgDepth = 0;
+          while (bgImageElement && bgImageElement !== doc.body.parentElement && bgDepth < 15) {
+            const computedStyle = doc.defaultView?.getComputedStyle(bgImageElement);
+            const bgImage = computedStyle?.backgroundImage || '';
+            if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+              // Encontrou elemento com background-image
+              bgImageElement.classList.add('selected');
+              bgImageElement.style.zIndex = '1000';
+              bgImageElement.setAttribute('data-cv-selected', '1');
+              setSelectedElement({ slideIndex, element: 'background' });
+              setFocusedSlide(slideIndex);
+              if (!expandedLayers.has(slideIndex)) setExpandedLayers(s => new Set(s).add(slideIndex));
+              logc('select bg-image element', { slideIndex, tagName: bgImageElement.tagName, bgImage: bgImage.substring(0, 80) });
+              return;
+            }
+            bgImageElement = bgImageElement.parentElement;
+            bgDepth++;
+          }
+          return;
+        }
         (el as HTMLElement).style.pointerEvents = 'auto';
 
         const type = el.getAttribute('data-editable');

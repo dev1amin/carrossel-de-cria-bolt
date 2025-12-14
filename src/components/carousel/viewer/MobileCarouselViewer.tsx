@@ -1204,7 +1204,30 @@ const MobileCarouselViewer: React.FC<MobileCarouselViewerProps> = ({
         
         // Encontra o elemento [data-editable] mais próximo do target
         // (que NÃO seja o body, se houver um mais específico)
-        const editableElement = target.closest('[data-editable]');
+        let editableElement = target.closest('[data-editable]');
+        
+        // Se não encontrou elemento com data-editable, verifica background-image CSS
+        if (!editableElement) {
+          let bgImageElement: Element | null = target;
+          let bgDepth = 0;
+          while (bgImageElement && bgImageElement !== doc.body.parentElement && bgDepth < 15) {
+            const computedStyle = doc.defaultView?.getComputedStyle(bgImageElement as HTMLElement);
+            const bgImage = computedStyle?.backgroundImage || '';
+            if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+              // Encontrou elemento com background-image - usa ele como editável
+              log('DocEvent', 'Encontrado elemento com background-image CSS', { 
+                tagName: (bgImageElement as HTMLElement).tagName, 
+                bgImage: bgImage.substring(0, 80) 
+              });
+              editableElement = bgImageElement;
+              (bgImageElement as HTMLElement).classList.add('selected');
+              (bgImageElement as HTMLElement).setAttribute('data-cv-selected', '1');
+              break;
+            }
+            bgImageElement = bgImageElement.parentElement;
+            bgDepth++;
+          }
+        }
         
         log('DocEvent', 'Elemento editável encontrado:', editableElement ? {
           tag: editableElement.tagName,
@@ -1225,9 +1248,9 @@ const MobileCarouselViewer: React.FC<MobileCarouselViewerProps> = ({
           return;
         }
 
-        const editableType = editableElement.getAttribute('data-editable');
+        const editableType = editableElement.getAttribute('data-editable') || 'background';
         
-        // Se o elemento mais próximo é o body (background), verifica se há outro mais específico
+        // Se o elemento mais próximo é o body (background) ou é um elemento com background-image CSS, verifica se há outro mais específico
         if (editableType === 'background') {
           log('DocEvent', 'Background detectado - buscando elemento mais específico');
           // Procura por qualquer outro elemento editável que contenha o target
