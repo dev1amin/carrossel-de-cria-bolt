@@ -36,6 +36,11 @@ export interface GeneratedContent {
   status: 'pending' | 'completed' | 'failed';
   completed_at?: string;
   influencer_content: GeneratedContentSource;
+  // Campos adicionais que vem da API
+  business_id?: string;
+  description?: string;
+  name?: string;
+  content?: GeneratedContentSource;
 }
 
 export interface GeneratedContentPagination {

@@ -53,10 +53,19 @@ const CreateCarouselPage: React.FC = () => {
     }
   };
 
+  // Limites de fontes
+  const MAX_INSTAGRAM_SOURCES = 2;
+  const MAX_WEBSITE_SOURCES = 5;
+
   const handleAddLink = () => {
     if (!linkInput.trim()) return;
 
     if (activeModal === 'instagram') {
+      // Verificar limite de Instagram (máximo 2)
+      if (multipleLinks.length >= MAX_INSTAGRAM_SOURCES - 1) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_INSTAGRAM_SOURCES} posts do Instagram.`);
+        return;
+      }
       const code = extractInstagramCode(linkInput);
       if (!code) {
         alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
@@ -64,6 +73,11 @@ const CreateCarouselPage: React.FC = () => {
       }
       setMultipleLinks(prev => [...prev, linkInput.trim()]);
     } else {
+      // Verificar limite de links (máximo 5)
+      if (multipleLinks.length >= MAX_WEBSITE_SOURCES - 1) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_WEBSITE_SOURCES} links.`);
+        return;
+      }
       setMultipleLinks(prev => [...prev, linkInput.trim()]);
     }
     setLinkInput('');

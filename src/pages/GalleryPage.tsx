@@ -7,7 +7,7 @@ import Toast, { ToastMessage } from '../components/Toast';
 import GalleryFilters from '../components/GalleryFilters';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
-import { type CarouselTab, type GenerationOptions } from '../carousel';
+import { type GenerationOptions } from '../carousel';
 import type { CarouselData } from '../carousel';
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { useEditorTabs } from '../contexts/EditorTabsContext';
@@ -45,7 +45,7 @@ const GalleryPage = () => {
   const navigate = useNavigate();
 
   // Usa o contexto compartilhado de abas
-  const { addEditorTab: addTab, editorTabs, closeEditorTab } = useEditorTabs();
+  const { closeEditorTab } = useEditorTabs();
 
   // Usa o contexto global da fila
   const { generationQueue, addToQueue, updateQueueItem } = useGenerationQueue();
@@ -407,21 +407,10 @@ const GalleryPage = () => {
   }, []);
 
   const addEditorTab = async (carousel: GalleryCarousel) => {
-    const tabId = `gallery-${carousel.id}`;
-
-    console.log('🎨 Abrindo carrossel no editor:', {
+    console.log('👁️ Abrindo carrossel no preview:', {
       id: carousel.id,
       generatedContentId: carousel.generatedContentId,
     });
-
-    // Check if tab already exists - if so, skip API call and just activate it
-    const existingTab = editorTabs.find((t: CarouselTab) => t.id === tabId);
-    if (existingTab) {
-      console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
-      addTab(existingTab);
-      navigate(`/editor/${encodeURIComponent(tabId)}`);
-      return;
-    }
 
     // Se tem generatedContentId, buscar dados frescos da API
     let carouselData = carousel.carouselData;
@@ -434,13 +423,20 @@ const GalleryPage = () => {
 
         if (freshData.success && freshData.data.result) {
           const apiData = freshData.data.result as any;
+          
+          // A description está no nível data, NÃO dentro de result
+          const descriptionFromApi = freshData.data.description || apiData.description || apiData.dados_gerais?.description || '';
+          console.log('📝 Description na resposta da API:', descriptionFromApi ? descriptionFromApi.substring(0, 50) + '...' : 'não encontrada');
 
           // Atualizar carouselData com dados da API
           if (apiData.conteudos && apiData.dados_gerais) {
             carouselData = {
               conteudos: apiData.conteudos,
               dados_gerais: apiData.dados_gerais,
-              styles: apiData.styles || {}, // IMPORTANTE: Inclui os estilos salvos
+              styles: apiData.styles || {},
+              // Pega description do nível data (fora de result) ou fallbacks
+              description: descriptionFromApi,
+              business_id: freshData.data.business_id || apiData.business_id,
             } as CarouselData;
 
             // Renderizar slides atualizados
@@ -452,7 +448,7 @@ const GalleryPage = () => {
             );
 
             console.log('✅ Dados atualizados carregados da API');
-            console.log('📐 Estilos carregados:', apiData.styles);
+            console.log('📝 Descrição salva no carouselData:', (carouselData as any).description ? (carouselData as any).description.substring(0, 50) + '...' : 'vazio');
           }
         }
       } catch (error) {
@@ -461,17 +457,17 @@ const GalleryPage = () => {
       }
     }
 
-    const newTab: CarouselTab = {
-      id: tabId,
-      slides: slides,
-      carouselData: carouselData,
-      title: carousel.templateName,
-      generatedContentId: carousel.generatedContentId,
-    };
-
-    addTab(newTab);
-    // Navega para o editor após adicionar a aba
-    navigate(`/editor/${encodeURIComponent(tabId)}`);
+    // Navega para a página de preview ao invés do editor
+    navigate(`/carousel-preview/${encodeURIComponent(carousel.id)}`, {
+      state: {
+        slides: slides,
+        carouselData: carouselData,
+        title: carousel.templateName,
+        generatedContentId: carousel.generatedContentId,
+        fromQueue: false,
+        description: (carouselData as any)?.description || '',
+      }
+    });
   };
 
   const handleDeleteCarousel = (carouselId: string) => {

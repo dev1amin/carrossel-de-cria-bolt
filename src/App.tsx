@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { configureCarousel, type CarouselTab } from './carousel';
-import { EditorTabsProvider, useEditorTabs } from './contexts/EditorTabsContext';
+import { configureCarousel } from './carousel';
+import { EditorTabsProvider } from './contexts/EditorTabsContext';
 import { GenerationQueueProvider, useGenerationQueue } from './contexts/GenerationQueueContext';
 import { GenerationQueue } from './carousel';
 import type { GenerationQueueItem } from './carousel';
@@ -16,6 +16,7 @@ import SettingsPageContainer from './pages/SettingsPageContainer';
 import CreateCarouselPage from './pages/CreateCarouselPage';
 import ChatBotPageWithConversations from './pages/ChatBotPageWithConversations';
 import EditorPage from './pages/EditorPage';
+import CarouselPreviewPage from './pages/CarouselPreviewPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -23,7 +24,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 function AppContent() {
   const { generationQueue, removeFromQueue } = useGenerationQueue();
   const navigate = useNavigate();
-  const { addEditorTab } = useEditorTabs();
 
   const handleViewCarousel = (item: GenerationQueueItem) => {
     console.log('👁️ handleViewCarousel chamado:', { 
@@ -40,25 +40,18 @@ function AppContent() {
       return;
     }
 
-    const newTab: CarouselTab = {
-      id: `queue-${item.id}`,
-      slides: item.slides,
-      carouselData: item.carouselData,
-      title: item.templateName,
-      generatedContentId: item.generatedContentId,
-    };
-
-    console.log('✅ Abrindo editor na rota /editor:', {
-      id: newTab.id,
-      title: newTab.title,
-      slidesLength: newTab.slides.length,
-      hasCarouselData: !!newTab.carouselData,
-      generatedContentId: newTab.generatedContentId,
+    // Navega para a página de preview ao invés do editor
+    navigate(`/carousel-preview/${encodeURIComponent(item.id)}`, {
+      state: {
+        slides: item.slides,
+        carouselData: item.carouselData,
+        title: item.templateName,
+        generatedContentId: item.generatedContentId,
+        fromQueue: true,
+        queueItemId: item.id,
+        description: (item.carouselData as any)?.description || '',
+      }
     });
-    
-    addEditorTab(newTab);
-    // Navega para a rota do editor com o ID da aba
-    navigate(`/editor/${encodeURIComponent(newTab.id)}`);
   };
 
   const location = useLocation();
@@ -95,6 +88,7 @@ function AppContent() {
           <Route path="/chatbot/:conversationId" element={<ChatBotPageWithConversations />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/settings" element={<SettingsPageContainer />} />
+          <Route path="/carousel-preview/:previewId" element={<CarouselPreviewPage />} />
           <Route path="/editor" element={<EditorPage />} />
           <Route path="/editor/:tabId" element={<EditorPage />} />
         </Route>

@@ -193,6 +193,14 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   const [linkInput, setLinkInput] = useState('');
   const [addingType, setAddingType] = useState<'instagram' | 'website' | null>(null);
 
+  // Limites de fontes
+  const MAX_INSTAGRAM_SOURCES = 2;
+  const MAX_WEBSITE_SOURCES = 5;
+
+  // Contadores de fontes por tipo
+  const instagramSourcesCount = sources.filter(s => s.type === 'instagram').length;
+  const websiteSourcesCount = sources.filter(s => s.type === 'website').length;
+
   // Helpers para sources
   const extractInstagramCode = (url: string): string | null => {
     try {
@@ -204,6 +212,15 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   };
 
   const handleAddSource = (type: 'instagram' | 'website') => {
+    // Verificar limites antes de permitir adicionar
+    if (type === 'instagram' && instagramSourcesCount >= MAX_INSTAGRAM_SOURCES) {
+      alert(`Limite atingido! Você pode adicionar no máximo ${MAX_INSTAGRAM_SOURCES} posts do Instagram.`);
+      return;
+    }
+    if (type === 'website' && websiteSourcesCount >= MAX_WEBSITE_SOURCES) {
+      alert(`Limite atingido! Você pode adicionar no máximo ${MAX_WEBSITE_SOURCES} links.`);
+      return;
+    }
     setAddingType(type);
     setLinkInput('');
   };
@@ -212,6 +229,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     if (!linkInput.trim()) return;
 
     if (addingType === 'instagram') {
+      // Verificar limite novamente
+      if (instagramSourcesCount >= MAX_INSTAGRAM_SOURCES) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_INSTAGRAM_SOURCES} posts do Instagram.`);
+        setAddingType(null);
+        return;
+      }
       const code = extractInstagramCode(linkInput);
       if (!code) {
         alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
@@ -224,6 +247,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         title: `Post Instagram: ${code}`,
       }]);
     } else if (addingType === 'website') {
+      // Verificar limite novamente
+      if (websiteSourcesCount >= MAX_WEBSITE_SOURCES) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_WEBSITE_SOURCES} links.`);
+        setAddingType(null);
+        return;
+      }
       setSources(prev => [...prev, {
         type: 'website',
         id: `website-${Date.now()}`,
@@ -952,26 +981,44 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                         <div className="grid grid-cols-2 gap-3">
                           <button
                             onClick={() => handleAddSource('instagram')}
-                            className="group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100 transition-all"
+                            disabled={instagramSourcesCount >= MAX_INSTAGRAM_SOURCES}
+                            className={`group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl transition-all ${
+                              instagramSourcesCount >= MAX_INSTAGRAM_SOURCES 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100'
+                            }`}
                           >
                             <div className="p-2.5 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
                               <Instagram className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">
                               <p className="font-semibold text-gray-900">Instagram</p>
-                              <p className="text-xs text-gray-500">Post ou Reels</p>
+                              <p className="text-xs text-gray-500">
+                                {instagramSourcesCount >= MAX_INSTAGRAM_SOURCES 
+                                  ? `Limite: ${MAX_INSTAGRAM_SOURCES}/${MAX_INSTAGRAM_SOURCES}` 
+                                  : `${instagramSourcesCount}/${MAX_INSTAGRAM_SOURCES} adicionados`}
+                              </p>
                             </div>
                           </button>
                           <button
                             onClick={() => handleAddSource('website')}
-                            className="group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 transition-all"
+                            disabled={websiteSourcesCount >= MAX_WEBSITE_SOURCES}
+                            className={`group flex items-center gap-3 p-4 bg-white border-2 border-gray-200 rounded-2xl transition-all ${
+                              websiteSourcesCount >= MAX_WEBSITE_SOURCES 
+                                ? 'opacity-50 cursor-not-allowed' 
+                                : 'hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100'
+                            }`}
                           >
                             <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
                               <Link2 className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">
                               <p className="font-semibold text-gray-900">Link Externo</p>
-                              <p className="text-xs text-gray-500">Site ou Artigo</p>
+                              <p className="text-xs text-gray-500">
+                                {websiteSourcesCount >= MAX_WEBSITE_SOURCES 
+                                  ? `Limite: ${MAX_WEBSITE_SOURCES}/${MAX_WEBSITE_SOURCES}` 
+                                  : `${websiteSourcesCount}/${MAX_WEBSITE_SOURCES} adicionados`}
+                              </p>
                             </div>
                           </button>
                         </div>

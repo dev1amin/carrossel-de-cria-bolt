@@ -11,6 +11,7 @@ export interface CarouselData {
     arroba: string;
     foto_perfil: string;
     template: string;
+    description?: string; // Descrição do post (pode vir em dados_gerais)
   };
   conteudos: Array<{
     title: string;
@@ -24,6 +25,8 @@ export interface CarouselData {
     imagem_fundo6?: string;
   }>;
   styles?: Record<string, any>; // Estilos salvos por slide: { "0": { "title": {...}, "subtitle": {...} }, "1": {...} }
+  description?: string; // Descrição do post (pode vir no nível raiz, abaixo de business_id)
+  business_id?: string; // ID do negócio
 }
 
 export interface CarouselResponse extends CarouselData {}
@@ -125,10 +128,19 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
   }
 ];
 
-// Dimensões específicas por template (para templates com dimensões diferentes do padrão 1085x1354)
+// Dimensões específicas por template
+// Templates 1-6: Formato padrão Instagram (1080x1350)
+// Templates 7-9: Formato vertical para Reels/Stories (1170x1560)
 export const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  '1': { width: 1080, height: 1350 },
+  '2': { width: 1080, height: 1350 },
+  '3': { width: 1080, height: 1350 },
+  '4': { width: 1080, height: 1350 },
+  '5': { width: 1080, height: 1350 },
+  '6': { width: 1080, height: 1350 },
   '7': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
   '8': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
+  '9': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
 };
 
 // ==================== Queue Types ====================

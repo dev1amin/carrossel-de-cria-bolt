@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Edit, Send, Sparkles } from 'lucide-react';
+import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Download, Eye, Send, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
@@ -8,8 +8,6 @@ import { MouseFollowLight } from '../components/MouseFollowLight';
 import { ToneSetupModal } from '../components/ToneSetupModal';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
-import { useEditorTabs } from '../contexts/EditorTabsContext';
-import type { CarouselTab } from '../carousel';
 import type { GeneratedContent } from '../types/generatedContent';
 import type { CarouselData } from '../carousel';
 import { templateService } from '../services/carousel/template.service';
@@ -17,6 +15,7 @@ import { templateRenderer } from '../services/carousel/templateRenderer.service'
 import { CacheService, CACHE_KEYS } from '../services/cache';
 import { downloadSlidesAsPNG } from '../services/carousel/download.service';
 import { useToneSetup } from '../hooks/useToneSetup';
+import { TEMPLATE_DIMENSIONS } from '../types/carousel';
 
 interface GalleryCarousel {
   id: string;
@@ -37,7 +36,6 @@ const HomePage: React.FC = () => {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const [userName, setUserName] = useState<string>('Usuário');
-  const { editorTabs, addEditorTab } = useEditorTabs();
 
   // Get user name from localStorage (already populated by verify/login)
   useEffect(() => {
@@ -336,20 +334,9 @@ const HomePage: React.FC = () => {
     navigate(route);
   };
 
-  const handleViewCarousel = async (carousel: GalleryCarousel) => {
+  const handleViewPreview = async (carousel: GalleryCarousel) => {
     if (!carousel.slides || !carousel.carouselData) {
       alert('Erro: Dados do carrossel não encontrados.');
-      return;
-    }
-
-    const tabId = `home-${carousel.id}`;
-    
-    // Check if tab already exists - if so, skip API call and just activate it
-    const existingTab = editorTabs.find(t => t.id === tabId);
-    if (existingTab) {
-      console.log('♻️ Aba já existe, reutilizando dados em cache:', tabId);
-      addEditorTab(existingTab);
-      navigate(`/editor/${encodeURIComponent(tabId)}`);
       return;
     }
 
@@ -363,12 +350,18 @@ const HomePage: React.FC = () => {
 
         if (freshData.success && freshData.data.result) {
           const apiData = freshData.data.result as any;
+          
+          // A description está no nível data, NÃO dentro de result
+          const descriptionFromApi = freshData.data.description || apiData.description || apiData.dados_gerais?.description || '';
+          console.log('📝 Description na resposta da API:', descriptionFromApi ? descriptionFromApi.substring(0, 50) + '...' : 'não encontrada');
 
           if (apiData.conteudos && apiData.dados_gerais) {
             carouselData = {
               conteudos: apiData.conteudos,
               dados_gerais: apiData.dados_gerais,
               styles: apiData.styles || {},
+              description: descriptionFromApi,
+              business_id: freshData.data.business_id || apiData.business_id,
             } as CarouselData;
 
             const templateId = apiData.dados_gerais.template || '2';
@@ -379,6 +372,7 @@ const HomePage: React.FC = () => {
             );
 
             console.log('✅ Dados atualizados carregados da API');
+            console.log('📝 Descrição salva no carouselData:', (carouselData as any).description ? (carouselData as any).description.substring(0, 50) + '...' : 'vazio');
           }
         }
       } catch (error) {
@@ -386,16 +380,17 @@ const HomePage: React.FC = () => {
       }
     }
 
-    const newTab: CarouselTab = {
-      id: tabId,
-      slides: slides,
-      carouselData: carouselData,
-      title: carousel.templateName,
-      generatedContentId: carousel.generatedContentId,
-    };
-
-    addEditorTab(newTab);
-    navigate(`/editor/${encodeURIComponent(tabId)}`);
+    // Navega para a página de preview
+    navigate(`/carousel-preview/${encodeURIComponent(carousel.id)}`, {
+      state: {
+        slides: slides,
+        carouselData: carouselData,
+        title: carousel.templateName,
+        generatedContentId: carousel.generatedContentId,
+        fromQueue: false,
+        description: (carouselData as any)?.description || '',
+      }
+    });
   };
 
   const handleDownload = async (carousel: GalleryCarousel) => {
@@ -731,7 +726,7 @@ const HomePage: React.FC = () => {
               ) : (
                 <CarouselSlider
                   carousels={carousels}
-                  onEdit={handleViewCarousel}
+                  onView={handleViewPreview}
                   onDownload={handleDownload}
                   downloadingId={downloadingId}
                   downloadProgress={downloadProgress}
@@ -747,7 +742,7 @@ const HomePage: React.FC = () => {
 
 interface GalleryItemProps {
   carousel: GalleryCarousel;
-  onEdit: (carousel: GalleryCarousel) => void;
+  onView: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
   downloadingId: string | null;
   downloadProgress: { current: number; total: number } | null;
@@ -755,13 +750,13 @@ interface GalleryItemProps {
 
 interface CarouselSliderProps {
   carousels: GalleryCarousel[];
-  onEdit: (carousel: GalleryCarousel) => void;
+  onView: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
   downloadingId: string | null;
   downloadProgress: { current: number; total: number } | null;
 }
 
-const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDownload, downloadingId, downloadProgress }) => {
+const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onView, onDownload, downloadingId, downloadProgress }) => {
   const [startIndex, setStartIndex] = useState(0);
   const itemsPerPage = 4;
   const visibleCarousels = carousels.slice(startIndex, startIndex + itemsPerPage);
@@ -787,7 +782,7 @@ const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDo
           <GalleryItem
             key={carousel.id}
             carousel={carousel}
-            onEdit={onEdit}
+            onView={onView}
             onDownload={onDownload}
             downloadingId={downloadingId}
             downloadProgress={downloadProgress}
@@ -825,10 +820,22 @@ const CarouselSlider: React.FC<CarouselSliderProps> = ({ carousels, onEdit, onDo
   );
 };
 
-const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload, downloadingId, downloadProgress }) => {
+const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onView, onDownload, downloadingId, downloadProgress }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Detecta o template e calcula a proporção correta
+  const templateInfo = useMemo(() => {
+    const templateId = carousel.carouselData?.dados_gerais?.template || '1';
+    const dimensions = TEMPLATE_DIMENSIONS[templateId] || { width: 1080, height: 1350 };
+    return {
+      templateId,
+      width: dimensions.width,
+      height: dimensions.height,
+      aspectRatio: dimensions.height / dimensions.width // Para paddingTop em %
+    };
+  }, [carousel.carouselData]);
 
   const minSwipeDistance = 50;
 
@@ -876,7 +883,7 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
         className="relative w-full bg-black overflow-hidden cursor-grab active:cursor-grabbing select-none"
         style={{
           height: 0,
-          paddingTop: 'calc(1350 / 1080 * 100%)',
+          paddingTop: `${templateInfo.aspectRatio * 100}%`, // Proporção dinâmica baseada no template
           position: 'relative',
           width: '100%',
         }}
@@ -884,7 +891,7 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {carousel.slides[currentSlide].includes('iframe') ? (
             <iframe
               src={carousel.slides[currentSlide]}
@@ -892,8 +899,6 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
               className="w-full h-full"
               style={{
                 border: 'none',
-                objectFit: 'contain',
-                height: '100%',
               }}
             />
           ) : (
@@ -902,7 +907,7 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
               slideContent={carousel.slides[currentSlide]}
               slideIndex={currentSlide}
               styles={carousel.carouselData?.styles || {}}
-              className="w-full h-full object-none"
+              className="w-full h-full"
             />
           )}
         </div>
@@ -954,11 +959,11 @@ const GalleryItem: React.FC<GalleryItemProps> = ({ carousel, onEdit, onDownload,
 
         <div className="flex gap-2">
           <button
-            onClick={() => onEdit(carousel)}
+            onClick={() => onView(carousel)}
             className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200"
           >
-            <Edit className="w-4 h-4" />
-            Editar
+            <Eye className="w-4 h-4" />
+            Ver
           </button>
           <button
             onClick={() => onDownload(carousel)}

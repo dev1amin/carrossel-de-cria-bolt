@@ -32,7 +32,24 @@ export const MultiSourceSelectionModal: React.FC<MultiSourceSelectionModalProps>
   const [linkInput, setLinkInput] = useState('');
   const [addingType, setAddingType] = useState<'instagram' | 'website' | null>(null);
 
+  // Limites de fontes
+  const MAX_INSTAGRAM_SOURCES = 2;
+  const MAX_WEBSITE_SOURCES = 5;
+
+  // Contadores de fontes por tipo
+  const instagramSourcesCount = sources.filter(s => s.type === 'instagram').length;
+  const websiteSourcesCount = sources.filter(s => s.type === 'website').length;
+
   const handleAddSource = (type: 'instagram' | 'website') => {
+    // Verificar limites antes de permitir adicionar
+    if (type === 'instagram' && instagramSourcesCount >= MAX_INSTAGRAM_SOURCES) {
+      alert(`Limite atingido! Você pode adicionar no máximo ${MAX_INSTAGRAM_SOURCES} posts do Instagram.`);
+      return;
+    }
+    if (type === 'website' && websiteSourcesCount >= MAX_WEBSITE_SOURCES) {
+      alert(`Limite atingido! Você pode adicionar no máximo ${MAX_WEBSITE_SOURCES} links.`);
+      return;
+    }
     setAddingType(type);
     setLinkInput('');
   };
@@ -50,6 +67,12 @@ export const MultiSourceSelectionModal: React.FC<MultiSourceSelectionModalProps>
     if (!linkInput.trim()) return;
 
     if (addingType === 'instagram') {
+      // Verificar limite novamente
+      if (instagramSourcesCount >= MAX_INSTAGRAM_SOURCES) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_INSTAGRAM_SOURCES} posts do Instagram.`);
+        setAddingType(null);
+        return;
+      }
       const code = extractInstagramCode(linkInput);
       if (!code) {
         alert('Link do Instagram inválido. Use um link como: https://www.instagram.com/p/CODE/');
@@ -62,6 +85,12 @@ export const MultiSourceSelectionModal: React.FC<MultiSourceSelectionModalProps>
         title: `Post Instagram: ${code}`,
       }]);
     } else if (addingType === 'website') {
+      // Verificar limite novamente
+      if (websiteSourcesCount >= MAX_WEBSITE_SOURCES) {
+        alert(`Limite atingido! Você pode adicionar no máximo ${MAX_WEBSITE_SOURCES} links.`);
+        setAddingType(null);
+        return;
+      }
       setSources(prev => [...prev, {
         type: 'website',
         id: `website-${Date.now()}`,
@@ -235,26 +264,44 @@ export const MultiSourceSelectionModal: React.FC<MultiSourceSelectionModalProps>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => handleAddSource('instagram')}
-                    className="flex items-center gap-3 p-4 bg-gradient-to-r from-pink-50 to-purple-50 border-2 border-pink-200 rounded-xl hover:border-pink-400 hover:shadow-md transition-all"
+                    disabled={instagramSourcesCount >= MAX_INSTAGRAM_SOURCES}
+                    className={`flex items-center gap-3 p-4 bg-gradient-to-r from-pink-50 to-purple-50 border-2 border-pink-200 rounded-xl transition-all ${
+                      instagramSourcesCount >= MAX_INSTAGRAM_SOURCES 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:border-pink-400 hover:shadow-md'
+                    }`}
                   >
                     <div className="p-2 bg-pink-100 rounded-lg">
                       <Instagram className="w-5 h-5 text-pink-600" />
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-gray-900">Instagram</p>
-                      <p className="text-xs text-gray-500">Post ou Carrossel</p>
+                      <p className="text-xs text-gray-500">
+                        {instagramSourcesCount >= MAX_INSTAGRAM_SOURCES 
+                          ? `Limite: ${MAX_INSTAGRAM_SOURCES}/${MAX_INSTAGRAM_SOURCES}` 
+                          : `${instagramSourcesCount}/${MAX_INSTAGRAM_SOURCES} adicionados`}
+                      </p>
                     </div>
                   </button>
                   <button
                     onClick={() => handleAddSource('website')}
-                    className="flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all"
+                    disabled={websiteSourcesCount >= MAX_WEBSITE_SOURCES}
+                    className={`flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl transition-all ${
+                      websiteSourcesCount >= MAX_WEBSITE_SOURCES 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'hover:border-blue-400 hover:shadow-md'
+                    }`}
                   >
                     <div className="p-2 bg-blue-100 rounded-lg">
                       <Link2 className="w-5 h-5 text-blue-600" />
                     </div>
                     <div className="text-left">
                       <p className="font-medium text-gray-900">Link Externo</p>
-                      <p className="text-xs text-gray-500">Site ou Artigo</p>
+                      <p className="text-xs text-gray-500">
+                        {websiteSourcesCount >= MAX_WEBSITE_SOURCES 
+                          ? `Limite: ${MAX_WEBSITE_SOURCES}/${MAX_WEBSITE_SOURCES}` 
+                          : `${websiteSourcesCount}/${MAX_WEBSITE_SOURCES} adicionados`}
+                      </p>
                     </div>
                   </button>
                 </div>

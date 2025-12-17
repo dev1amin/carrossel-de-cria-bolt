@@ -1,4 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+
+// Dimensões dos templates
+const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
+  '1': { width: 1080, height: 1350 },
+  '2': { width: 1080, height: 1350 },
+  '3': { width: 1080, height: 1350 },
+  '4': { width: 1080, height: 1350 },
+  '5': { width: 1080, height: 1350 },
+  '6': { width: 1080, height: 1350 },
+  '7': { width: 1170, height: 1560 },
+  '8': { width: 1170, height: 1560 },
+  '9': { width: 1170, height: 1560 },
+};
 
 interface SlideData {
   title?: string;
@@ -15,14 +28,29 @@ interface SlideRendererProps {
   className?: string;
   slideIndex?: number;
   styles?: Record<string, any>; // Estilos salvos do carrossel
+  templateId?: string; // ID do template para usar dimensões corretas
+  containerWidth?: number; // Largura do container (para calcular escala)
+  containerHeight?: number; // Altura do container (para calcular escala)
 }
 
 const SlideRenderer: React.FC<SlideRendererProps> = ({ 
   slideContent, 
   className = '', 
   slideIndex = 0,
-  styles = {}
+  styles = {},
+  templateId,
+  containerWidth,
+  containerHeight
 }) => {
+  // Obtém dimensões do template
+  const templateDimensions = useMemo(() => {
+    if (templateId && TEMPLATE_DIMENSIONS[templateId]) {
+      return TEMPLATE_DIMENSIONS[templateId];
+    }
+    // Default: assume template 1-6
+    return { width: 1080, height: 1350 };
+  }, [templateId]);
+
   // Tenta fazer parse do JSON
   let slideData: SlideData | null = null;
   let isHTML = false;
@@ -186,11 +214,68 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
 `;
 
     // CSS base + regras customizadas
+    // Os templates são projetados para tamanhos fixos (1080x1350 ou 1170x1560)
+    // O container pai deve manter a proporção correta e o iframe preenche 100%
+    // Usamos zoom CSS para escalar o conteúdo do template para caber no iframe
     const injectedCSS = `
-      html,body{margin:0;padding:0;overflow:hidden !important;width:100%;height:100%}
-      main.slide{zoom:.3}
+      html,body{margin:0 !important;padding:0 !important;overflow:hidden !important;box-sizing:border-box !important;width:100% !important;height:100% !important}
+      *{box-sizing:border-box}
+      body{transform-origin:top left}
       ${customRules.join('\n')}
     `;
+    
+    // Usa as dimensões do template já calculadas
+    const baseWidth = templateDimensions.width;
+    const baseHeight = templateDimensions.height;
+    
+    // Script para ajustar o zoom para preencher o container completamente
+    // Importante: o container pai deve ter o aspect ratio correto do template!
+    // Quando o aspect ratio está correto, o zoom vai preencher 100% sem cortar
+    const zoomScript = `
+(function(){
+  function applyZoom(){
+    // Dimensões do viewport do iframe
+    var vw = window.innerWidth || document.documentElement.clientWidth || 320;
+    var vh = window.innerHeight || document.documentElement.clientHeight || 400;
+    
+    // Dimensões originais do template
+    var baseWidth = ${baseWidth};
+    var baseHeight = ${baseHeight};
+    
+    // Calcula as escalas
+    var scaleX = vw / baseWidth;
+    var scaleY = vh / baseHeight;
+    
+    // Usa a menor escala para garantir que todo o conteúdo seja visível (contain)
+    // Isso evita que qualquer parte seja cortada
+    var scale = Math.min(scaleX, scaleY);
+    
+    // Aplica zoom no documento
+    document.documentElement.style.zoom = scale;
+    document.documentElement.style.transformOrigin = 'top left';
+    
+    // Fallback para Firefox que não suporta zoom
+    if(navigator.userAgent.indexOf('Firefox') > -1){
+      document.body.style.transform = 'scale(' + scale + ')';
+      document.body.style.transformOrigin = 'top left';
+      document.body.style.width = baseWidth + 'px';
+      document.body.style.height = baseHeight + 'px';
+    }
+  }
+  
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(applyZoom, 10);
+  } else {
+    document.addEventListener('DOMContentLoaded', applyZoom);
+  }
+  window.addEventListener('resize', applyZoom);
+  setTimeout(applyZoom, 100);
+  setTimeout(applyZoom, 300);
+})();
+`;
+
+    // Combina os scripts
+    const combinedJS = runtimePatcher + zoomScript;
 
     // Injeção robusta de CSS + script
     const injectAssets = (html: string, css: string, js: string) => {
@@ -203,7 +288,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
       return `<!doctype html><html><head><meta charset="utf-8">${styleTag}${scriptTag}</head><body>${html}</body></html>`;
     };
 
-    const htmlWithStyles = injectAssets(slideContent, injectedCSS, runtimePatcher);
+    const htmlWithStyles = injectAssets(slideContent, injectedCSS, combinedJS);
 
     return (
       <iframe

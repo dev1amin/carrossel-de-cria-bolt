@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, Edit, Image, Trash2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Download, Eye, Image, Trash2 } from 'lucide-react';
 import SlideRenderer from './SlideRenderer';
 import { deleteGeneratedContent } from '../services/generatedContent';
+import { TEMPLATE_DIMENSIONS } from '../types/carousel';
 
 interface GalleryCarousel {
   id: string;
@@ -23,7 +24,7 @@ interface GalleryProps {
 
 interface GalleryItemProps {
   carousel: GalleryCarousel;
-  onEdit: (carousel: GalleryCarousel) => void;
+  onView: (carousel: GalleryCarousel) => void;
   onDownload: (carousel: GalleryCarousel) => void;
   onDelete?: (carousel: GalleryCarousel) => void;
 }
@@ -77,7 +78,7 @@ const Gallery: React.FC<GalleryProps> = ({ carousels, onViewCarousel, onDeleteCa
             <GalleryItem
               key={carousel.id}
               carousel={carousel}
-              onEdit={onViewCarousel}
+              onView={onViewCarousel}
               onDownload={handleDownload}
               onDelete={handleDelete}
             />
@@ -88,17 +89,28 @@ const Gallery: React.FC<GalleryProps> = ({ carousels, onViewCarousel, onDeleteCa
   );
 };
 
-const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProps) => {
+const GalleryItem = ({ carousel, onView, onDownload, onDelete }: GalleryItemProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Detecta o template e calcula a proporção correta
+  const templateInfo = useMemo(() => {
+    const templateId = carousel.carouselData?.dados_gerais?.template || '1';
+    const dimensions = TEMPLATE_DIMENSIONS[templateId] || { width: 1080, height: 1350 };
+    return {
+      templateId,
+      width: dimensions.width,
+      height: dimensions.height,
+      aspectRatio: dimensions.height / dimensions.width // Para paddingTop em %
+    };
+  }, [carousel.carouselData]);
+
   // Log dos estilos para debug
-  console.log(`🎨 [GalleryItem] Carrossel ${carousel.id} - Slide ${currentSlide}:`, {
-    allStyles: carousel.carouselData?.styles,
-    currentSlideStyles: carousel.carouselData?.styles?.[String(currentSlide)],
-    backgroundStyles: carousel.carouselData?.styles?.[String(currentSlide)]?.background
+  console.log(`🎨 [GalleryItem] Carrossel ${carousel.id} - Slide ${currentSlide} - Template ${templateInfo.templateId}:`, {
+    dimensions: `${templateInfo.width}x${templateInfo.height}`,
+    aspectRatio: templateInfo.aspectRatio
   });
 
   // Distância mínima de swipe (em px)
@@ -149,16 +161,16 @@ const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProp
     className="relative w-full bg-black overflow-hidden cursor-grab active:cursor-grabbing select-none"
     style={{
       height: 0,
-      paddingTop: 'calc(1350 / 1080 * 100%)', // Mantém a proporção de 1080x1350
+      paddingTop: `${templateInfo.aspectRatio * 100}%`, // Proporção dinâmica baseada no template
       position: 'relative',
-      width: '100%', // Garante que a largura ocupe todo o espaço disponível
+      width: '100%',
     }}
     onTouchStart={onTouchStart}
     onTouchMove={onTouchMove}
     onTouchEnd={onTouchEnd}
   >
     {/* Slide atual */}
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {/* Verifica se é um iframe ou outro tipo de conteúdo */}
       {carousel.slides[currentSlide].includes('iframe') ? (
         <iframe
@@ -167,8 +179,6 @@ const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProp
           className="w-full h-full"
           style={{
             border: 'none',
-            objectFit: 'contain', // Isso vai garantir que o conteúdo se ajuste sem cortar
-            height: '100%', // Ajusta o iframe para preencher a altura disponível
           }}
         />
       ) : (
@@ -177,7 +187,7 @@ const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProp
           slideContent={carousel.slides[currentSlide]}
           slideIndex={currentSlide}
           styles={carousel.carouselData?.styles || {}}
-          className="w-full h-full object-none" // Remover o object-cover
+          className="w-full h-full"
         />
       )}
     </div>
@@ -238,16 +248,16 @@ const GalleryItem = ({ carousel, onEdit, onDownload, onDelete }: GalleryItemProp
           disabled
           className="flex-1 flex items-center justify-center gap-2 bg-gray-300 text-gray-500 font-medium py-2.5 px-4 rounded-lg cursor-not-allowed"
         >
-          <Edit className="w-4 h-4" />
+          <Eye className="w-4 h-4" />
           Post Salvo
         </button>
       ) : (
         <button
-          onClick={() => onEdit(carousel)}
+          onClick={() => onView(carousel)}
           className="flex-1 flex items-center justify-center gap-2 bg-white text-black font-medium py-2.5 px-4 rounded-lg hover:bg-zinc-200 transition-colors"
         >
-          <Edit className="w-4 h-4" />
-          Editar
+          <Eye className="w-4 h-4" />
+          Ver
         </button>
       )}
       <button
