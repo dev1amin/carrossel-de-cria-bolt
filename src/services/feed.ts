@@ -15,6 +15,7 @@ interface FeedItem {
   score: number;
   is_saved: boolean;
   influencer_id: string;
+  influencer_name: string;
   recommend: boolean;
   influencer_content: {
     id: number;
@@ -99,7 +100,7 @@ const convertFeedItemToPost = (item: FeedItem): Post => {
     code: content.code,
     text: content.text,
     taken_at: takenAt,
-    username: item.influencer_id, // Usar ID do influenciador como username temporariamente
+    username: item.influencer_name, // Usar nome do influenciador como username temporariamente
     image_url: content.content_url,
     video_url: content.media_type === 8 ? content.content_url : null,
     media_type: content.media_type,

@@ -8,6 +8,7 @@ import type { BlockSlideContent } from '../../../../types/blocks';
 import { isBlockSlide } from '../../../../types/blocks';
 import { updateGeneratedContent } from '../../../../services/generatedContent';
 import { downloadSlidesAsPNG } from '../../../../services/carousel/download.service';
+import { downloadAllReactSlides, captureElementAsBlob } from '../../../../services/carousel/reactDownload.service';
 import { applyStylesFromState } from './useSlideRender';
 import { renderBlocksToHtml } from '../../blocks/utils/renderBlocksToHtml';
 
@@ -22,6 +23,8 @@ export interface UseSaveDownloadParams {
   iframeRefs: React.MutableRefObject<(HTMLIFrameElement | null)[]>;
   slideWidth?: number;
   slideHeight?: number;
+  isReactTemplate?: boolean;
+  reactSlideRefs?: React.MutableRefObject<(HTMLDivElement | null)[]>;
   
   // Setters
   setEditedContent: React.Dispatch<React.SetStateAction<Record<string, any>>>;
@@ -45,6 +48,8 @@ export function useSaveDownload({
   iframeRefs,
   slideWidth = 1080,
   slideHeight = 1350,
+  isReactTemplate = false,
+  reactSlideRefs,
   setEditedContent,
   setUploadedImages,
   setHasUnsavedChanges,
@@ -236,11 +241,34 @@ export function useSaveDownload({
 
   /**
    * Faz o download de todos os slides como PNG
+   * Suporta tanto templates React (captura direta do DOM) quanto HTML (via API)
    */
   const handleDownloadAll = useCallback(async () => {
     console.log('🎯 handleDownloadAll chamado - iniciando processo de download');
+    console.log('📊 isReactTemplate:', isReactTemplate);
+    
     try {
-      console.log('📥 Iniciando download...');
+      // Se for template React e temos refs dos slides, usa download direto
+      if (isReactTemplate && reactSlideRefs?.current) {
+        console.log('🚀 Usando download React direto (sem API)');
+        const slideElements = reactSlideRefs.current.filter((el): el is HTMLDivElement => el !== null);
+        
+        if (slideElements.length === 0) {
+          throw new Error('Nenhum slide React encontrado para download');
+        }
+        
+        console.log(`📊 ${slideElements.length} slides React encontrados`);
+        
+        await downloadAllReactSlides(slideElements, (current, total) => {
+          console.log(`📊 Progresso: ${current}/${total}`);
+        });
+        
+        addToast(`${slideElements.length} slides baixados com sucesso!`, 'success');
+        return;
+      }
+
+      // Fallback: usa o método tradicional com iframes e API
+      console.log('📥 Usando download tradicional (iframe + API)');
       console.log('📊 Número de slides originais:', slides.length);
       console.log('📊 Número de renderedSlides:', renderedSlides.length);
 
@@ -338,7 +366,7 @@ export function useSaveDownload({
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
       addToast(`Erro ao baixar slides: ${errorMessage}`, 'error');
     }
-  }, [slides, renderedSlides, editedContent, elementStyles, iframeRefs, data, slideWidth, slideHeight, addToast]);
+  }, [slides, renderedSlides, editedContent, elementStyles, iframeRefs, data, slideWidth, slideHeight, isReactTemplate, reactSlideRefs, addToast]);
 
   return { handleSave, handleDownloadAll };
 }

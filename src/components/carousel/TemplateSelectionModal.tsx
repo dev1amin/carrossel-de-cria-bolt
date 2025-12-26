@@ -3,6 +3,7 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { createPortal } from "react-dom";
 import { X, Loader2, ZoomIn, ZoomOut, CircleSlash, PanelsTopLeft, ChevronRight, ChevronLeft, BookOpen, Briefcase, GraduationCap, Package, MessageSquare, Link2, Smartphone, Monitor, Instagram, Trash2, Newspaper, Image, FileText, Sparkles, Check, Layers } from "lucide-react";
@@ -10,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TemplateConfig, AVAILABLE_TEMPLATES, TEMPLATE_DIMENSIONS } from "../../types/carousel";
 import { templateService, templateRenderer } from "../../services/carousel";
 import { TEMPLATE_PREVIEW_DATA } from "../../data/templatePreviews";
+import { ReactSlideRenderer } from "../../templates/react";
 
 // ==================== Source Item Types ====================
 export interface SourceItem {
@@ -176,6 +178,12 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   );
   const [slidesHtml, setSlidesHtml] = useState<string[]>([]);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  
+  // Dados brutos do preview (para templates React)
+  const [previewRawData, setPreviewRawData] = useState<{
+    conteudos: any[];
+    dados_gerais: any;
+  } | null>(null);
 
   // Generation options state
   const [contentType, setContentType] = useState<ContentType | null>(null);
@@ -196,6 +204,11 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   // Limites de fontes
   const MAX_INSTAGRAM_SOURCES = 2;
   const MAX_WEBSITE_SOURCES = 5;
+  
+  // Verifica se o template selecionado é React
+  const isReactTemplate = useMemo(() => {
+    return templateService.isReactTemplate(selectedTemplate.id);
+  }, [selectedTemplate.id]);
 
   // Contadores de fontes por tipo
   const instagramSourcesCount = sources.filter(s => s.type === 'instagram').length;
@@ -336,10 +349,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     switch (currentStep) {
       case 'sources': return 'Pronto para gerar!';
       case 'template': return 'Selecionar Template';
-      case 'context': return 'Contexto do Carrossel';
       case 'content-type': return 'Tipo de Conteúdo';
       case 'characteristics': return 'Características do Carrossel';
       case 'cta': return 'Configurar CTA';
+      case 'context': return 'Contexto do Carrossel';
     }
   };
 
@@ -348,10 +361,10 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     switch (currentStep) {
       case 'sources': return 1;
       case 'template': return hasSourcesStep ? 2 : 1;
-      case 'context': return hasSourcesStep ? 3 : 2;
-      case 'content-type': return hasSourcesStep ? 4 : 3;
-      case 'characteristics': return hasSourcesStep ? 5 : 4;
-      case 'cta': return hasSourcesStep ? 6 : 5;
+      case 'content-type': return hasSourcesStep ? 3 : 2;
+      case 'characteristics': return hasSourcesStep ? 4 : 3;
+      case 'cta': return hasSourcesStep ? 5 : 4;
+      case 'context': return hasSourcesStep ? 6 : 5;
     }
   };
 
@@ -377,9 +390,6 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         setCurrentStep('template');
         break;
       case 'template':
-        setCurrentStep('context');
-        break;
-      case 'context':
         setCurrentStep('content-type');
         break;
       case 'content-type':
@@ -387,14 +397,24 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
         break;
       case 'characteristics':
         if (hasCTA === false) {
-          // Generate immediately
-          handleGenerate();
+          setCurrentStep('context');
         } else {
           setCurrentStep('cta');
         }
         break;
       case 'cta':
-        handleGenerate();
+        setCurrentStep('context');
+        break;
+      case 'context':
+        // Se escolheu que quer adicionar contexto mas ainda não digitou, não avança
+        if (wantsContext === true) {
+          // Já está no campo de texto, pode gerar mesmo sem contexto
+          handleGenerate();
+        } else if (wantsContext === false) {
+          // Escolheu não adicionar contexto, gera direto
+          handleGenerate();
+        }
+        // Se wantsContext === null, não faz nada (não deveria chegar aqui)
         break;
     }
   };
@@ -407,26 +427,27 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
           setCurrentStep('sources');
         }
         break;
-      case 'context':
-        // Se estiver no campo de texto, volta para a pergunta sim/não
-        if (wantsContext === true) {
-          setWantsContext(null);
-        } else {
-          setCurrentStep('template');
-        }
-        break;
       case 'content-type':
-        // Se pulou o contexto, volta para a pergunta sim/não
-        if (wantsContext === false) {
-          setWantsContext(null);
-        }
-        setCurrentStep('context');
+        setCurrentStep('template');
         break;
       case 'characteristics':
         setCurrentStep('content-type');
         break;
       case 'cta':
         setCurrentStep('characteristics');
+        break;
+      case 'context':
+        // Se estiver no campo de texto, volta para a pergunta sim/não
+        if (wantsContext === true) {
+          setWantsContext(null);
+        } else {
+          // Volta para CTA ou characteristics dependendo se tem CTA
+          if (hasCTA === false) {
+            setCurrentStep('characteristics');
+          } else {
+            setCurrentStep('cta');
+          }
+        }
         break;
     }
   };
@@ -461,31 +482,49 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
     (async () => {
       setIsLoadingPreview(true);
       try {
-        // Busca os slides do template
-        const slides = await templateService.fetchTemplate(selectedTemplate.id);
+        // Para templates React, usa o ID base (sem -react) para buscar preview data
+        const baseTemplateId = selectedTemplate.id.replace('-react', '');
+        const isReact = templateService.isReactTemplate(selectedTemplate.id);
         
-        if (!cancelled && Array.isArray(slides)) {
-          // Verifica se existe dados de preview para este template
-          const previewData = TEMPLATE_PREVIEW_DATA[selectedTemplate.id];
+        // Verifica se existe dados de preview para este template (usa ID base)
+        const previewData = TEMPLATE_PREVIEW_DATA[baseTemplateId] || TEMPLATE_PREVIEW_DATA['1'];
+        
+        if (previewData) {
+          // Mescla dados do usuário com dados do template
+          const userData = getUserData();
+          const mergedPreviewData = mergeUserDataWithPreview(previewData, userData);
           
-          if (previewData) {
-            // Mescla dados do usuário com dados do template
-            const userData = getUserData();
-            const mergedPreviewData = mergeUserDataWithPreview(previewData, userData);
-            
-            // Renderiza os slides com os dados mesclados
-            const renderedSlides = templateRenderer.renderAllSlides(slides, mergedPreviewData);
-            setSlidesHtml(renderedSlides);
+          // Salva dados brutos para templates React
+          setPreviewRawData({
+            conteudos: mergedPreviewData.conteudos || [],
+            dados_gerais: mergedPreviewData.dados_gerais || {},
+          });
+          
+          if (isReact) {
+            // Templates React não precisam de HTML - renderização é via componentes
+            // Define array vazio para indicar que deve usar renderização React
+            setSlidesHtml(Array(10).fill('__REACT__'));
           } else {
-            // Se não houver dados de preview, usa os slides vazios
-            setSlidesHtml(slides);
+            // Busca os slides do template HTML
+            const slides = await templateService.fetchTemplate(selectedTemplate.id);
+            
+            if (!cancelled && Array.isArray(slides)) {
+              // Renderiza os slides com os dados mesclados (para iframe)
+              const renderedSlides = templateRenderer.renderAllSlides(slides, mergedPreviewData);
+              setSlidesHtml(renderedSlides);
+            }
           }
-        } else if (!cancelled) {
+        } else {
+          // Se não houver dados de preview
           setSlidesHtml([]);
+          setPreviewRawData(null);
         }
       } catch (error) {
         console.error('Erro ao carregar preview do template:', error);
-        if (!cancelled) setSlidesHtml([]);
+        if (!cancelled) {
+          setSlidesHtml([]);
+          setPreviewRawData(null);
+        }
       } finally {
         if (!cancelled) setIsLoadingPreview(false);
       }
@@ -691,9 +730,11 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
   };
 
   const handleGenerate = () => {
-    // Se tem sources, inclui as inform\u00e7\u00f5es de multi-fonte
+    // Se tem sources, inclui as informações de multi-fonte
     const isMultifont = sources.length > 1;
-    const sourceLinks = sources.map(s => s.code || s.id);
+    // IMPORTANTE: O primeiro item (initialSource) já é enviado via postCode pelo componente pai
+    // Então pegamos apenas os links adicionais (sources[1] em diante)
+    const additionalLinks = sources.slice(1).map(s => s.code || s.id);
     
     const options: GenerationOptions = {
       templateId: selectedTemplate.id,
@@ -705,14 +746,15 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
       ...(hasCTA && ctaType && { ctaType }),
       ...(hasCTA && ctaIntention && { ctaIntention }),
       ...(context.trim() && { context: context.trim() }),
-      ...(isMultifont && { multipleLinks: sourceLinks }),
+      ...(isMultifont && additionalLinks.length > 0 && { multipleLinks: additionalLinks }),
       ...(isMultifont && { multifont: true }),
     };
     
-    console.log('\ud83c\udfaf TemplateSelectionModal - handleGenerate called');
-    console.log('\ud83c\udfaf Generation options:', options);
-    console.log('\ud83c\udfaf Sources:', sources);
-    console.log('\ud83c\udfaf Calling onSelectTemplate with:', selectedTemplate.id, options);
+    console.log('🎯 TemplateSelectionModal - handleGenerate called');
+    console.log('🎯 Generation options:', options);
+    console.log('🎯 Sources:', sources);
+    console.log('🎯 Additional links (excluding first):', additionalLinks);
+    console.log('🎯 Calling onSelectTemplate with:', selectedTemplate.id, options);
     
     onSelectTemplate(selectedTemplate.id, options);
     onClose();
@@ -1189,9 +1231,8 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                       >
                         <div
                           style={{
-                            transform: `scale(${zoom})`,
-                            transformOrigin: "top left",
-                            willChange: "transform",
+                            // Usa zoom ao invés de transform:scale para texto nítido
+                            zoom: zoom,
                           }}
                         >
                           {slidesHtml.length > 0 ? (
@@ -1208,6 +1249,38 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                             >
                               {slidesHtml.map((html, idx) => {
                                 const { width, height } = getTemplateDimensions(selectedTemplate.id);
+                                
+                                // Se for template React, usa ReactSlideRenderer
+                                if (isReactTemplate && previewRawData) {
+                                  const slideData = previewRawData.conteudos[idx] || {};
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className="relative shadow-lg rounded-lg overflow-hidden bg-black border border-gray-300"
+                                      style={{ 
+                                        width, 
+                                        height, 
+                                        zIndex: 10000001,
+                                        // Renderização nítida
+                                        transform: 'translateZ(0)',
+                                        backfaceVisibility: 'hidden',
+                                        WebkitBackfaceVisibility: 'hidden',
+                                        willChange: 'auto',
+                                      }}
+                                    >
+                                      <ReactSlideRenderer
+                                        templateId={selectedTemplate.id}
+                                        slideIndex={idx}
+                                        slideData={slideData}
+                                        dadosGerais={previewRawData.dados_gerais}
+                                        containerWidth={width}
+                                        containerHeight={height}
+                                      />
+                                    </div>
+                                  );
+                                }
+                                
+                                // Template normal: usa iframe
                                 return (
                                   <div
                                     key={idx}
@@ -1278,7 +1351,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                           <button
                             onClick={() => {
                               setWantsContext(false);
-                              setCurrentStep('content-type');
+                              handleGenerate();
                             }}
                             className="flex-1 max-w-[200px] py-4 px-6 rounded-xl font-semibold transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
                           >
@@ -1618,9 +1691,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                 <span>
                   {currentStep === 'sources'
                     ? (sources.length === 1 ? 'Gerar Carrossel' : `Gerar com ${sources.length} fontes`)
-                    : currentStep === 'characteristics' && hasCTA === false
-                    ? 'Gerar Carrossel'
-                    : currentStep === 'cta'
+                    : currentStep === 'context'
                     ? 'Gerar Carrossel'
                     : 'Avançar'
                   }

@@ -37,6 +37,3 @@ export * from './types/carousel';
 
 // ==================== Config ====================
 export * from './config/carousel';
-
-// ==================== Utils ====================
-export * as CarouselUtils from './utils/carousel';

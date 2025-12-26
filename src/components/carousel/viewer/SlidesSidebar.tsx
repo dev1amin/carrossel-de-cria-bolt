@@ -1,9 +1,9 @@
-import React from 'react';
-import { 
-  Plus, 
-  Trash2, 
-  Image as ImageIcon, 
-  Type, 
+import React, { useContext } from 'react';
+import {
+  Plus,
+  Trash2,
+  Image as ImageIcon,
+  Type,
   ChevronLeft,
   ArrowLeft,
   CheckSquare,
@@ -13,18 +13,25 @@ import {
 } from 'lucide-react';
 import type { CarouselData } from '../../../types/carousel';
 
+// ✅ Context opcional (não explode fora do Provider)
+import EditorContext from "./v2/context/EditorContext";
+
 interface SlideCardProps {
   index: number;
   conteudo: {
+    id?: string;
+    layoutIndex?: number;
     title?: string;
     subtitle?: string;
     imagem_fundo?: string;
+    thumbnail_url?: string;
   };
   isActive: boolean;
   isGenerating?: boolean;
   hasError?: boolean;
   isBatchMode: boolean;
   isSelected: boolean;
+  canDelete: boolean;
   onSelect: () => void;
   onDelete: () => void;
   onBatchToggle: () => void;
@@ -38,12 +45,13 @@ const SlideCard: React.FC<SlideCardProps> = ({
   hasError = false,
   isBatchMode,
   isSelected,
+  canDelete,
   onSelect,
   onDelete,
   onBatchToggle,
 }) => {
   const slideType = index === 0 ? 'COVER' : 'CONTENT';
-  const hasImage = !!conteudo?.imagem_fundo;
+  const hasImage = !!(conteudo?.thumbnail_url || conteudo?.imagem_fundo);
   const previewText = conteudo?.title || conteudo?.subtitle || 'Slide vazio';
 
   return (
@@ -51,8 +59,8 @@ const SlideCard: React.FC<SlideCardProps> = ({
       onClick={onSelect}
       className={`
         relative p-3 rounded-lg cursor-pointer transition-all duration-200 group
-        ${isActive 
-          ? 'bg-blue-50 border-2 border-blue-DEFAULT shadow-lg' 
+        ${isActive
+          ? 'bg-blue-50 border-2 border-blue-DEFAULT shadow-lg'
           : 'bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
         }
         ${hasError ? 'border-red-500 bg-red-50' : ''}
@@ -80,10 +88,14 @@ const SlideCard: React.FC<SlideCardProps> = ({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onDelete();
+          if (canDelete) onDelete();
         }}
-        className="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 bg-white shadow-sm border border-gray-light hover:bg-red-50 hover:border-red-200 transition-all z-20"
-        title="Excluir slide"
+        disabled={!canDelete}
+        className={`
+          absolute top-2 right-2 p-1.5 rounded-md bg-white shadow-sm border border-gray-light transition-all z-20
+          ${canDelete ? 'opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:border-red-200' : 'opacity-40 cursor-not-allowed'}
+        `}
+        title={canDelete ? "Excluir slide" : "Não é possível deletar o último slide"}
       >
         <Trash2 className="w-4 h-4 text-red-500" />
       </button>
@@ -105,7 +117,7 @@ const SlideCard: React.FC<SlideCardProps> = ({
           </span>
         </div>
 
-        {/* Status indicators - hidden on hover to not conflict with delete */}
+        {/* Status indicators */}
         <div className="flex items-center gap-1 group-hover:opacity-0 transition-opacity">
           {isGenerating && (
             <Loader2 className="w-4 h-4 text-blue-DEFAULT animate-spin" />
@@ -122,8 +134,8 @@ const SlideCard: React.FC<SlideCardProps> = ({
       {/* Preview thumbnail */}
       <div className="relative w-full aspect-square rounded-md overflow-hidden bg-gray-light mb-2">
         {hasImage ? (
-          <img 
-            src={conteudo.imagem_fundo} 
+          <img
+            src={conteudo.thumbnail_url || conteudo.imagem_fundo}
             alt={`Slide ${index + 1}`}
             className="w-full h-full object-cover"
           />
@@ -150,8 +162,10 @@ const SlideCard: React.FC<SlideCardProps> = ({
 };
 
 interface SlidesSidebarProps {
+  // ⚠️ Esses props viram fallback. Se estiver dentro do EditorProvider, ele usa o Context.
   slides: string[];
   carouselData: CarouselData;
+
   focusedSlide: number;
   generatingSlides?: Set<number>;
   errorSlides?: Set<number>;
@@ -169,13 +183,13 @@ interface SlidesSidebarProps {
 }
 
 export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
-  slides,
-  carouselData,
-  focusedSlide,
+  slides: slidesProp,
+  carouselData: carouselDataProp,
+  focusedSlide: focusedSlideProp,
   generatingSlides = new Set(),
   errorSlides = new Set(),
-  batchMode,
-  selectedSlides,
+  batchMode: batchModeProp,
+  selectedSlides: selectedSlidesProp,
   isMinimized = false,
   onToggleMinimize,
   onSlideClick,
@@ -186,7 +200,29 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
   onBatchDelete,
   onBackToSetup,
 }) => {
-  const data = carouselData as any;
+  const ctx = useContext(EditorContext);
+
+  // ✅ Fonte real de verdade (Context) — fallback para props se não tiver Provider
+  const effectiveSlides = ctx?.state?.renderedSlides ?? slidesProp;
+  const effectiveFocused = ctx?.state?.focusedSlide ?? focusedSlideProp;
+  const effectiveBatchMode = ctx?.state?.batchMode ?? batchModeProp;
+  const effectiveSelectedSlides = ctx?.state?.selectedSlides ?? selectedSlidesProp;
+  const effectiveEditedContent = ctx?.state?.editedContent ?? {};
+  const effectiveActiveData = (ctx?.data?.activeData ?? carouselDataProp) as any;
+
+  const conteudos: any[] = effectiveActiveData?.conteudos ?? [];
+  const canDelete = effectiveSlides.length > 1;
+
+  // Preview mesclado (pega edits)
+  const getPreviewConteudo = (index: number) => {
+    const c = conteudos?.[index] ?? {};
+    return {
+      ...c,
+      title: effectiveEditedContent[`${index}-title`] ?? c.title,
+      subtitle: effectiveEditedContent[`${index}-subtitle`] ?? c.subtitle,
+      imagem_fundo: effectiveEditedContent[`${index}-background`] ?? c.imagem_fundo,
+    };
+  };
 
   if (isMinimized) {
     return (
@@ -198,24 +234,27 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
         >
           <ChevronLeft className="w-5 h-5 text-gray-DEFAULT rotate-180" />
         </button>
-        
-        {/* Mini slide indicators */}
+
         <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-1.5 w-full">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => onSlideClick(index)}
-              className={`
-                w-full aspect-square rounded-md flex items-center justify-center text-xs font-bold transition-all border
-                ${focusedSlide === index 
-                  ? 'bg-blue-DEFAULT text-white border-blue-DEFAULT' 
-                  : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
-                }
-              `}
-            >
-              {index + 1}
-            </button>
-          ))}
+          {effectiveSlides.map((_, index) => {
+            const c = conteudos?.[index];
+            const key = c?.id ?? `${index}-${effectiveSlides.length}`;
+            return (
+              <button
+                key={key}
+                onClick={() => onSlideClick(index)}
+                className={`
+                  w-full aspect-square rounded-md flex items-center justify-center text-xs font-bold transition-all border
+                  ${effectiveFocused === index
+                    ? 'bg-blue-DEFAULT text-white border-blue-DEFAULT'
+                    : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                  }
+                `}
+              >
+                {index + 1}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -228,7 +267,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
         <div className="flex items-center gap-2">
           <h3 className="text-gray-dark font-semibold text-sm">Slides</h3>
           <span className="text-xs text-gray-DEFAULT bg-gray-light px-2 py-0.5 rounded-full">
-            {slides.length}
+            {effectiveSlides.length}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -236,7 +275,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
             onClick={onToggleBatchMode}
             className={`
               p-1.5 rounded transition-colors
-              ${batchMode ? 'bg-blue-DEFAULT text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}
+              ${effectiveBatchMode ? 'bg-blue-DEFAULT text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}
             `}
             title="Modo de seleção"
           >
@@ -253,10 +292,10 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
       </div>
 
       {/* Batch actions bar */}
-      {batchMode && selectedSlides.size > 0 && (
+      {effectiveBatchMode && effectiveSelectedSlides.size > 0 && (
         <div className="px-3 py-2 bg-blue-light/30 border-b border-gray-light flex items-center justify-between">
           <span className="text-xs text-blue-dark font-medium">
-            {selectedSlides.size} selecionado(s)
+            {effectiveSelectedSlides.size} selecionado(s)
           </span>
           <button
             onClick={onBatchDelete}
@@ -270,18 +309,21 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
 
       {/* Slides list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {slides.map((_, index) => {
-          const conteudo = data?.conteudos?.[index] || {};
+        {effectiveSlides.map((_, index) => {
+          const conteudo = getPreviewConteudo(index);
+          const key = conteudo?.id ?? `${index}-${effectiveSlides.length}`;
+
           return (
             <SlideCard
-              key={index}
+              key={key}
               index={index}
               conteudo={conteudo}
-              isActive={focusedSlide === index}
+              isActive={effectiveFocused === index}
               isGenerating={generatingSlides.has(index)}
               hasError={errorSlides.has(index)}
-              isBatchMode={batchMode}
-              isSelected={selectedSlides.has(index)}
+              isBatchMode={effectiveBatchMode}
+              isSelected={effectiveSelectedSlides.has(index)}
+              canDelete={canDelete}
               onSelect={() => onSlideClick(index)}
               onDelete={() => onDeleteSlide?.(index)}
               onBatchToggle={() => onToggleSlideSelection(index)}

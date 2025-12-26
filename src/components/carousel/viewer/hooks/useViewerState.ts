@@ -11,6 +11,7 @@ export function useViewerState(
   generatedContentId?: number
 ): ViewerState & {
   iframeRefs: React.MutableRefObject<(HTMLIFrameElement | null)[]>;
+  reactSlideRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
   selectedImageRefs: React.MutableRefObject<Record<number, HTMLImageElement | null>>;
   lastSearchId: React.MutableRefObject<number>;
@@ -86,6 +87,7 @@ export function useViewerState(
 
   // Refs
   const iframeRefs = useRef<(HTMLIFrameElement | null)[]>(new Array(slides.length).fill(null));
+  const reactSlideRefs = useRef<(HTMLDivElement | null)[]>(new Array(slides.length).fill(null));
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedImageRefs = useRef<Record<number, HTMLImageElement | null>>({});
   const lastSearchId = useRef(0);
@@ -125,6 +127,7 @@ export function useViewerState(
     autoDownloadExecuted,
     contentId,
     iframeRefs,
+    reactSlideRefs,
     containerRef,
     selectedImageRefs,
     lastSearchId,

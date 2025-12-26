@@ -87,9 +87,11 @@ export const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         <div
           className="absolute"
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            // Pan usa transform para posicionamento, zoom usa propriedade CSS zoom para texto nítido
+            transform: `translate(${pan.x}px, ${pan.y}px)`,
+            zoom: zoom,
             transformOrigin: '0 0',
-            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+            transition: isDragging ? 'none' : 'transform 0.2s ease-out, zoom 0.2s ease-out',
             left: 0,
             top: 0,
             zIndex: 10,

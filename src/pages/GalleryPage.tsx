@@ -59,7 +59,7 @@ const GalleryPage = () => {
     setToasts((prev) => [...prev, { id, message, type }]);
   };
 
-  // Função para renderizar slides usando o template correto do MinIO
+  // Função para renderizar slides usando o template correto (local)
   const renderSlidesWithTemplate = async (
     conteudos: any[],
     dados_gerais: any,
@@ -68,10 +68,28 @@ const GalleryPage = () => {
     try {
       console.log(`🎨 Renderizando com template "${templateId}" para preview na galeria`);
 
-      // Busca o template do MinIO
-      const templateSlides = await templateService.fetchTemplate(templateId);
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(templateId);
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado na galeria: ${normalizedTemplateId}`);
+        // Retorna dados JSON com marcador especial para identificar
+        return conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: dados_gerais,
+          })
+        );
+      }
 
-      console.log(`✅ Template "${templateId}" carregado: ${templateSlides.length} slides`);
+      // Busca o template local via dynamic import
+      const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+
+      console.log(`✅ Template "${normalizedTemplateId}" carregado: ${templateSlides.length} slides`);
 
       // Monta os dados no formato CarouselData
       const carouselData: CarouselData = {
@@ -225,7 +243,7 @@ const GalleryPage = () => {
         const templateId = result.dados_gerais?.template || '2';
         console.log(`🎨 Template detectado: "${templateId}"`);
 
-        // Renderiza os slides usando o template correto do MinIO
+        // Renderiza os slides usando o template local
         slides = await renderSlidesWithTemplate(
           result.conteudos,
           result.dados_gerais || {},
@@ -353,7 +371,7 @@ const GalleryPage = () => {
 
       console.log('✅ Resposta da API (Galeria):', response);
 
-      // Converte conteúdos da API para formato da galeria (com templates do MinIO)
+      // Converte conteúdos da API para formato da galeria (com templates locais)
       const apiCarouselsPromises = response.data.map(content =>
         convertAPIToGalleryCarousel(content)
       );
@@ -546,10 +564,28 @@ const GalleryPage = () => {
       const responseTemplateId = carouselData.dados_gerais.template;
       console.log(`⏳ Buscando template ${responseTemplateId}...`);
 
-      const templateSlides = await templateService.fetchTemplate(responseTemplateId);
-      console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
-
-      const rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
+      
+      let rendered: string[];
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+        rendered = carouselData.conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: carouselData.dados_gerais,
+          })
+        );
+      } else {
+        const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+        console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
+        rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      }
 
       const galleryItem = {
         id: queueItem.id,

@@ -1,199 +1,198 @@
-import { getCarouselConfig } from '../../config/carousel';
+/**
+ * TemplateService - Carrega templates locais via Dynamic Import
+ * 
+ * OTIMIZADO PARA PERFORMANCE:
+ * - Templates são bundled com a aplicação (sem requisições externas)
+ * - Dynamic imports para code-splitting (só baixa quando necessário)
+ * - Cache em memória para acesso instantâneo após primeiro load
+ * - Zero dependência de servidores externos (MinIO removido)
+ */
 
-const CACHE_KEY_PREFIX = 'template_cache_';
-const CACHE_VERSION = 'v1';
-const CACHE_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+// Mapa de imports dinâmicos para cada template (apenas JSON para templates legados)
+// Vite faz code-splitting automático para cada um
+// NOTA: Templates 1-8 agora são 100% React (não precisam de JSON)
+const templateImports: Record<string, () => Promise<{ default: { slides: string[] } }>> = {
+  // Templates 1-8 são React puro, não precisam de JSON
+  '9': () => import('../../templates/template9.json'),
+};
 
-interface CachedTemplate {
-  slides: string[];
-  timestamp: number;
-  version: string;
-}
+// Templates que usam renderização React (sem iframe, sem JSON)
+// Performance: React nativo elimina overhead de iframes e parsing de HTML
+export const REACT_TEMPLATES = [
+  '1-react',  // Template 1 - Versão React
+  '2-react',  // Template 2 - Footer branco com chips azuis
+  '3-react',  // Template 3 - Anton SC em fundo preto
+  '4-react',  // Template 4 - Fundo roxo (#6750A4)
+  '5-react',  // Template 5 - Fundo claro (#F1F1F1) com botão verde
+  '6-react',  // Template 6 - Mix de fundos claro/escuro
+  '7-react',  // Template 7 - Twitter Dark Mode (1170x1560)
+  '8-react',  // Template 8 - Twitter Light Mode (1170x1560)
+];
+
+// Mapeamento de IDs legados para IDs React
+// Isso garante compatibilidade com dados antigos da API que usam "1", "2", etc.
+const LEGACY_TO_REACT_MAP: Record<string, string> = {
+  '1': '1-react',
+  '2': '2-react',
+  '3': '3-react',
+  '4': '4-react',
+  '5': '5-react',
+  '6': '6-react',
+  '7': '7-react',
+  '8': '8-react',
+};
 
 export class TemplateService {
+  // Cache em memória - acesso instantâneo após primeiro load
   private memoryCache: Map<string, string[]> = new Map();
+  
+  // Controle de loading para evitar requisições duplicadas
+  private loadingPromises: Map<string, Promise<string[]>> = new Map();
 
-  private getCacheKey(templateId: string): string {
-    return `${CACHE_KEY_PREFIX}${templateId}`;
-  }
-
-  private loadFromLocalStorage(templateId: string): string[] | null {
-    try {
-      const cacheKey = this.getCacheKey(templateId);
-      const cached = localStorage.getItem(cacheKey);
-      
-      if (!cached) return null;
-      
-      const data: CachedTemplate = JSON.parse(cached);
-      
-      // Verifica versão e expiração
-      if (data.version !== CACHE_VERSION) {
-        console.log(`Cache version mismatch for template ${templateId}, clearing...`);
-        localStorage.removeItem(cacheKey);
-        return null;
-      }
-      
-      const now = Date.now();
-      if (now - data.timestamp > CACHE_EXPIRATION_MS) {
-        console.log(`Cache expired for template ${templateId}, clearing...`);
-        localStorage.removeItem(cacheKey);
-        return null;
-      }
-      
-      console.log(`✅ Loaded template ${templateId} from localStorage cache`);
-      return data.slides;
-    } catch (error) {
-      console.error(`Error loading template ${templateId} from localStorage:`, error);
-      return null;
+  /**
+   * Normaliza o ID do template (mapeia IDs legados para IDs React)
+   * Ex: "1" -> "1-react", "2" -> "2-react"
+   */
+  normalizeTemplateId(templateId: string): string {
+    // Se já é um ID React válido, retorna como está
+    if (REACT_TEMPLATES.includes(templateId)) {
+      return templateId;
     }
-  }
-
-  private saveToLocalStorage(templateId: string, slides: string[]): void {
-    try {
-      const cacheKey = this.getCacheKey(templateId);
-      const data: CachedTemplate = {
-        slides,
-        timestamp: Date.now(),
-        version: CACHE_VERSION
-      };
-      
-      localStorage.setItem(cacheKey, JSON.stringify(data));
-      console.log(`💾 Saved template ${templateId} to localStorage cache`);
-    } catch (error) {
-      console.error(`Error saving template ${templateId} to localStorage:`, error);
-      // Se falhar (quota excedida), limpa caches antigos
-      this.clearOldCaches();
+    
+    // Se é um ID legado (1-8), mapeia para React
+    if (LEGACY_TO_REACT_MAP[templateId]) {
+      console.log(`🔄 Mapeando template legado "${templateId}" para "${LEGACY_TO_REACT_MAP[templateId]}"`);
+      return LEGACY_TO_REACT_MAP[templateId];
     }
+    
+    // Outros IDs (como "9") permanecem inalterados
+    return templateId;
   }
 
-  private clearOldCaches(): void {
-    try {
-      const keys = Object.keys(localStorage);
-      for (const key of keys) {
-        if (key.startsWith(CACHE_KEY_PREFIX)) {
-          localStorage.removeItem(key);
-        }
-      }
-      console.log('🗑️ Cleared old template caches from localStorage');
-    } catch (error) {
-      console.error('Error clearing old caches:', error);
-    }
+  /**
+   * Verifica se um template usa renderização React
+   */
+  isReactTemplate(templateId: string): boolean {
+    const normalizedId = this.normalizeTemplateId(templateId);
+    return REACT_TEMPLATES.includes(normalizedId);
   }
 
+  /**
+   * Busca um template pelo ID
+   * - Primeiro verifica cache em memória (instantâneo)
+   * - Depois usa dynamic import (Vite otimiza automaticamente)
+   * - Templates React retornam array vazio (renderização é via componentes)
+   */
   async fetchTemplate(templateId: string): Promise<string[]> {
-    // 1. Verifica cache em memória
-    if (this.memoryCache.has(templateId)) {
-      console.log(`✅ Using memory cached template ${templateId}`);
-      return this.memoryCache.get(templateId)!;
+    // Normaliza o ID (mapeia IDs legados para React)
+    const normalizedId = this.normalizeTemplateId(templateId);
+    
+    // Templates React não precisam de HTML - renderização é via componentes
+    if (REACT_TEMPLATES.includes(normalizedId)) {
+      console.log(`⚡ Template ${normalizedId} é React - não precisa de HTML`);
+      // Retorna array com 10 slots vazios (para indicar número de slides)
+      return Array(10).fill('');
     }
 
-    // 2. Verifica cache em localStorage
-    const cachedSlides = this.loadFromLocalStorage(templateId);
-    if (cachedSlides) {
-      this.memoryCache.set(templateId, cachedSlides);
-      return cachedSlides;
+    // 1. Cache em memória = acesso instantâneo
+    if (this.memoryCache.has(normalizedId)) {
+      console.log(`⚡ Template ${normalizedId} servido do cache (instantâneo)`);
+      return this.memoryCache.get(normalizedId)!;
     }
 
-    const config = getCarouselConfig();
-    const MINIO_ENDPOINT = config.minio.endpoint;
-    const MINIO_BUCKET = config.minio.bucket;
-    const TOTAL_SLIDES = config.templates.totalSlides;
+    // 2. Se já está carregando, reutiliza a promise (evita duplicatas)
+    if (this.loadingPromises.has(normalizedId)) {
+      console.log(`⏳ Template ${normalizedId} já está sendo carregado, aguardando...`);
+      return this.loadingPromises.get(normalizedId)!;
+    }
 
-    const slides: string[] = [];
-    const errors: string[] = [];
+    // 3. Verifica se o template existe
+    const importFn = templateImports[normalizedId];
+    if (!importFn) {
+      throw new Error(`Template "${normalizedId}" não encontrado. Templates disponíveis: ${Object.keys(templateImports).join(', ')}, ${REACT_TEMPLATES.join(', ')}`);
+    }
 
-    console.log(`🔍 Fetching template "${templateId}" from MinIO...`);
-    console.log(`📦 MinIO Config:`, { MINIO_ENDPOINT, MINIO_BUCKET, TOTAL_SLIDES });
-    console.log(`🎯 Template path will be: ${MINIO_ENDPOINT}/${MINIO_BUCKET}/template${templateId}/`);
-
-    for (let i = 1; i <= TOTAL_SLIDES; i++) {
-      const url = `${MINIO_ENDPOINT}/${MINIO_BUCKET}/template${templateId}/Slide ${i}.html`;
-      console.log(`📥 Fetching slide ${i}:`, url);
-
+    // 4. Carrega via dynamic import
+    const loadPromise = (async () => {
+      console.log(`📦 Carregando template ${normalizedId} via dynamic import...`);
+      const startTime = performance.now();
+      
       try {
-        const response = await fetch(url, {
-          method: 'GET',
-          mode: 'cors',
-        });
-
-        console.log(`Slide ${i} response:`, response.status, response.ok);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch slide ${i}: ${response.statusText}`);
+        const module = await importFn();
+        const slides = module.default?.slides || (module as any).slides;
+        
+        if (!slides || !Array.isArray(slides)) {
+          throw new Error(`Template ${normalizedId} não contém array "slides" válido`);
         }
 
-        const html = await response.text();
-        console.log(`Slide ${i} loaded successfully, length: ${html.length}`);
-        slides.push(html);
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`Error loading slide ${i}:`, error);
-        errors.push(`Slide ${i}: ${errorMsg}`);
+        const loadTime = (performance.now() - startTime).toFixed(2);
+        console.log(`✅ Template ${normalizedId} carregado em ${loadTime}ms (${slides.length} slides)`);
+        
+        // Salva no cache
+        this.memoryCache.set(normalizedId, slides);
+        
+        return slides;
+      } finally {
+        // Remove da lista de loading
+        this.loadingPromises.delete(normalizedId);
       }
-    }
+    })();
 
-    if (errors.length > 0) {
-      console.error('Failed to load slides:', errors);
-      throw new Error(`Failed to load some slides:\n${errors.join('\n')}`);
-    }
-
-    console.log(`All ${TOTAL_SLIDES} slides loaded successfully for template ${templateId}`);
-    
-    // 3. Salva em ambos os caches
-    this.memoryCache.set(templateId, slides);
-    this.saveToLocalStorage(templateId, slides);
-    
-    return slides;
+    this.loadingPromises.set(normalizedId, loadPromise);
+    return loadPromise;
   }
 
+  /**
+   * Limpa o cache de templates
+   */
   clearCache(templateId?: string): void {
     if (templateId) {
-      // Limpa cache específico
       this.memoryCache.delete(templateId);
-      const cacheKey = this.getCacheKey(templateId);
-      localStorage.removeItem(cacheKey);
-      console.log(`🗑️ Cleared cache for template ${templateId}`);
+      console.log(`🗑️ Cache limpo para template ${templateId}`);
     } else {
-      // Limpa todos os caches
       this.memoryCache.clear();
-      this.clearOldCaches();
-      console.log('🗑️ Cleared all template caches');
+      console.log('🗑️ Cache de todos os templates limpo');
     }
   }
 
+  /**
+   * Retorna template do cache se existir (não faz fetch)
+   */
   getCachedTemplate(templateId: string): string[] | null {
-    // Verifica memória primeiro
-    if (this.memoryCache.has(templateId)) {
-      return this.memoryCache.get(templateId)!;
-    }
-    
-    // Depois localStorage
-    return this.loadFromLocalStorage(templateId);
+    return this.memoryCache.get(templateId) || null;
   }
 
-  // Método para pré-carregar templates em background
+  /**
+   * Pré-carrega um template em background
+   */
   async preloadTemplate(templateId: string): Promise<void> {
-    if (this.getCachedTemplate(templateId)) {
-      console.log(`Template ${templateId} already cached, skipping preload`);
-      return;
+    if (this.memoryCache.has(templateId)) {
+      return; // Já está em cache
     }
     
     try {
-      console.log(`📦 Preloading template ${templateId}...`);
       await this.fetchTemplate(templateId);
-      console.log(`✅ Template ${templateId} preloaded successfully`);
     } catch (error) {
-      console.error(`Failed to preload template ${templateId}:`, error);
+      console.warn(`Falha ao pré-carregar template ${templateId}:`, error);
     }
   }
 
-  // Método para pré-carregar múltiplos templates
+  /**
+   * Pré-carrega múltiplos templates em paralelo
+   */
   async preloadTemplates(templateIds: string[]): Promise<void> {
-    console.log(`📦 Preloading ${templateIds.length} templates...`);
+    console.log(`📦 Pré-carregando ${templateIds.length} templates...`);
     await Promise.allSettled(
       templateIds.map(id => this.preloadTemplate(id))
     );
-    console.log('✅ Template preloading completed');
+    console.log('✅ Pré-carregamento concluído');
+  }
+
+  /**
+   * Retorna lista de IDs de templates disponíveis
+   */
+  getAvailableTemplates(): string[] {
+    return Object.keys(templateImports);
   }
 }
 

@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import LoadingBar from '../components/LoadingBar';
-import NewsPostCard from '../components/NewsPostCard';
-import NewsFeedMobile from '../components/NewsFeedMobile';
-import NewsFilters from '../components/NewsFilters';
+import NewsCard from '../components/NewsCard';
 import Toast, { ToastMessage } from '../components/Toast';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { MouseFollowLight } from '../components/MouseFollowLight';
@@ -43,6 +41,8 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   const [error, setError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedNiche, setSelectedNiche] = useState('');
   const navigate = useNavigate();
 
   const { addEditorTab } = useEditorTabs();
@@ -201,10 +201,28 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
       const responseTemplateId = carouselData.dados_gerais.template;
       console.log(`⏳ Buscando template ${responseTemplateId}...`);
       
-      const templateSlides = await templateService.fetchTemplate(responseTemplateId);
-      console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
       
-      const rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      let rendered: string[];
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+        rendered = carouselData.conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: carouselData.dados_gerais,
+          })
+        );
+      } else {
+        const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+        console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
+        rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      }
       console.log('✅ Slides renderizados:', rendered.length);
 
       const galleryItem = {
@@ -323,6 +341,38 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
   // Uso do useMemo para evitar re-renderização do menu
   const memoizedNavigation = useMemo(() => <Navigation currentPage="news" unviewedCount={unviewedCount} />, [unviewedCount]);
 
+  // Extrair niches únicos das notícias
+  const availableNiches = useMemo(() => {
+    const nichesSet = new Set<string>();
+    news.forEach(item => {
+      if (item.niches?.name) {
+        nichesSet.add(item.niches.name);
+      }
+    });
+    return Array.from(nichesSet).sort();
+  }, [news]);
+
+  // Filtrar notícias por busca e niche
+  const displayNews = useMemo(() => {
+    let filtered = [...news];
+    
+    // Filtro por busca
+    if (searchTerm.trim()) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.title.toLowerCase().includes(search) ||
+        item.description?.toLowerCase().includes(search)
+      );
+    }
+    
+    // Filtro por niche
+    if (selectedNiche) {
+      filtered = filtered.filter(item => item.niches?.name === selectedNiche);
+    }
+    
+    return filtered;
+  }, [news, searchTerm, selectedNiche]);
+
   return (
     <div className="flex min-h-screen bg-white overflow-x-hidden">
       {memoizedNavigation}
@@ -330,265 +380,158 @@ const NewsPage: React.FC<NewsPageProps> = ({ unviewedCount = 0 }) => {
         <Toast toasts={toasts} onRemove={removeToast} />
         <LoadingBar isLoading={isLoading} />
 
-        {/* Mobile Layout */}
-        {isMobile ? (
-          <main className="min-h-screen pb-16">
-            {isLoading && news.length === 0 ? (
-              <div className="p-4 pt-8">
-                <SkeletonGrid count={4} type="news" />
-              </div>
-            ) : news.length === 0 ? (
-              <div className="p-4 pt-8">
-                <EmptyState />
-              </div>
-            ) : (
-              <NewsFeedMobile
-                news={news}
-                onGenerateCarousel={handleGenerateCarousel}
-                onGenerateClick={handleGenerateClick}
-              />
-            )}
-          </main>
-        ) : (
-          /* Desktop Layout */
-          <main className={`${generationQueue.length > 0 ? 'pt-24' : ''} pb-20 md:pb-0 bg-white`}>
-          <section className="relative pb-[5rem]">
-            <MouseFollowLight zIndex={-1} />
-            <div
-              className="fixed top-[-200px] left-1/2 -translate-x-1/2 w-[900px] h-[900px] pointer-events-none"
-              style={{
-                background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.08) 30%, rgba(255,255,255,0) 70%)",
-                filter: "blur(70px)",
-                animation: "glowDown 3s ease-in-out infinite"
-              }}
-            />
-
-            <div
-              className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"
-              style={{
-                backgroundImage: `linear-gradient(rgba(59,130,246,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.5) 1px, transparent 1px)`,
-                backgroundSize: "50px 50px",
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '10%',
-                left: '8%',
-                width: '300px',
-                height: '300px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.3,
-                filter: 'blur(80px)',
-                animation: 'float 8s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '5%',
-                right: '12%',
-                width: '250px',
-                height: '250px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.25,
-                filter: 'blur(70px)',
-                animation: 'float 10s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '40%',
-                left: '5%',
-                width: '280px',
-                height: '280px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.2,
-                filter: 'blur(75px)',
-                animation: 'float 11s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '45%',
-                right: '8%',
-                width: '220px',
-                height: '220px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.28,
-                filter: 'blur(65px)',
-                animation: 'float 9s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                bottom: '15%',
-                left: '15%',
-                width: '260px',
-                height: '260px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.22,
-                filter: 'blur(70px)',
-                animation: 'float 12s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                bottom: '20%',
-                right: '20%',
-                width: '240px',
-                height: '240px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.26,
-                filter: 'blur(68px)',
-                animation: 'float 13s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '25%',
-                left: '45%',
-                width: '200px',
-                height: '200px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.18,
-                filter: 'blur(60px)',
-                animation: 'float 10s ease-in-out infinite',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '70%',
-                left: '35%',
-                width: '230px',
-                height: '230px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #ff7eb9, #ff65a3, #6a82fb, #fc9d9a)',
-                opacity: 0.24,
-                filter: 'blur(72px)',
-                animation: 'float 14s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div
-              className="fixed pointer-events-none"
-              style={{
-                top: '55%',
-                right: '15%',
-                width: '350px',
-                height: '350px',
-                borderRadius: '50%',
-                background: 'linear-gradient(to top right, #6a82fb, #fc9d9a, #ff7eb9)',
-                opacity: 0.45,
-                filter: 'blur(85px)',
-                animation: 'float 11s ease-in-out infinite reverse',
-              }}
-            />
-
-            <div className="relative z-10 max-w-5xl mx-auto px-8 pt-[6rem] pb-[4rem] space-y-6">
-              <div className="text-center">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-dark mb-3">
-                  Separamos as melhores notícias pra você!
+        {/* Mobile & Desktop Layout with same style */}
+        <main className={`min-h-screen ${isMobile ? 'pb-16' : 'pb-8'} bg-gray-50`}>
+          {/* Header com Filtros e Busca */}
+          <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <div className="max-w-6xl mx-auto px-4 py-6">
+              <div className="flex flex-col gap-4">
+                {/* Título */}
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  Notícias
                 </h1>
-              </div>
-            </div>
-          </section>
 
-          <section className="max-w-7xl mx-auto px-6" style={{ marginTop: '-90px' }}>
-            <div className="bg-white/40 backdrop-blur-md rounded-3xl p-8 shadow-xl border border-white/50 relative z-10">
-              <div className="mb-6 flex justify-between items-center">
-                <p className="text-lg md:text-xl text-gray-dark font-medium">
-                  Aqui está o seu feed de notícias!
-                </p>
-                {(filters.countries.length > 0 || filters.languages.length > 0) && (
-                  <NewsFilters
-                    filters={filters}
-                    selectedCountry={selectedCountry}
-                    selectedLanguage={selectedLanguage}
-                    onCountryChange={setSelectedCountry}
-                    onLanguageChange={setSelectedLanguage}
-                  />
-                )}
-              </div>
-              {isLoading && news.length === 0 ? (
-                <SkeletonGrid count={8} type="news" />
-              ) : news.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
-                    <AnimatePresence>
-                      {news.map((item, index) => (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 20 }}
-                          transition={{ duration: 0.3 }}
-                          className="w-full flex justify-center"
-                        >
-                          <NewsPostCard
-                            news={item}
-                            index={index}
-                            onGenerateCarousel={handleGenerateCarousel}
-                            onGenerateClick={handleGenerateClick}
-                          />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
+                {/* Barra de Busca e Filtros */}
+                <div className="flex flex-col md:flex-row gap-3">
+                  {/* Campo de Busca */}
+                  <div className="flex-1 relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar notícias..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 placeholder-gray-400"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
-                  {/* Paginação */}
-                  {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-4 mt-8 pb-8">
-                      <button
-                        onClick={handlePreviousPage}
-                        disabled={pagination.page === 1}
-                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                      >
-                        Anterior
-                      </button>
+                  {/* Filtro por Tema */}
+                  <div className="w-full md:w-64">
+                    <select
+                      value={selectedNiche}
+                      onChange={(e) => setSelectedNiche(e.target.value)}
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900"
+                    >
+                      <option value="">Todos os temas</option>
+                      {availableNiches.map((niche) => (
+                        <option key={niche} value={niche}>
+                          {niche}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                      <span className="text-gray">
-                        Página {pagination.page} de {pagination.totalPages}
-                      </span>
-
-                      <button
-                        onClick={handleNextPage}
-                        disabled={pagination.page === pagination.totalPages}
-                        className="px-4 py-2 bg-white hover:bg-light disabled:opacity-50 disabled:cursor-not-allowed border border-gray-light rounded-lg text-dark transition-colors"
-                      >
-                        Próxima
-                      </button>
-                    </div>
+                  {/* Botão Limpar Filtros */}
+                  {(searchTerm || selectedNiche) && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setSelectedNiche('');
+                      }}
+                      className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+                    >
+                      Limpar
+                    </button>
                   )}
-                </>
-              )}
+                </div>
+
+                {/* Contador de Resultados */}
+                <div className="text-sm text-gray-600">
+                  {displayNews.length} {displayNews.length === 1 ? 'notícia encontrada' : 'notícias encontradas'}
+                  {(searchTerm || selectedNiche) && ` de ${news.length} total`}
+                </div>
+              </div>
             </div>
-          </section>
+          </header>
+
+          {/* Content */}
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            {isLoading && news.length === 0 ? (
+              <SkeletonGrid count={6} type="news" />
+            ) : displayNews.length === 0 ? (
+              <div className="text-center py-20">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">Nenhuma notícia encontrada</h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  {searchTerm || selectedNiche
+                    ? 'Tente ajustar os filtros de busca'
+                    : 'Não há notícias disponíveis no momento'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-0 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <AnimatePresence>
+                  {displayNews.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className="px-6"
+                    >
+                      <NewsCard
+                        news={item}
+                        onGenerateCarousel={handleGenerateCarousel}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Paginação */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={pagination.page === 1}
+                  className="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700 font-medium transition-colors shadow-sm"
+                >
+                  Anterior
+                </button>
+
+                <span className="text-gray-600 font-medium">
+                  {pagination.page} / {pagination.totalPages}
+                </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-gray-700 font-medium transition-colors shadow-sm"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
+          </div>
         </main>
-        )}
       </div>
       
       <ToneSetupModal

@@ -886,18 +886,23 @@ export const applyBackgroundImageImmediate = (
         }
         return video;
       } else {
-        // Preserva linear-gradient existente ao trocar a URL
+        // Preserva gradientes existentes ao trocar a URL
         // Lê do estilo computado para pegar gradients definidos no template original
         const win = cont.ownerDocument?.defaultView || window;
         const computedBg = win.getComputedStyle(cont).backgroundImage || '';
         const currentBgImage = computedBg !== 'none' ? computedBg : '';
         let newBgImage = `url('${mediaUrl}')`;
         
-        // Se já tem linear-gradient, substitui apenas a url() mantendo o gradient
-        if (currentBgImage.includes('linear-gradient') && currentBgImage.includes('url(')) {
+        // Detecta qualquer tipo de gradiente (linear, radial, conic, etc.)
+        const hasGradient = /gradient\s*\(/i.test(currentBgImage);
+        
+        // Se já tem gradiente, substitui apenas a url() mantendo o gradiente
+        if (hasGradient && currentBgImage.includes('url(')) {
+          console.log('🎨 Preservando gradiente existente e substituindo URL');
           newBgImage = currentBgImage.replace(/url\([^)]+\)/g, `url('${mediaUrl}')`);
-        } else if (currentBgImage.includes('linear-gradient')) {
+        } else if (hasGradient) {
           // Se tem gradient mas sem url, adiciona a url após o gradient
+          console.log('🎨 Adicionando URL após gradiente existente');
           newBgImage = currentBgImage + `, url('${mediaUrl}')`;
         }
         
@@ -956,18 +961,23 @@ export const applyBackgroundImageImmediate = (
     queueMicrotask(() => { try { cleanupAltArtifacts(holder!); } catch {} });
     return video;
   } else {
-    // Preserva linear-gradient existente ao trocar a URL do body
+    // Preserva gradientes existentes ao trocar a URL do body
     // Lê do estilo computado para pegar gradients definidos no template original
     const win = doc.defaultView || window;
     const computedBg = win.getComputedStyle(doc.body).backgroundImage || '';
     const currentBgImage = computedBg !== 'none' ? computedBg : '';
     let newBgImage = `url('${mediaUrl}')`;
     
-    // Se já tem linear-gradient, substitui apenas a url() mantendo o gradient
-    if (currentBgImage.includes('linear-gradient') && currentBgImage.includes('url(')) {
+    // Detecta qualquer tipo de gradiente (linear, radial, conic, etc.)
+    const hasGradient = /gradient\s*\(/i.test(currentBgImage);
+    
+    // Se já tem gradiente, substitui apenas a url() mantendo o gradiente
+    if (hasGradient && currentBgImage.includes('url(')) {
+      console.log('🎨 Preservando gradiente existente no body e substituindo URL');
       newBgImage = currentBgImage.replace(/url\([^)]+\)/g, `url('${mediaUrl}')`);
-    } else if (currentBgImage.includes('linear-gradient')) {
+    } else if (hasGradient) {
       // Se tem gradient mas sem url, adiciona a url após o gradient
+      console.log('🎨 Adicionando URL após gradiente existente no body');
       newBgImage = currentBgImage + `, url('${mediaUrl}')`;
     }
     

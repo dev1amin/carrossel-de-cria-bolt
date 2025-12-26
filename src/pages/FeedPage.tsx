@@ -196,11 +196,29 @@ const FeedPage: React.FC<FeedPageProps> = ({ unviewedCount = 0 }) => {
 
       const responseTemplateId = carouselData.dados_gerais.template;
       console.log(`⏳ Buscando template ${responseTemplateId}...`);
-
-      const templateSlides = await templateService.fetchTemplate(responseTemplateId);
-      console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
-
-      const rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
+      
+      let rendered: string[];
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+        rendered = carouselData.conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: carouselData.dados_gerais,
+          })
+        );
+      } else {
+        const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+        console.log('✅ Template obtido, total de slides:', templateSlides?.length || 0);
+        rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+      }
 
       const galleryItem = {
         id: queueItem.id,

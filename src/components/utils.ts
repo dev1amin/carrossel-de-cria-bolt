@@ -400,7 +400,23 @@ export function applyBackgroundImageImmediate(
       img.style.height = "100%";
       return img;
     } else {
-      best.el.style.setProperty("background-image", `url('${imageUrl}')`, "important");
+      // Preserva gradientes ao trocar a URL do background
+      const cs = doc.defaultView?.getComputedStyle(best.el);
+      const currentBgImage = cs?.backgroundImage || '';
+      let newBgImage = `url('${imageUrl}')`;
+      
+      // Detecta qualquer tipo de gradiente (linear, radial, conic, etc.)
+      const hasGradient = /gradient\s*\(/i.test(currentBgImage);
+      
+      if (hasGradient && currentBgImage !== 'none' && currentBgImage.includes('url(')) {
+        console.log('🎨 Preservando gradiente em best.el e substituindo URL');
+        newBgImage = currentBgImage.replace(/url\([^)]+\)/g, `url('${imageUrl}')`);
+      } else if (hasGradient && currentBgImage !== 'none') {
+        console.log('🎨 Adicionando URL após gradiente em best.el');
+        newBgImage = currentBgImage + `, url('${imageUrl}')`;
+      }
+      
+      best.el.style.setProperty("background-image", newBgImage, "important");
       best.el.style.setProperty("background-size", "cover", "important");
       best.el.style.setProperty("background-repeat", "no-repeat", "important");
       best.el.style.setProperty("background-position", "center", "important");
@@ -408,7 +424,23 @@ export function applyBackgroundImageImmediate(
     }
   }
 
-  doc.body.style.setProperty("background-image", `url('${imageUrl}')`, "important");
+  // Preserva gradientes ao trocar a URL do body
+  const csBody = doc.defaultView?.getComputedStyle(doc.body);
+  const currentBgImageBody = csBody?.backgroundImage || '';
+  let newBgImageBody = `url('${imageUrl}')`;
+  
+  // Detecta qualquer tipo de gradiente (linear, radial, conic, etc.)
+  const hasGradientBody = /gradient\s*\(/i.test(currentBgImageBody);
+  
+  if (hasGradientBody && currentBgImageBody !== 'none' && currentBgImageBody.includes('url(')) {
+    console.log('🎨 Preservando gradiente no body e substituindo URL');
+    newBgImageBody = currentBgImageBody.replace(/url\([^)]+\)/g, `url('${imageUrl}')`);
+  } else if (hasGradientBody && currentBgImageBody !== 'none') {
+    console.log('🎨 Adicionando URL após gradiente no body');
+    newBgImageBody = currentBgImageBody + `, url('${imageUrl}')`;
+  }
+
+  doc.body.style.setProperty("background-image", newBgImageBody, "important");
   doc.body.style.setProperty("background-size", "cover", "important");
   doc.body.style.setProperty("background-repeat", "no-repeat", "important");
   doc.body.style.setProperty("background-position", "center", "important");

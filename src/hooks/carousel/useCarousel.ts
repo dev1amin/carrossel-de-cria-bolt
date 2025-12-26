@@ -33,19 +33,38 @@ export const useCarousel = () => {
       if (result && result.length > 0) {
         const carouselData = result[0];
         const responseTemplateId = carouselData.dados_gerais.template;
+        
+        // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+        const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
+        
+        let rendered: string[];
+        
+        // Se for template React, retorna dados JSON para o ReactSlideRenderer
+        if (templateService.isReactTemplate(normalizedTemplateId)) {
+          console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+          rendered = carouselData.conteudos.map((slideData: any, index: number) => 
+            JSON.stringify({
+              __reactTemplate: true,
+              templateId: normalizedTemplateId,
+              slideIndex: index,
+              slideData: slideData,
+              dadosGerais: carouselData.dados_gerais,
+            })
+          );
+        } else {
+          console.log(`Fetching template ${normalizedTemplateId}...`);
+          const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
 
-        console.log(`Fetching template ${responseTemplateId}...`);
-        const templateSlides = await templateService.fetchTemplate(responseTemplateId);
+          // Configura a compatibilidade do template no renderer
+          const templateConfig = AVAILABLE_TEMPLATES.find(t => t.id === normalizedTemplateId);
+          if (templateConfig) {
+            templateRenderer.setTemplateCompatibility(templateConfig.compatibility);
+            console.log(`Template compatibility set to: ${templateConfig.compatibility}`);
+          }
 
-        // Configura a compatibilidade do template no renderer
-        const templateConfig = AVAILABLE_TEMPLATES.find(t => t.id === responseTemplateId);
-        if (templateConfig) {
-          templateRenderer.setTemplateCompatibility(templateConfig.compatibility);
-          console.log(`Template compatibility set to: ${templateConfig.compatibility}`);
+          console.log('Rendering slides with data...');
+          rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
         }
-
-        console.log('Rendering slides with data...');
-        const rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
 
         setRenderedSlides(rendered);
         setCarouselData(carouselData);

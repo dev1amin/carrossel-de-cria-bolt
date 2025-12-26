@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { validateToken, isAuthenticated } from '../services/auth';
 
 const ProtectedRoute = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const validationAttempted = useRef(false);
+
+  // Verifica autenticação local imediatamente
+  const hasLocalAuth = isAuthenticated();
 
   useEffect(() => {
+    // Só valida uma vez por montagem
+    if (validationAttempted.current) return;
+    validationAttempted.current = true;
+
     const validateAuth = async () => {
-      if (!isAuthenticated()) {
-        navigate('/login');
-        return;
+      if (!hasLocalAuth) {
+        return; // O Navigate abaixo já vai redirecionar
       }
 
       try {
@@ -27,8 +33,6 @@ const ProtectedRoute = () => {
             console.log('🏢 Usuário precisa configurar business, mas permitindo acesso normal');
           }
         }
-        
-        setIsLoading(false);
       } catch (error) {
         console.warn('Token validation failed:', error);
         navigate('/login');
@@ -36,17 +40,16 @@ const ProtectedRoute = () => {
     };
 
     validateAuth();
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, hasLocalAuth]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-white"></div>
-      </div>
-    );
+  // Se não tem autenticação local, redireciona imediatamente para login
+  if (!hasLocalAuth) {
+    return <Navigate to="/login" replace />;
   }
 
-  return isAuthenticated() ? <Outlet /> : <Navigate to="/login" />;
+  // Se tem autenticação local, mostra o conteúdo imediatamente
+  // A validação do token acontece em background
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

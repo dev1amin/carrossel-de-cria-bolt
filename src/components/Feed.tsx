@@ -1,6 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Send, Bookmark, Sparkles, Music2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform } from 'framer-motion';
+import {
+  Heart,
+  MessageCircle,
+  Send,
+  Bookmark,
+  Sparkles,
+  SlidersHorizontal,
+  Search,
+  X,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  TrendingUp,
+  Clock,
+  Flame
+} from 'lucide-react';
 import { Post, SortOption } from '../types';
 import PostCard from './PostCard';
 import TemplateSelectionModal, { GenerationOptions } from './carousel/TemplateSelectionModal';
@@ -12,7 +28,7 @@ import {
   templateRenderer
 } from '../carousel';
 
-// ==================== Mobile Reels Feed Component ====================
+// ==================== Mobile Stories Feed Component ====================
 interface MobileReelsFeedProps {
   posts: Post[];
   currentIndex: number;
@@ -23,6 +39,10 @@ interface MobileReelsFeedProps {
   onUnsavePost?: (postId: number) => void;
   showSaveButtons?: boolean;
   showGenerateButtons?: boolean;
+  mobileSearchTerm: string;
+  setMobileSearchTerm: (t: string) => void;
+  mobileSort: SortOption;
+  setMobileSort: (s: SortOption) => void;
 }
 
 const MobileReelsFeed: React.FC<MobileReelsFeedProps> = ({
@@ -34,60 +54,95 @@ const MobileReelsFeed: React.FC<MobileReelsFeedProps> = ({
   onSavePost,
   onUnsavePost,
   showSaveButtons = false,
-  showGenerateButtons = true
+  showGenerateButtons = true,
+  mobileSearchTerm,
+  setMobileSearchTerm,
+  mobileSort,
+  setMobileSort
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isDescExpanded, setIsDescExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState<Record<number, boolean>>({});
+  
   const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartY = useRef(0);
-  const touchStartTime = useRef(0);
+  const dragX = useMotionValue(0);
 
   const currentPost = posts[currentIndex];
 
-  // Formatar números grandes (1.2K, 1.2M, etc)
   const formatCount = (count: number): string => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
   };
 
-  // Handle touch events para swipe vertical
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchStartTime.current = Date.now();
+  const formatDate = (timestamp?: number): string => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffHours < 1) return 'Agora';
+    if (diffHours < 24) return `${diffHours}h atrás`;
+    if (diffDays < 7) return `${diffDays}d atrás`;
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEndY = e.changedTouches[0].clientY;
-    const diff = touchStartY.current - touchEndY;
-    const timeDiff = Date.now() - touchStartTime.current;
-    const velocity = Math.abs(diff) / timeDiff;
-    
-    // Swipe rápido ou distância suficiente
-    if (velocity > 0.5 || Math.abs(diff) > 80) {
-      if (diff > 0 && currentIndex < posts.length - 1) {
-        // Swipe up - próximo
-        onIndexChange(currentIndex + 1);
-      } else if (diff < 0 && currentIndex > 0) {
-        // Swipe down - anterior
-        onIndexChange(currentIndex - 1);
-      }
+  const goToNext = useCallback(() => {
+    if (currentIndex < posts.length - 1) {
+      onIndexChange(currentIndex + 1);
+    }
+  }, [currentIndex, posts.length, onIndexChange]);
+
+  const goToPrev = useCallback(() => {
+    if (currentIndex > 0) {
+      onIndexChange(currentIndex - 1);
+    }
+  }, [currentIndex, onIndexChange]);
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    const { offset, velocity } = info;
+    const swipeThreshold = 50;
+    const velocityThreshold = 500;
+
+    if (offset.x < -swipeThreshold || velocity.x < -velocityThreshold) {
+      goToNext();
+    } else if (offset.x > swipeThreshold || velocity.x > velocityThreshold) {
+      goToPrev();
     }
   };
 
-  // Handler para gerar carrossel
   const handleGenerateClick = () => {
-    const needsToneSetup = localStorage.getItem('needs_tone_setup');
+    console.log('🔵 [MOBILE] handleGenerateClick chamado');
+    console.log('🔵 [MOBILE] onGenerateClick existe?', !!onGenerateClick);
+    console.log('🔵 [MOBILE] currentPost existe?', !!currentPost);
+    console.log('🔵 [MOBILE] currentPost:', currentPost);
     
-    if (needsToneSetup === 'false' && currentPost) {
-      setSelectedPost(currentPost);
-      setIsModalOpen(true);
-    } else if (onGenerateClick) {
+    // No mobile, sempre verifica o tone setup primeiro via onGenerateClick
+    if (onGenerateClick) {
+      console.log('🟢 [MOBILE] Chamando onGenerateClick para verificar tone setup...');
       onGenerateClick();
-    } else if (currentPost) {
+      
+      // Verifica se precisa de tone setup
+      const needsToneSetup = localStorage.getItem('needs_tone_setup');
+      console.log('🔍 [MOBILE] needs_tone_setup?', needsToneSetup);
+      
+      if (needsToneSetup === 'true') {
+        console.log('⚠️ [MOBILE] Precisa de tone setup, modal não será aberto');
+        return;
+      }
+    }
+    
+    // Se não precisa de tone setup (ou não tem onGenerateClick), abre o modal
+    if (currentPost) {
+      console.log('🟢 [MOBILE] Abrindo modal de seleção de template...');
       setSelectedPost(currentPost);
       setIsModalOpen(true);
+    } else {
+      console.log('🔴 [MOBILE] Nenhuma ação executada - sem currentPost');
     }
   };
 
@@ -99,187 +154,353 @@ const MobileReelsFeed: React.FC<MobileReelsFeedProps> = ({
     setSelectedPost(null);
   };
 
-  // Handler para salvar/dessalvar
   const handleToggleSave = () => {
     if (!currentPost || currentPost.id === undefined) return;
-    if (currentPost.is_saved) {
-      onUnsavePost?.(currentPost.id);
-    } else {
-      onSavePost?.(currentPost.id);
-    }
+    if (currentPost.is_saved) onUnsavePost?.(currentPost.id);
+    else onSavePost?.(currentPost.id);
+  };
+
+  const sortLabels: Record<SortOption, { label: string; icon: React.ReactNode }> = {
+    latest: { label: 'Recentes', icon: <Clock className="w-4 h-4" /> },
+    popular: { label: 'Popular', icon: <Flame className="w-4 h-4" /> },
+    likes: { label: 'Curtidas', icon: <Heart className="w-4 h-4" /> },
+    comments: { label: 'Comentários', icon: <MessageCircle className="w-4 h-4" /> },
+    shares: { label: 'Shares', icon: <Send className="w-4 h-4" /> },
+    saved: { label: 'Salvos', icon: <Bookmark className="w-4 h-4" /> }
   };
 
   if (!currentPost) return null;
 
-  // Determinar se é vídeo ou imagem
-  const isVideo = currentPost.media_type === 2 || (currentPost.video_url && currentPost.video_url !== currentPost.image_url);
-  const mediaUrl = isVideo ? currentPost.video_url : currentPost.image_url;
-
   return (
     <>
-      <div 
-        ref={containerRef}
-        className="fixed inset-0 bg-black"
-        style={{ bottom: '64px' }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Media Background (Imagem ou Vídeo fullscreen) */}
-        <AnimatePresence mode="wait">
+      {/* Main container - fundo claro como o site */}
+      <div className="fixed inset-0 bg-light overflow-hidden flex flex-col" style={{ bottom: '64px' }}>
+        
+        {/* Header simples apenas com filtros */}
+        <div className="flex-shrink-0 bg-white border-b border-gray-light px-4 py-2 safe-area-top">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-900 text-2xl font-bold">Feed</span>
+              <span className="text-gray text-xs font-medium">
+                {currentIndex + 1} / {posts.length}
+              </span>
+            </div>
+            <button
+              onClick={() => setFiltersOpen(true)}
+              className="w-9 h-9 rounded-full bg-light flex items-center justify-center"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-gray-dark" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content area - swipeable */}
+        <motion.div
+          ref={containerRef}
+          className="flex-1 overflow-hidden"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.15}
+          onDragEnd={handleDragEnd}
+          style={{ x: dragX, touchAction: 'pan-y', transform: 'none !important' }}
+        >
+          <div className="h-full flex flex-col">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPost.id}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col"
+              >
+                {/* Embed area - altura fixa de 560px */}
+                <div className="flex-shrink-0 bg-white relative" style={{ height: '135vw' }}>
+                  {!iframeLoaded[currentIndex] && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-light z-10">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 border-2 border-gray-light border-t-blue rounded-full animate-spin" />
+                        <span className="text-gray text-xs">Carregando...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <iframe
+                    key={currentPost.code}
+                    src={`https://www.instagram.com/p/${currentPost.code}/embed`}
+                    allow="autoplay; encrypted-media"
+                    scrolling="no"
+                    onLoad={() => setIframeLoaded(prev => ({ ...prev, [currentIndex]: true }))}
+                    className="absolute inset-0 w-full h-full border-0"
+                  />
+                </div>
+
+                {/* Botões de ação e Métricas juntos */}
+                <div className="flex-1 bg-white border-t border-gray-light px-4 py-4 flex flex-col justify-center">
+                  {/* Botões */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setDetailsOpen(true)}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-light flex items-center justify-center gap-2 active:bg-gray-light transition-colors"
+                    >
+                      <Eye className="w-4 h-4 text-gray-dark" />
+                      <span className="text-gray-dark text-sm font-medium">Ver descrição</span>
+                    </button>
+
+                    {showGenerateButtons && (
+                      <button
+                        onClick={handleGenerateClick}
+                        className="flex-1 py-2.5 px-4 rounded-xl bg-blue flex items-center justify-center gap-2 active:bg-blue-dark transition-colors"
+                      >
+                        <Sparkles className="w-4 h-4 text-white" />
+                        <span className="text-white text-sm font-semibold">Gerar Carrossel</span>
+                      </button>
+                    )}
+
+                    {showSaveButtons && (
+                      <button
+                        onClick={handleToggleSave}
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
+                          currentPost.is_saved 
+                            ? 'bg-blue text-white' 
+                            : 'bg-light text-gray-dark active:bg-gray-light'
+                        }`}
+                      >
+                        <Bookmark className={`w-5 h-5 ${currentPost.is_saved ? 'fill-white' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Métricas maiores */}
+                  <div className="flex items-center justify-around">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                        <Heart className="w-6 h-6 text-red-500" />
+                      </div>
+                      <span className="text-dark font-bold text-base">{formatCount(currentPost.like_count)}</span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
+                        <MessageCircle className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <span className="text-dark font-bold text-base">{formatCount(currentPost.comment_count)}</span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center">
+                        <Send className="w-6 h-6 text-green-600" />
+                      </div>
+                      <span className="text-dark font-bold text-base">{formatCount(currentPost.reshare_count)}</span>
+                    </div>
+                    
+                    {currentPost.overallScore && (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center">
+                          <TrendingUp className="w-6 h-6 text-amber-600" />
+                        </div>
+                        <span className="text-dark font-bold text-base">{Math.round(currentPost.overallScore)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Navigation dots */}
+        <div className="flex-shrink-0 bg-white py-2 flex items-center justify-center gap-3">
+          <button
+            onClick={goToPrev}
+            disabled={currentIndex === 0}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              currentIndex === 0 ? 'bg-light text-gray-light' : 'bg-light text-gray-dark active:bg-gray-light'
+            }`}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="flex gap-1">
+            {posts.slice(Math.max(0, currentIndex - 3), Math.min(posts.length, currentIndex + 4)).map((_, idx) => {
+              const actualIdx = Math.max(0, currentIndex - 3) + idx;
+              return (
+                <button
+                  key={actualIdx}
+                  onClick={() => onIndexChange(actualIdx)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    actualIdx === currentIndex 
+                      ? 'w-6 bg-blue' 
+                      : 'w-1.5 bg-gray-light'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          
+          <button
+            onClick={goToNext}
+            disabled={currentIndex === posts.length - 1}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              currentIndex === posts.length - 1 ? 'bg-light text-gray-light' : 'bg-light text-gray-dark active:bg-gray-light'
+            }`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+
+      </div>
+
+      {/* Details bottom sheet */}
+      <AnimatePresence>
+        {detailsOpen && (
           <motion.div
-            key={currentPost.id}
+            className="fixed inset-0 z-[100] bg-dark/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0"
+            onClick={() => setDetailsOpen(false)}
           >
-            {isVideo && mediaUrl ? (
-              <video
-                src={mediaUrl}
-                className="w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
-            ) : mediaUrl ? (
-              <img
-                src={mediaUrl}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-800" />
-            )}
-            {/* Gradient overlay para legibilidade do texto */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+            <motion.div
+              className="absolute left-0 right-0 bottom-0 max-h-[75vh] bg-white rounded-t-2xl overflow-hidden"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle */}
+              <div className="flex justify-center py-3">
+                <div className="w-10 h-1 rounded-full bg-gray-light" />
+              </div>
+
+              <div className="px-5 pb-8 overflow-y-auto max-h-[calc(75vh-48px)]">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <p className="text-dark font-bold text-lg">{currentPost.influencer_name || currentPost.username}</p>
+                    <p className="text-gray text-sm">{formatDate(currentPost.taken_at)}</p>
+                  </div>
+                  <button
+                    onClick={() => setDetailsOpen(false)}
+                    className="w-9 h-9 rounded-full bg-light flex items-center justify-center"
+                  >
+                    <X className="w-5 h-5 text-gray-dark" />
+                  </button>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-4 gap-2 mb-5">
+                  <div className="bg-light rounded-xl p-3 text-center">
+                    <Heart className="w-5 h-5 text-gray mx-auto mb-1" />
+                    <p className="text-dark font-bold text-sm">{formatCount(currentPost.like_count)}</p>
+                    <p className="text-gray text-[10px]">Curtidas</p>
+                  </div>
+                  <div className="bg-light rounded-xl p-3 text-center">
+                    <MessageCircle className="w-5 h-5 text-gray mx-auto mb-1" />
+                    <p className="text-dark font-bold text-sm">{formatCount(currentPost.comment_count)}</p>
+                    <p className="text-gray text-[10px]">Comentários</p>
+                  </div>
+                  <div className="bg-light rounded-xl p-3 text-center">
+                    <Send className="w-5 h-5 text-gray mx-auto mb-1" />
+                    <p className="text-dark font-bold text-sm">{formatCount(currentPost.reshare_count)}</p>
+                    <p className="text-gray text-[10px]">Shares</p>
+                  </div>
+                  <div className="bg-light rounded-xl p-3 text-center">
+                    <TrendingUp className="w-5 h-5 text-blue mx-auto mb-1" />
+                    <p className="text-dark font-bold text-sm">{Math.round(currentPost.overallScore || 0)}</p>
+                    <p className="text-gray text-[10px]">Score</p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="mb-5">
+                  <h3 className="text-gray text-xs font-semibold uppercase tracking-wider mb-2">Descrição</h3>
+                  <div className="bg-light rounded-xl p-4">
+                    <p className="text-dark text-sm leading-relaxed whitespace-pre-wrap">
+                      {currentPost.text || 'Sem descrição disponível.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Link */}
+                <a
+                  href={`https://www.instagram.com/p/${currentPost.code}/`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-3 rounded-xl bg-blue-light/30 text-center text-blue text-sm font-medium"
+                >
+                  Ver no Instagram →
+                </a>
+              </div>
+            </motion.div>
           </motion.div>
-        </AnimatePresence>
+        )}
+      </AnimatePresence>
 
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-20 pt-3 pb-2 px-4 safe-area-top">
-          <div className="flex items-center justify-between">
-            <span className="text-white font-semibold text-base">Reels</span>
-            <span className="text-white/70 text-sm">
-              {currentIndex + 1}/{posts.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Right Side Actions (Instagram style) */}
-        <div className="absolute right-3 bottom-32 z-20 flex flex-col items-center gap-5">
-          {/* Likes */}
-          <button className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-              <Heart className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-white text-xs font-medium">{formatCount(currentPost.like_count)}</span>
-          </button>
-
-          {/* Comments */}
-          <button className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-              <MessageCircle className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-white text-xs font-medium">{formatCount(currentPost.comment_count)}</span>
-          </button>
-
-          {/* Shares */}
-          <button className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-            <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-              <Send className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-white text-xs font-medium">{formatCount(currentPost.reshare_count)}</span>
-          </button>
-
-          {/* Save */}
-          {showSaveButtons && (
-            <button 
-              onClick={handleToggleSave}
-              className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
-            >
-              <div className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
-                <Bookmark className={`w-7 h-7 ${currentPost.is_saved ? 'text-yellow-400 fill-yellow-400' : 'text-white'}`} />
-              </div>
-              <span className="text-white text-xs font-medium">Salvar</span>
-            </button>
-          )}
-
-          {/* Generate Carousel Button */}
-          {showGenerateButtons && (
-            <button 
-              onClick={handleGenerateClick}
-              className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white text-xs font-medium">Gerar</span>
-            </button>
-          )}
-        </div>
-
-        {/* Bottom Info (Username + Description) */}
-        <div className="absolute left-0 right-16 bottom-4 z-20 px-4">
-          {/* Username */}
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-[2px]">
-              <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {currentPost.username.substring(0, 2).toUpperCase()}
-                </span>
-              </div>
-            </div>
-            <span className="text-white font-semibold text-sm">@{currentPost.username.substring(0, 15)}</span>
-            <button className="ml-2 px-3 py-1 border border-white/50 rounded-md text-white text-xs font-medium">
-              Seguir
-            </button>
-          </div>
-
-          {/* Description */}
-          <div 
-            className={`${isDescExpanded ? '' : 'line-clamp-2'}`}
-            onClick={() => setIsDescExpanded(!isDescExpanded)}
-          >
-            <p className="text-white text-sm leading-relaxed">
-              {currentPost.text}
-            </p>
-          </div>
-          {currentPost.text.length > 100 && !isDescExpanded && (
-            <button 
-              onClick={() => setIsDescExpanded(true)}
-              className="text-white/60 text-sm mt-1"
-            >
-              ... mais
-            </button>
-          )}
-
-          {/* Music indicator (simulated) */}
-          <div className="flex items-center gap-2 mt-3">
-            <Music2 className="w-4 h-4 text-white" />
-            <div className="flex-1 overflow-hidden">
-              <p className="text-white text-xs truncate animate-marquee">
-                🎵 Áudio original - @{currentPost.username}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Swipe hint */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 opacity-50">
+      {/* Filters bottom sheet */}
+      <AnimatePresence>
+        {filtersOpen && (
           <motion.div
-            animate={{ y: [0, -8, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="text-white/40 text-xs flex flex-col items-center"
+            className="fixed inset-0 z-[100] bg-dark/40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setFiltersOpen(false)}
           >
-            <span>↑</span>
-            <span>Deslize</span>
-          </motion.div>
-        </div>
-      </div>
+            <motion.div
+              className="absolute left-0 right-0 bottom-0 bg-white rounded-t-2xl overflow-hidden"
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Handle */}
+              <div className="flex justify-center py-3">
+                <div className="w-10 h-1 rounded-full bg-gray-light" />
+              </div>
 
-      {/* Template Selection Modal */}
+              <div className="px-5 pb-8">
+                <div className="flex items-center justify-between mb-5">
+                  <h2 className="text-dark font-bold text-lg">Filtros</h2>
+                  <button
+                    onClick={() => setFiltersOpen(false)}
+                    className="w-9 h-9 rounded-full bg-light flex items-center justify-center"
+                  >
+                    <X className="w-5 h-5 text-gray-dark" />
+                  </button>
+                </div>
+
+                {/* Sort options */}
+                <div className="mb-6">
+                  <label className="text-gray text-xs font-semibold uppercase tracking-wider mb-3 block">
+                    Ordenar por
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(Object.keys(sortLabels) as SortOption[]).map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => setMobileSort(opt)}
+                        className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                          mobileSort === opt
+                            ? 'bg-blue text-white'
+                            : 'bg-light text-gray-dark'
+                        }`}
+                      >
+                        {sortLabels[opt].icon}
+                        {sortLabels[opt].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Template modal */}
       <TemplateSelectionModal
         isOpen={isModalOpen}
         onClose={() => {
@@ -328,18 +549,24 @@ const Feed: React.FC<FeedProps> = ({
   const [carouselData, setCarouselData] = useState<CarouselData | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Detecta mudanças de tamanho de tela
+  // filtros só no mobile (não altera desktop)
+  const [mobileSearchTerm, setMobileSearchTerm] = useState<string>('');
+  const [mobileSort, setMobileSort] = useState<SortOption>('latest');
+
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  /**
-   * Calcula o ranking absoluto de um post baseado em overallScore
-   */
+  useEffect(() => {
+    setMobileSearchTerm(searchTerm || '');
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setMobileSort(activeSort);
+  }, [activeSort]);
+
   const getAbsoluteRanking = (post: Post): number => {
     const sortedByScore = [...posts].sort((a, b) => b.overallScore - a.overallScore);
     return sortedByScore.findIndex(p => p.id === post.id);
@@ -358,8 +585,28 @@ const Feed: React.FC<FeedProps> = ({
       if (result && result.length > 0) {
         const carouselData = result[0];
         const responseTemplateId = carouselData.dados_gerais.template;
-        const templateSlides = await templateService.fetchTemplate(responseTemplateId);
-        const rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+        
+        // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+        const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
+        
+        let rendered: string[];
+        
+        // Se for template React, retorna dados JSON para o ReactSlideRenderer
+        if (templateService.isReactTemplate(normalizedTemplateId)) {
+          console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+          rendered = carouselData.conteudos.map((slideData: any, index: number) => 
+            JSON.stringify({
+              __reactTemplate: true,
+              templateId: normalizedTemplateId,
+              slideIndex: index,
+              slideData: slideData,
+              dadosGerais: carouselData.dados_gerais,
+            })
+          );
+        } else {
+          const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+          rendered = templateRenderer.renderAllSlides(templateSlides, carouselData);
+        }
 
         setRenderedSlides(rendered);
         setCarouselData(carouselData);
@@ -370,23 +617,26 @@ const Feed: React.FC<FeedProps> = ({
     }
   };
 
-  // Filtra e ordena posts
+  // Filtra e ordena posts (desktop igual ao antigo; mobile usa states próprios)
   useEffect(() => {
     let result = [...posts];
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    const effectiveSearch = isMobile ? mobileSearchTerm : searchTerm;
+    const effectiveSort = isMobile ? mobileSort : activeSort;
+
+    if (effectiveSearch) {
+      const term = effectiveSearch.toLowerCase();
       result = result.filter(post =>
         post.username.toLowerCase().includes(term) ||
         post.text.toLowerCase().includes(term)
       );
     }
 
-    if (activeSort === 'saved') {
+    if (effectiveSort === 'saved') {
       result = result.filter(post => post.is_saved === true);
     } else {
       result.sort((a, b) => {
-        switch (activeSort) {
+        switch (effectiveSort) {
           case 'latest':
             return (b.taken_at || 0) - (a.taken_at || 0);
           case 'popular':
@@ -405,9 +655,8 @@ const Feed: React.FC<FeedProps> = ({
 
     setFilteredPosts(result);
     setCurrentIndex(0);
-  }, [posts, searchTerm, activeSort]);
+  }, [posts, searchTerm, activeSort, isMobile, mobileSearchTerm, mobileSort]);
 
-  // Empty state
   if (filteredPosts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
@@ -437,9 +686,9 @@ const Feed: React.FC<FeedProps> = ({
         <p className="text-gray-600 text-center max-w-md">
           {posts.length === 0
             ? 'Você ainda não tem posts no seu feed. Configure seus interesses nas configurações.'
-            : searchTerm
-            ? `Nenhum post corresponde à sua busca por "${searchTerm}".`
-            : activeSort === 'saved'
+            : (isMobile ? mobileSearchTerm : searchTerm)
+            ? `Nenhum post corresponde à sua busca.`
+            : (isMobile ? mobileSort : activeSort) === 'saved'
             ? 'Você ainda não salvou nenhum post.'
             : 'Nenhum post corresponde aos filtros selecionados.'}
         </p>
@@ -449,7 +698,6 @@ const Feed: React.FC<FeedProps> = ({
 
   return (
     <>
-      {/* Carousel Viewer Modal */}
       {renderedSlides && carouselData && (
         <CarouselViewer
           slides={renderedSlides}
@@ -461,7 +709,7 @@ const Feed: React.FC<FeedProps> = ({
         />
       )}
 
-      {/* ============= MOBILE FEED (Reels Style - Fullscreen) ============= */}
+      {/* MOBILE */}
       {isMobile ? (
         <MobileReelsFeed
           posts={filteredPosts}
@@ -473,9 +721,13 @@ const Feed: React.FC<FeedProps> = ({
           onUnsavePost={onUnsavePost}
           showSaveButtons={showSaveButtons}
           showGenerateButtons={showGenerateButtons}
+          mobileSearchTerm={mobileSearchTerm}
+          setMobileSearchTerm={setMobileSearchTerm}
+          mobileSort={mobileSort}
+          setMobileSort={setMobileSort}
         />
       ) : (
-        /* ============= DESKTOP FEED (Grid) ============= */
+        /* DESKTOP (EXATAMENTE COMO ESTAVA) */
         <div className="container mx-auto px-4 py-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
             <AnimatePresence>

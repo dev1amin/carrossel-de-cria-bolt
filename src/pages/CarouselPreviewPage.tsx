@@ -31,6 +31,7 @@ import { useEditorTabs } from '../contexts/EditorTabsContext';
 import { useGenerationQueue } from '../contexts/GenerationQueueContext';
 import type { CarouselData, CarouselTab } from '../types/carousel';
 import { TEMPLATE_DIMENSIONS } from '../types/carousel';
+import { getGeneratedContentById } from '../services/generatedContent';
 
 interface CarouselPreviewState {
   slides: string[];
@@ -122,28 +123,45 @@ const CarouselPreviewPage: React.FC = () => {
       if (!id) return;
 
       try {
-        // TROQUE este endpoint para o seu real:
-        // Ex: `/api/generated-content/${id}` ou `https://api.seudominio.com/generated-content/${id}`
-        const res = await fetch(`/api/generated-content/${id}`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await getGeneratedContentById(id);
 
-        if (!res.ok) {
-          console.error('Falha ao buscar generated-content:', res.status, res.statusText);
+        if (!response?.success || !response.data) {
+          console.error('Falha ao buscar generated-content: resposta inválida', response);
           return;
         }
 
-        const json = await res.json();
+        const apiData = response.data as any;
+        const rawResult = apiData?.result;
+        let parsedResult: any = rawResult;
 
-        // seu payload: { success: true, data: { description: "..." } }
-        const desc = json?.data?.description;
+        if (rawResult && typeof rawResult === 'string') {
+          try {
+            parsedResult = JSON.parse(rawResult);
+          } catch (parseError) {
+            console.warn('Não foi possível parsear result do generated content como JSON:', parseError);
+          }
+        }
 
-        if (typeof desc === 'string' && desc.trim()) {
-          setCarouselState(prev => (prev ? { ...prev, description: desc } : prev));
+        const descriptionCandidates = [
+          apiData?.description,
+          parsedResult?.description,
+          parsedResult?.dados_gerais?.description,
+          parsedResult?.dados_gerais?.resumo,
+          parsedResult?.dados_gerais?.descricao,
+          parsedResult?.metadata?.descricao,
+        ];
+
+        const description = descriptionCandidates.find(
+          (value): value is string => typeof value === 'string' && value.trim().length > 0,
+        );
+
+        if (description) {
+          setCarouselState(prev => (prev ? { ...prev, description: description.trim() } : prev));
+        } else {
+          console.warn('Generated content não retornou descrição utilizável para o preview');
         }
       } catch (e) {
-        console.error('Erro ao hidratar descrição:', e);
+        console.error('Erro ao hidratar descrição via generated-content API:', e);
       }
     };
 

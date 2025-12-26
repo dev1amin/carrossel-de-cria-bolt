@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   Settings2, 
   Type, 
   Image as ImageIcon, 
-  Upload, 
   Search, 
   Play,
   ChevronRight,
@@ -23,9 +22,251 @@ import {
   Sliders,
   Sparkles,
   Loader2,
+  Images,
+  Upload,
+  Crop,
 } from 'lucide-react';
 import type { CarouselData, ElementType, ElementStyles, TemplateCompatibility } from '../../../types/carousel';
 import { isVideoUrl } from './viewerUtils';
+import { EditorGallery } from './EditorGallery';
+import { ImageCropModal } from './ImageCropModal';
+
+// === Rich Text Editor Component ===
+interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+  placeholder?: string;
+  onApplyStyle?: (style: 'bold' | 'italic' | 'underline' | 'strikethrough') => void;
+}
+
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
+  value, 
+  onChange, 
+  rows = 3, 
+  placeholder,
+}) => {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [showToolbar, setShowToolbar] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
+  const lastValueRef = useRef(value);
+  const isInternalChange = useRef(false);
+  const colorPickerRef = useRef<HTMLInputElement>(null);
+  const savedSelectionRef = useRef<Range | null>(null);
+
+  // Atualiza o conteúdo apenas quando o valor externo muda E não é uma mudança interna
+  useEffect(() => {
+    if (editorRef.current && value !== lastValueRef.current && !isInternalChange.current) {
+      editorRef.current.innerHTML = value;
+      lastValueRef.current = value;
+    }
+    isInternalChange.current = false;
+  }, [value]);
+
+  // Inicializa o conteúdo
+  useEffect(() => {
+    if (editorRef.current && !editorRef.current.innerHTML) {
+      editorRef.current.innerHTML = value;
+    }
+  }, []);
+
+  // Salva a seleção atual
+  const saveSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      savedSelectionRef.current = selection.getRangeAt(0).cloneRange();
+    }
+  }, []);
+
+  // Restaura a seleção salva
+  const restoreSelection = useCallback(() => {
+    if (savedSelectionRef.current) {
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedSelectionRef.current);
+      }
+    }
+  }, []);
+
+  // Aplica estilo na seleção
+  const applyStyle = useCallback((command: string, commandValue?: string) => {
+    restoreSelection();
+    document.execCommand(command, false, commandValue);
+    if (editorRef.current) {
+      isInternalChange.current = true;
+      const newValue = editorRef.current.innerHTML;
+      lastValueRef.current = newValue;
+      onChange(newValue);
+    }
+    saveSelection();
+  }, [onChange, restoreSelection, saveSelection]);
+
+  // Detecta seleção de texto para mostrar toolbar
+  const handleSelect = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0 && editorRef.current) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const editorRect = editorRef.current.getBoundingClientRect();
+      
+      setToolbarPosition({
+        top: rect.top - editorRect.top - 45,
+        left: Math.max(0, Math.min(rect.left - editorRect.left + rect.width / 2 - 80, editorRect.width - 160)),
+      });
+      setShowToolbar(true);
+      saveSelection();
+    } else {
+      setShowToolbar(false);
+    }
+  }, [saveSelection]);
+
+  // Handler de input - preserva posição do cursor
+  const handleInput = useCallback(() => {
+    if (editorRef.current) {
+      isInternalChange.current = true;
+      const newValue = editorRef.current.innerHTML;
+      lastValueRef.current = newValue;
+      onChange(newValue);
+    }
+  }, [onChange]);
+
+  // Handler para o color picker
+  const handleColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const color = e.target.value;
+    
+    // Restaura a seleção antes de aplicar a cor
+    restoreSelection();
+    document.execCommand('foreColor', false, color);
+    
+    if (editorRef.current) {
+      isInternalChange.current = true;
+      const newValue = editorRef.current.innerHTML;
+      lastValueRef.current = newValue;
+      onChange(newValue);
+    }
+  }, [onChange, restoreSelection]);
+
+  // Esconde toolbar quando clicar fora (mas não imediatamente)
+  const handleBlur = useCallback((e: React.FocusEvent) => {
+    // Não esconde se o foco foi para elementos da toolbar
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (relatedTarget?.closest('.rich-text-toolbar')) return;
+    
+    setTimeout(() => {
+      // Verifica novamente se não estamos na toolbar
+      const activeElement = document.activeElement as HTMLElement;
+      if (!activeElement?.closest('.rich-text-toolbar')) {
+        setShowToolbar(false);
+      }
+    }, 300);
+  }, []);
+
+  return (
+    <div className="relative">
+      {/* Floating Toolbar */}
+      {showToolbar && (
+        <div 
+          className="absolute z-50 flex items-center gap-1 bg-gray-900 rounded-lg shadow-lg px-2 py-1 rich-text-toolbar"
+          style={{ top: toolbarPosition.top, left: toolbarPosition.left }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <button
+            onMouseDown={(e) => { e.preventDefault(); saveSelection(); applyStyle('bold'); }}
+            className="p-1.5 rounded hover:bg-gray-700 text-white"
+            title="Negrito"
+          >
+            <Bold className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onMouseDown={(e) => { e.preventDefault(); saveSelection(); applyStyle('italic'); }}
+            className="p-1.5 rounded hover:bg-gray-700 text-white"
+            title="Itálico"
+          >
+            <Italic className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onMouseDown={(e) => { e.preventDefault(); saveSelection(); applyStyle('underline'); }}
+            className="p-1.5 rounded hover:bg-gray-700 text-white"
+            title="Sublinhado"
+          >
+            <Underline className="w-3.5 h-3.5" />
+          </button>
+          <div className="w-px h-4 bg-gray-600 mx-1" />
+          {/* Color picker que não fecha a toolbar */}
+          <div 
+            className="relative"
+            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          >
+            <input
+              ref={colorPickerRef}
+              type="color"
+              className="w-6 h-6 rounded cursor-pointer border-0"
+              onMouseDown={(e) => { 
+                e.stopPropagation();
+                e.preventDefault();
+                saveSelection(); 
+              }}
+              onInput={(e) => {
+                // Aplica cor durante o arrasto
+                e.stopPropagation();
+                e.preventDefault();
+                const color = (e.target as HTMLInputElement).value;
+                restoreSelection();
+                document.execCommand('foreColor', false, color);
+                if (editorRef.current) {
+                  isInternalChange.current = true;
+                  const newValue = editorRef.current.innerHTML;
+                  lastValueRef.current = newValue;
+                  onChange(newValue);
+                }
+                saveSelection();
+              }}
+              onChange={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleColorChange(e);
+              }}
+              onBlur={(e) => {
+                // Não propaga o blur para não fechar a toolbar
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              title="Cor do texto"
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Contenteditable Editor */}
+      <div
+        ref={editorRef}
+        contentEditable
+        className="w-full px-3 py-2 text-sm border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT focus:border-transparent bg-white overflow-auto"
+        style={{ minHeight: `${rows * 1.5}em`, maxHeight: `${rows * 3}em` }}
+        onInput={handleInput}
+        onSelect={handleSelect}
+        onBlur={handleBlur}
+        data-placeholder={placeholder}
+        suppressContentEditableWarning
+      />
+      
+      <style>{`
+        [contenteditable]:empty:before {
+          content: attr(data-placeholder);
+          color: #9ca3af;
+          pointer-events: none;
+        }
+      `}</style>
+    </div>
+  );
+};
 
 // === Types ===
 interface RightPropertiesPanelProps {
@@ -188,6 +429,235 @@ const TextFormattingToolbar: React.FC<TextFormattingToolbarProps> = ({ onApplySt
   </div>
 );
 
+// === Avatar Settings Component (separado da imagem do carrossel) ===
+interface AvatarSettingsProps {
+  currentAvatar?: string;
+  onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectFromGallery?: (imageUrl: string) => void;
+}
+
+const AvatarSettings: React.FC<AvatarSettingsProps> = ({
+  currentAvatar,
+  onAvatarUpload,
+  // onSelectFromGallery está disponível mas usamos handleSelectFromGallery interno
+}) => {
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
+  const [showGallery, setShowGallery] = useState(true); // Inicia aberta para mostrar galeria
+  const [displayAvatar, setDisplayAvatar] = useState(currentAvatar);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Atualiza o avatar local quando currentAvatar mudar
+  useEffect(() => {
+    setDisplayAvatar(currentAvatar);
+  }, [currentAvatar]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    console.log('📸 Avatar selecionado, fazendo upload na galeria...');
+    
+    // Primeiro faz o upload na galeria
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('access_token');
+      
+      const response = await fetch('https://carousel-api-sepia.vercel.app/api/business/images', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const uploadedUrl = data.url;
+        console.log('✅ Avatar uploaded na galeria:', uploadedUrl);
+        
+        // Abre o modal de crop com a URL da galeria
+        setImageToCrop(uploadedUrl);
+        setShowCropModal(true);
+      } else {
+        console.error('❌ Erro ao fazer upload na galeria');
+        // Fallback: usa data URL local
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const url = ev.target?.result as string;
+          setImageToCrop(url);
+          setShowCropModal(true);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao fazer upload:', error);
+      // Fallback: usa data URL local
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const url = ev.target?.result as string;
+        setImageToCrop(url);
+        setShowCropModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCropSave = async (croppedUrl: string) => {
+    console.log('✅ Avatar cortado salvo, URL:', croppedUrl.substring(0, 50));
+    
+    try {
+      // Converte data URL para blob
+      const response = await fetch(croppedUrl);
+      const blob = await response.blob();
+      const file = new File([blob], 'avatar-cropped.png', { type: 'image/png' });
+      
+      console.log('📤 Fazendo upload do avatar cortado...');
+      
+      // Faz upload do arquivo cortado
+      const formData = new FormData();
+      formData.append('file', file);
+      const token = localStorage.getItem('access_token');
+      
+      const uploadResponse = await fetch('https://carousel-api-sepia.vercel.app/api/business/images', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (uploadResponse.ok) {
+        const data = await uploadResponse.json();
+        const uploadedUrl = data.url;
+        console.log('✅ Avatar cortado uploaded:', uploadedUrl);
+        
+        // Atualiza o estado local imediatamente para feedback visual
+        setDisplayAvatar(uploadedUrl);
+        
+        // Cria evento fake para chamar onAvatarUpload com a URL já uploadada
+        const dt = new DataTransfer();
+        const fakeFile = new File([blob], 'avatar.png', { type: 'image/png' });
+        dt.items.add(fakeFile);
+        const fakeEvent = {
+          target: { files: dt.files }
+        } as React.ChangeEvent<HTMLInputElement>;
+        
+        // Atualiza o avatar globalmente
+        onAvatarUpload?.(fakeEvent);
+        
+        console.log('🔄 Avatar atualizado visualmente e nos slides');
+      } else {
+        console.error('❌ Erro ao fazer upload do avatar cortado');
+      }
+    } catch (error) {
+      console.error('❌ Erro no handleCropSave:', error);
+    }
+    
+    setShowCropModal(false);
+  };
+
+  const handleSelectFromGallery = (imageUrl: string) => {
+    setImageToCrop(imageUrl);
+    setShowCropModal(true);
+    setShowGallery(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <User className="w-5 h-5 text-blue-DEFAULT" />
+        <span className="text-sm font-medium text-gray-dark">Avatar do Perfil</span>
+      </div>
+      <p className="text-xs text-gray-DEFAULT">
+        O avatar é replicado em todos os slides. Você pode recortar a imagem para ajustar.
+      </p>
+      
+      {/* Avatar atual */}
+      <div className="flex justify-center">
+        {displayAvatar ? (
+          <div className="relative group">
+            <img 
+              src={displayAvatar} 
+              alt="Avatar" 
+              className="w-24 h-24 rounded-full object-cover border-3 border-blue-light shadow-md"
+            />
+            <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-white text-xs font-medium"
+              >
+                Alterar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-gray-light flex items-center justify-center border-2 border-dashed border-gray-300">
+            <User className="w-10 h-10 text-gray-400" />
+          </div>
+        )}
+      </div>
+
+      {/* Botões de ação */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Upload */}
+        <label className="flex flex-col items-center justify-center h-20 border-2 border-dashed border-gray-light rounded-lg cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition-colors">
+          <Upload className="w-5 h-5 text-blue-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">Upload</span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileSelect}
+          />
+        </label>
+
+        {/* Galeria */}
+        <button
+          onClick={() => setShowGallery(!showGallery)}
+          className={`flex flex-col items-center justify-center h-20 border-2 border-dashed rounded-lg transition-colors ${
+            showGallery 
+              ? 'border-blue-500 bg-blue-50' 
+              : 'border-gray-light hover:bg-blue-50 hover:border-blue-300'
+          }`}
+        >
+          <Images className="w-5 h-5 text-blue-500 mb-1" />
+          <span className="text-xs text-gray-600 font-medium">Galeria</span>
+        </button>
+      </div>
+
+      {/* Galeria de imagens */}
+      {showGallery && (
+        <div className="border border-gray-200 rounded-lg p-2 bg-gray-50">
+          <EditorGallery
+            onSelectImage={handleSelectFromGallery}
+            compact
+          />
+        </div>
+      )}
+
+      {/* Dica */}
+      <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+        <Crop className="w-4 h-4 text-blue-500 shrink-0" />
+        <span className="text-xs text-blue-700">
+          Ao selecionar uma imagem, você poderá recortar a área desejada.
+        </span>
+      </div>
+
+      {/* Modal de Crop */}
+      <ImageCropModal
+        isOpen={showCropModal}
+        imageUrl={imageToCrop}
+        onClose={() => setShowCropModal(false)}
+        onSave={handleCropSave}
+        aspectRatio={1}
+      />
+    </div>
+  );
+};
+
 // === Main Component ===
 export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
   selectedElement,
@@ -208,7 +678,7 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
   onBackgroundImageChange,
   onSearchKeywordChange,
   onSearchImages,
-  onImageUpload,
+  onImageUpload: _onImageUpload,
   onAvatarUpload,
   onGenerateAIImage,
   getElementStyle,
@@ -223,6 +693,7 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
     global: true,
     slide: true,
     image: true,
+    gallery: false, // Galeria começa fechada
   });
 
   const toggleSection = (section: keyof typeof openSections) => {
@@ -248,9 +719,12 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
       bottom: 'center bottom',
     };
     
+    // Usa o elemento selecionado atual (pode ser 'image' ou 'background')
+    const elementType = selectedElement.element || 'background';
+    
     onUpdateElementStyle(
       selectedElement.slideIndex, 
-      'background', 
+      elementType, 
       'objectPosition', 
       positionMap[position]
     );
@@ -494,13 +968,12 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
                     />
                   </div>
 
-                  {/* Text Content */}
+                  {/* Text Content - Rich Text Editor */}
                   <div>
                     <label className="text-xs font-medium text-gray-dark block mb-1.5">
-                      Conteúdo
+                      Conteúdo (selecione texto para formatar)
                     </label>
-                    <textarea
-                      className="w-full px-3 py-2 text-sm border border-gray-light rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT focus:border-transparent"
+                    <RichTextEditor
                       rows={selectedElement.element === 'title' ? 5 : 3}
                       value={(() => {
                         if (selectedElement.element === 'nome' || selectedElement.element === 'arroba') {
@@ -508,10 +981,12 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
                           return editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? defaultValue;
                         }
                         const v = data.conteudos[selectedElement.slideIndex]?.[selectedElement.element] || '';
-                        return editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? v;
+                        // Remove tags HTML vazias para exibição
+                        const cleanValue = editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? v;
+                        return cleanValue;
                       })()}
-                      onChange={(e) =>
-                        onUpdateEditedValue(selectedElement.slideIndex, selectedElement.element!, e.target.value)
+                      onChange={(newValue) =>
+                        onUpdateEditedValue(selectedElement.slideIndex, selectedElement.element!, newValue)
                       }
                       placeholder="Digite o texto..."
                     />
@@ -610,53 +1085,33 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
                 </>
               )}
 
-              {/* Avatar */}
+              {/* Avatar - Separado da imagem do carrossel */}
               {selectedElement.element === 'avatar' && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <User className="w-5 h-5 text-blue-DEFAULT" />
-                    <span className="text-sm font-medium text-gray-dark">Avatar</span>
-                  </div>
-                  <p className="text-xs text-gray-DEFAULT">
-                    O avatar é replicado em todos os slides automaticamente.
-                  </p>
-                  
-                  {/* Current Avatar */}
-                  <div className="flex justify-center">
-                    {data.dados_gerais?.foto_perfil ? (
-                      <img 
-                        src={data.dados_gerais.foto_perfil} 
-                        alt="Avatar" 
-                        className="w-20 h-20 rounded-full object-cover border-2 border-blue-light"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 rounded-full bg-gray-light flex items-center justify-center">
-                        <User className="w-8 h-8 text-gray-DEFAULT" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload */}
-                  <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-gray-light rounded-lg cursor-pointer hover:bg-gray-light/30 transition-colors">
-                    <div className="text-center">
-                      <Upload className="w-6 h-6 text-gray-DEFAULT mx-auto mb-1" />
-                      <span className="text-xs text-gray-DEFAULT">Upload novo avatar</span>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => onAvatarUpload?.(e)}
-                    />
-                  </label>
-                </div>
+                <AvatarSettings 
+                  currentAvatar={data.dados_gerais?.foto_perfil}
+                  onAvatarUpload={onAvatarUpload}
+                  onSelectFromGallery={(imageUrl) => {
+                    // Cria um input fake para usar o mesmo handler
+                    const dt = new DataTransfer();
+                    fetch(imageUrl)
+                      .then(r => r.blob())
+                      .then(blob => {
+                        const file = new File([blob], 'avatar.png', { type: blob.type });
+                        dt.items.add(file);
+                        const fakeEvent = {
+                          target: { files: dt.files }
+                        } as React.ChangeEvent<HTMLInputElement>;
+                        onAvatarUpload?.(fakeEvent);
+                      });
+                  }}
+                />
               )}
             </>
           )}
         </CollapsibleSection>
 
         {/* SECTION C: Image Settings */}
-        {selectedElement.element === 'background' && (
+        {(selectedElement.element === 'background' || selectedElement.element === 'image') && (
           <CollapsibleSection
             title="Configurações de Imagem"
             icon={<ImageIcon className="w-4 h-4 text-blue-DEFAULT" />}
@@ -820,26 +1275,23 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
                     )}
                   </button>
                 </div>
-
-                {/* Upload */}
-                <div>
-                  <label className="text-xs font-medium text-gray-dark block mb-1.5">
-                    Upload
-                  </label>
-                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-light rounded-lg cursor-pointer hover:bg-gray-light/30 transition-colors">
-                    <Upload className="w-6 h-6 text-gray-DEFAULT mb-1" />
-                    <span className="text-xs text-gray-DEFAULT">Clique para fazer upload</span>
-                    <span className="text-[10px] text-gray-DEFAULT mt-0.5">PNG, JPG ou GIF</span>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => onImageUpload(selectedElement.slideIndex, e)}
-                    />
-                  </label>
-                </div>
               </>
             )}
+          </CollapsibleSection>
+        )}
+
+        {/* SECTION D: Gallery - Minha Galeria de Imagens */}
+        {(selectedElement.element === 'background' || selectedElement.element === 'image') && (
+          <CollapsibleSection
+            title="Minha Galeria"
+            icon={<Images className="w-4 h-4 text-blue-DEFAULT" />}
+            isOpen={openSections.gallery}
+            onToggle={() => toggleSection('gallery')}
+          >
+            <EditorGallery
+              onSelectImage={(imageUrl) => onBackgroundImageChange(selectedElement.slideIndex, imageUrl)}
+              compact
+            />
           </CollapsibleSection>
         )}
       </div>

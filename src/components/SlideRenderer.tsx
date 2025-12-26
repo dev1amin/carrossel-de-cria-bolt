@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { ReactSlideRenderer, getTemplateDimensions } from '../templates/react';
 
-// Dimensões dos templates
+// Dimensões dos templates (legado + React)
 const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   '1': { width: 1080, height: 1350 },
   '2': { width: 1080, height: 1350 },
@@ -11,7 +12,24 @@ const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   '7': { width: 1170, height: 1560 },
   '8': { width: 1170, height: 1560 },
   '9': { width: 1170, height: 1560 },
+  '1-react': { width: 1080, height: 1350 },
+  '2-react': { width: 1080, height: 1350 },
+  '3-react': { width: 1080, height: 1350 },
+  '4-react': { width: 1080, height: 1350 },
+  '5-react': { width: 1080, height: 1350 },
+  '6-react': { width: 1080, height: 1350 },
+  '7-react': { width: 1170, height: 1560 },
+  '8-react': { width: 1170, height: 1560 },
 };
+
+// Interface para dados de slide React
+interface ReactTemplateData {
+  __reactTemplate: true;
+  templateId: string;
+  slideIndex: number;
+  slideData: any;
+  dadosGerais: any;
+}
 
 interface SlideData {
   title?: string;
@@ -42,7 +60,78 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
   containerWidth,
   containerHeight
 }) => {
-  // Obtém dimensões do template
+  // Ref para medir o container quando não temos dimensões
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredSize, setMeasuredSize] = useState<{ width: number; height: number } | null>(null);
+  
+  // Mede o container quando montado
+  useEffect(() => {
+    if (containerRef.current && !containerWidth && !containerHeight) {
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setMeasuredSize({ width: rect.width, height: rect.height });
+      }
+    }
+  }, [containerWidth, containerHeight]);
+  
+  // Observa mudanças de tamanho do container
+  useEffect(() => {
+    if (!containerRef.current || containerWidth || containerHeight) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setMeasuredSize({ width, height });
+        }
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [containerWidth, containerHeight]);
+
+  // Tenta fazer parse do JSON primeiro para detectar template React
+  let slideData: SlideData | ReactTemplateData | null = null;
+  let isHTML = false;
+
+  try {
+    slideData = JSON.parse(slideContent);
+  } catch {
+    isHTML = true;
+  }
+
+  // Usa dimensões passadas ou medidas
+  const effectiveWidth = containerWidth || measuredSize?.width || 300;
+  const effectiveHeight = containerHeight || measuredSize?.height || 375;
+
+  // ✅ TEMPLATE REACT: Se for dados de template React, usa ReactSlideRenderer
+  if (slideData && '__reactTemplate' in slideData && slideData.__reactTemplate === true) {
+    const reactData = slideData as ReactTemplateData;
+    const dims = getTemplateDimensions(reactData.templateId);
+    
+    return (
+      <div 
+        ref={containerRef}
+        className={`relative overflow-hidden ${className}`}
+        style={{ 
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <ReactSlideRenderer
+          templateId={reactData.templateId}
+          slideIndex={reactData.slideIndex}
+          slideData={reactData.slideData}
+          dadosGerais={reactData.dadosGerais}
+          containerWidth={effectiveWidth}
+          containerHeight={effectiveHeight}
+        />
+      </div>
+    );
+  }
+
+  // Obtém dimensões do template (para templates não-React)
   const templateDimensions = useMemo(() => {
     if (templateId && TEMPLATE_DIMENSIONS[templateId]) {
       return TEMPLATE_DIMENSIONS[templateId];
@@ -50,18 +139,6 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
     // Default: assume template 1-6
     return { width: 1080, height: 1350 };
   }, [templateId]);
-
-  // Tenta fazer parse do JSON
-  let slideData: SlideData | null = null;
-  let isHTML = false;
-
-  try {
-    // Tenta parsear como JSON
-    slideData = JSON.parse(slideContent);
-  } catch {
-    // Se falhar, é HTML
-    isHTML = true;
-  }
 
   // Se for HTML, renderiza com iframe para isolamento TOTAL
   if (isHTML || !slideData) {

@@ -1,16 +1,15 @@
 // Main components
-export { TopBar } from './TopBar';
-export { LayersSidebar } from './LayersSidebar';
-export { PropertiesPanel } from './PropertiesPanel';
-export { CanvasArea } from './CanvasArea';
 export { default as CarouselViewer } from './CarouselViewer';
-
-// New UI Components
 export { SlidesSidebar } from './SlidesSidebar';
 export { EditorToolbar } from './EditorToolbar';
 export { CanvasPreview } from './CanvasPreview';
 export { RightPropertiesPanel } from './RightPropertiesPanel';
-export { default as NewCarouselViewer } from './NewCarouselViewer';
+export { EditorGallery } from './EditorGallery';
+
+// V2 - Nova arquitetura modular
+export { default as NewCarouselViewer } from './v2/CarouselEditor';
+export { default as CarouselEditorV2 } from './v2/CarouselEditor';
+export { EditorProvider, useEditor } from './v2/context/EditorContext';
 
 // Types
 export * from './types';
@@ -24,13 +23,9 @@ export { useUnsavedChangesWarning } from './hooks/useUnsavedChangesWarning';
 
 // Utils
 export * from './utils/constants';
-export * from './utils/styleHelpers';
 export * from './utils/iframeHelpers';
-export * from './utils/dataHelpers';
 
 // Handlers
 export * from './handlers/selectionHandlers';
-export * from './handlers/editHandlers';
-export * from './handlers/zoomHandlers';
-export * from './handlers/imageHandlers';
 export * from './handlers/saveHandlers';
+export * from './handlers/dragHandlers';

@@ -4,7 +4,6 @@ import { Newspaper, Image, Wrench, LayoutGrid, ChevronLeft, ChevronRight, Downlo
 import { motion } from 'framer-motion';
 import Navigation from '../components/Navigation';
 import SlideRenderer from '../components/SlideRenderer';
-import { MouseFollowLight } from '../components/MouseFollowLight';
 import { ToneSetupModal } from '../components/ToneSetupModal';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { getGeneratedContent, getGeneratedContentById } from '../services/generatedContent';
@@ -63,9 +62,27 @@ const HomePage: React.FC = () => {
     try {
       console.log(`🎨 Renderizando com template "${templateId}" para preview na home`);
 
-      const templateSlides = await templateService.fetchTemplate(templateId);
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(templateId);
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+        // Retorna dados JSON com marcador especial para identificar
+        return conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: dados_gerais,
+          })
+        );
+      }
 
-      console.log(`✅ Template "${templateId}" carregado: ${templateSlides.length} slides`);
+      const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
+
+      console.log(`✅ Template "${normalizedTemplateId}" carregado: ${templateSlides.length} slides`);
 
       const carouselData: CarouselData = {
         conteudos: conteudos,
@@ -515,9 +532,6 @@ const HomePage: React.FC = () => {
       <Navigation currentPage="home" />
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white relative ml-0 md:ml-16">
-        {/* MouseFollowLight - sempre atrás de tudo */}
-        <MouseFollowLight zIndex={-1} />
-
         {/* Grid de quadrados - igual ao Feed */}
         <div
           className="pointer-events-none fixed top-0 left-0 md:left-20 right-0 bottom-0 opacity-60"

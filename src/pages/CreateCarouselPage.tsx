@@ -196,16 +196,36 @@ const CreateCarouselPage: React.FC = () => {
       }
 
       const responseTemplateId = carouselData.dados_gerais.template;
-      const templateSlides = await templateService.fetchTemplate(responseTemplateId);
+      
+      // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+      const normalizedTemplateId = templateService.normalizeTemplateId(responseTemplateId);
+      
+      let renderedSlides: string[];
+      
+      // Se for template React, retorna dados JSON para o ReactSlideRenderer
+      if (templateService.isReactTemplate(normalizedTemplateId)) {
+        console.log(`⚡ Template React detectado: ${normalizedTemplateId}`);
+        renderedSlides = carouselData.conteudos.map((slideData: any, index: number) => 
+          JSON.stringify({
+            __reactTemplate: true,
+            templateId: normalizedTemplateId,
+            slideIndex: index,
+            slideData: slideData,
+            dadosGerais: carouselData.dados_gerais,
+          })
+        );
+      } else {
+        const templateSlides = await templateService.fetchTemplate(normalizedTemplateId);
 
-      if (!templateSlides || templateSlides.length === 0) {
-        alert('Erro ao carregar template');
-        removeFromQueue(queueItem.id);
-        return;
+        if (!templateSlides || templateSlides.length === 0) {
+          alert('Erro ao carregar template');
+          removeFromQueue(queueItem.id);
+          return;
+        }
+
+        const { templateRenderer } = await import('../services/carousel');
+        renderedSlides = templateRenderer.renderAllSlides(templateSlides, carouselData);
       }
-
-      const { templateRenderer } = await import('../services/carousel');
-      const renderedSlides = templateRenderer.renderAllSlides(templateSlides, carouselData);
 
       updateQueueItem(queueItem.id, {
         status: 'completed',

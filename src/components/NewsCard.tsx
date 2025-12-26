@@ -1,107 +1,134 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { NewsItem } from '../types/news';
+import { TemplateSelectionModal, GenerationOptions, SourceItem } from '../carousel';
 
 interface NewsCardProps {
   news: NewsItem;
+  onGenerateCarousel?: (newsData: NewsItem, templateId: string, options?: GenerationOptions) => void;
 }
 
-const NewsCard: React.FC<NewsCardProps> = ({ news }) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
+const NewsCard: React.FC<NewsCardProps> = ({ news, onGenerateCarousel }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-    if (diffMins < 60) {
-      return `há ${diffMins} min`;
-    } else if (diffHours < 24) {
-      return `há ${diffHours}h`;
-    } else if (diffDays < 7) {
-      return `há ${diffDays}d`;
-    } else {
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  // Cria o SourceItem inicial baseado na notícia
+  const createInitialSource = (): SourceItem => ({
+    type: 'news',
+    id: `news-${news.id}`,
+    code: news.url,
+    title: news.title?.substring(0, 50) || 'Notícia',
+    thumbnail: news.image,
+    newsData: news,
+  });
+
+  const handleOpenModal = () => {
+    if (!onGenerateCarousel) return;
+    setIsModalOpen(true);
+  };
+
+  const handleSelectTemplate = (templateId: string, options?: GenerationOptions) => {
+    if (onGenerateCarousel) {
+      onGenerateCarousel(news, templateId, options);
     }
   };
 
-  const getFlagEmoji = (countryCode: string) => {
-    const codePoints = countryCode
-      .toUpperCase()
-      .split('')
-      .map(char => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    const year = date.getFullYear();
+    
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const hour12 = hours % 12 || 12;
+    
+    return `${month} ${day}, ${year} ${hour12}:${minutes} ${ampm}`;
+  };
+
+  const getAuthorName = (news: NewsItem) => {
+    // Se tiver autor real, usar ele, senão criar um nome baseado no nicho
+    if (news.niches?.name) {
+      const nicheWords = news.niches.name.split(' ');
+      return nicheWords.map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + ' Team';
+    }
+    return 'News Team';
   };
 
   return (
-    <article className="bg-white/5 rounded-lg overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-white/5 group">
-      {/* Imagem */}
-      {news.image && (
-        <div className="relative aspect-video overflow-hidden bg-black/20">
-          <img
-            src={news.image}
-            alt={news.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-          <div className="absolute top-3 left-3 flex gap-2">
-            <span className="px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs text-white/90">
-              {getFlagEmoji(news.country)} {news.country.toUpperCase()}
-            </span>
-            <span className="px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs text-white/90">
-              {news.lang.toUpperCase()}
-            </span>
+    <article className="border-b border-gray-200 py-8 first:pt-6 last:border-b-0 last:pb-6 hover:bg-gray-50 transition-colors">
+      <div className="flex items-start gap-4">
+        {/* Red dot indicator */}
+        <div className="flex-shrink-0 mt-2">
+          <div className="w-2.5 h-2.5 bg-red-500 rounded-full" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {/* Title */}
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-3 leading-tight hover:text-purple-600 transition-colors cursor-pointer">
+            {news.title}
+          </h2>
+
+          {/* Author and date */}
+          <p className="text-sm text-gray-600 mb-4">
+            <span className="">·</span>
+            {formatDate(news.publishedAt)}
+          </p>
+
+          {/* Description */}
+          <p className="text-gray-700 leading-relaxed mb-5 text-base">
+            {news.description}
+          </p>
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={news.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-gray-900 font-semibold hover:text-gray-700 transition-colors group text-sm"
+            >
+              Leia mais
+              <svg
+                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+            
+            {/* Generate Carousel Button */}
+            {onGenerateCarousel && (
+              <button
+                onClick={handleOpenModal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Gerar Carrossel
+              </button>
+            )}
           </div>
         </div>
-      )}
-
-      {/* Conteúdo */}
-      <div className="p-4 space-y-3">
-        {/* Niche Badge */}
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs font-medium">
-            {news.niches.name}
-          </span>
-          <span className="text-white/40 text-xs">
-            {formatDate(news.publishedAt)}
-          </span>
-        </div>
-
-        {/* Título */}
-        <h3 className="text-white font-semibold text-lg line-clamp-2 group-hover:text-purple-300 transition-colors">
-          {news.title}
-        </h3>
-
-        {/* Descrição */}
-        <p className="text-white/60 text-sm line-clamp-3">
-          {news.description}
-        </p>
-
-        {/* Botão de Leia Mais */}
-        <a
-          href={news.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
-        >
-          Leia mais
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="group-hover:translate-x-1 transition-transform"
-          >
-            <path d="M5 12h14" />
-            <path d="m12 5 7 7-7 7" />
-          </svg>
-        </a>
       </div>
+
+      {/* Modal de Seleção de Template */}
+      {onGenerateCarousel && (
+        <TemplateSelectionModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSelectTemplate={handleSelectTemplate}
+          postCode={news.id}
+          initialSource={createInitialSource()}
+        />
+      )}
     </article>
   );
 };

@@ -61,7 +61,7 @@ function AppContent() {
   return (
     <>
       {/* Luz global que acompanha o mouse - não aparece no login e editor */}
-      {!isLoginPage && !isEditorPage && <MouseFollowLight zIndex={5} />}
+      {!isLoginPage && !isEditorPage && <MouseFollowLight zIndex={-1} />}
 
       {/* Fila global - renderizada fora das rotas */}
       <GenerationQueue 
@@ -106,13 +106,6 @@ function App() {
       webhook: {
         generateCarousel: 'https://api.workez.online/webhook/generateCarousel',
         searchImages: 'https://api.workez.online/webhook/searchImages',
-      },
-      minio: {
-        endpoint: 'https://s3.workez.online',
-        bucket: 'carousel-templates',
-      },
-      templates: {
-        totalSlides: 10,
       },
     });
   }, []);

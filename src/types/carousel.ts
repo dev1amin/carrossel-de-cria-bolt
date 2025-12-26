@@ -33,7 +33,7 @@ export interface CarouselResponse extends CarouselData {}
 
 // ==================== Element Types ====================
 
-export type ElementType = 'title' | 'subtitle' | 'background' | 'nome' | 'arroba' | 'avatar' | null;
+export type ElementType = 'title' | 'subtitle' | 'background' | 'image' | 'nome' | 'arroba' | 'avatar' | null;
 
 export interface ElementStyles {
   fontSize?: string;
@@ -63,15 +63,15 @@ export interface TemplateConfig {
 
 export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
   {
-    id: '1',
+    id: '1-react',
     name: 'Template 1',
     thumbnail: 'https://images.pexels.com/photos/7319337/pexels-photo-7319337.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Modern and clean design',
+    description: 'Design moderno e clean',
     compatibility: 'image-only',
     compatibilityLabel: 'Apenas Imagem'
   },
   {
-    id: '2',
+    id: '2-react',
     name: 'Template 2',
     thumbnail: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Bold and vibrant layout',
@@ -79,7 +79,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Vídeo + Imagem'
   },
   {
-    id: '3',
+    id: '3-react',
     name: 'Template 3',
     thumbnail: 'https://images.pexels.com/photos/6372413/pexels-photo-6372413.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Elegant and professional',
@@ -87,7 +87,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Vídeo + Imagem'
   },
   {
-    id: '4',
+    id: '4-react',
     name: 'Template 4',
     thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Minimalist style',
@@ -95,7 +95,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Vídeo + Imagem'
   },
   {
-    id: '5',
+    id: '5-react',
     name: 'Template 5',
     thumbnail: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Dynamic and energetic',
@@ -103,7 +103,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Apenas Texto'
   },
   {
-    id: '6',
+    id: '6-react',
     name: 'Template 6',
     thumbnail: 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Creative and artistic',
@@ -111,7 +111,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Vídeo + Imagem'
   },
   {
-    id: '7',
+    id: '7-react',
     name: 'Template 7',
     thumbnail: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Formato Reels/Twitter - 15 slides (9:16)',
@@ -119,7 +119,7 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
     compatibilityLabel: 'Vídeo + Imagem'
   },
   {
-    id: '8',
+    id: '8-react',
     name: 'Template 8',
     thumbnail: 'https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=400',
     description: 'Formato Reels/Twitter - 15 slides (9:16)',
@@ -133,14 +133,22 @@ export const AVAILABLE_TEMPLATES: TemplateConfig[] = [
 // Templates 7-9: Formato vertical para Reels/Stories (1170x1560)
 export const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
   '1': { width: 1080, height: 1350 },
+  '1-react': { width: 1080, height: 1350 },
   '2': { width: 1080, height: 1350 },
+  '2-react': { width: 1080, height: 1350 },
   '3': { width: 1080, height: 1350 },
+  '3-react': { width: 1080, height: 1350 },
   '4': { width: 1080, height: 1350 },
+  '4-react': { width: 1080, height: 1350 },
   '5': { width: 1080, height: 1350 },
+  '5-react': { width: 1080, height: 1350 },
   '6': { width: 1080, height: 1350 },
-  '7': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
-  '8': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
-  '9': { width: 1170, height: 1560 }, // Formato vertical para Reels/Twitter
+  '6-react': { width: 1080, height: 1350 },
+  '7': { width: 1170, height: 1560 },
+  '7-react': { width: 1170, height: 1560 },
+  '8': { width: 1170, height: 1560 },
+  '8-react': { width: 1170, height: 1560 },
+  '9': { width: 1170, height: 1560 },
 };
 
 // ==================== Queue Types ====================

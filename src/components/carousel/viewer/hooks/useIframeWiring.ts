@@ -103,6 +103,17 @@ export function useIframeWiring({
       const leftPx = -maxOffsetX * (xPerc / 100);
       const topPx  = -maxOffsetY * (yPerc / 100);
 
+      console.log('🖼️ Iniciando drag de imagem:', {
+        slideIndex,
+        natW, natH,
+        contW, contH,
+        displayW, displayH,
+        maxOffsetX, maxOffsetY,
+        canDragHorizontal: maxOffsetX > 0,
+        canDragVertical: maxOffsetY > 0,
+        initialPosition: `${xPerc}% ${yPerc}%`
+      });
+
       imgDragState.current = {
         active:true, kind:'img', mode:'objpos', slideIndex, doc,
         wrapper, targetEl: img,
@@ -159,14 +170,26 @@ export function useIframeWiring({
       const cs = doc.defaultView?.getComputedStyle(cont);
       
       const backgroundImage = cs?.backgroundImage || '';
+      console.log('🖼️ startBgDrag - backgroundImage:', backgroundImage);
+      
       const urlMatches = backgroundImage.match(/url\(["']?([^)"']+)["']?\)/gi);
+      console.log('🔍 URLs encontradas:', urlMatches);
       
-      if (!urlMatches || urlMatches.length === 0) return;
+      if (!urlMatches || urlMatches.length === 0) {
+        console.warn('❌ Nenhuma URL encontrada no background');
+        return;
+      }
       
+      // Pega a última URL (geralmente é a imagem de fundo real, depois dos gradientes)
       const lastUrlMatch = urlMatches[urlMatches.length - 1];
       const bg = lastUrlMatch.match(/url\(["']?([^)"']+)["']?\)/i)?.[1];
       
-      if (!bg) return;
+      console.log('✅ URL da imagem extraída:', bg);
+      
+      if (!bg) {
+        console.warn('❌ Falha ao extrair URL');
+        return;
+      }
 
       let r = cont.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) { await layoutReady(doc); r = cont.getBoundingClientRect(); if (r.width === 0 || r.height === 0) return; }
@@ -203,15 +226,44 @@ export function useIframeWiring({
           minLeft: Math.min(0, r.width - displayW), minTop: Math.min(0, r.height - displayH),
           left: leftPx, top: topPx, startX: ev.clientX, startY: ev.clientY
         };
+        
+        console.log('✅ Background drag INICIADO:', {
+          slideIndex,
+          contW: r.width,
+          contH: r.height,
+          displayW,
+          displayH,
+          natW,
+          natH,
+          maxOffsetX: Math.max(0, displayW - r.width),
+          maxOffsetY: Math.max(0, displayH - r.height),
+          usedFallback: useFallback,
+          element: cont.tagName,
+          backgroundImage: cs?.backgroundImage.substring(0, 80)
+        });
+        
         logd('start BG', { slideIndex, contW:r.width, contH:r.height, displayW, displayH });
       };
       
+      console.log('📥 Carregando imagem do background:', bg);
       if (tmp.complete && tmp.naturalWidth) {
+        console.log('✅ Imagem já estava carregada');
         go();
       } else {
-        const timeout = setTimeout(() => go(true), 2000);
-        tmp.onload = () => { clearTimeout(timeout); go(); };
-        tmp.onerror = () => { clearTimeout(timeout); go(true); };
+        const timeout = setTimeout(() => {
+          console.warn('⚠️ Timeout ao carregar imagem, usando estimativa');
+          go(true);
+        }, 2000);
+        tmp.onload = () => { 
+          console.log('✅ Imagem carregada com sucesso');
+          clearTimeout(timeout); 
+          go(); 
+        };
+        tmp.onerror = () => { 
+          console.error('❌ Erro ao carregar imagem, usando estimativa');
+          clearTimeout(timeout); 
+          go(true); 
+        };
       }
     };
 
@@ -345,17 +397,27 @@ export function useIframeWiring({
           return;
         }
 
-        // Verifica se clicou em elemento com background-image CSS
+        // Verifica se clicou em elemento com background-image CSS (incluindo gradientes)
         let bgImageElement: HTMLElement | null = target;
         let bgDepth = 0;
         while (bgImageElement && bgImageElement !== doc.body.parentElement && bgDepth < 15) {
           const computedStyle = doc.defaultView?.getComputedStyle(bgImageElement);
           const bgImage = computedStyle?.backgroundImage || '';
+          
+          // Detecta tanto imagens simples quanto backgrounds com gradientes
           if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
-            // Encontrou elemento com background-image
+            console.log('🎯 Elemento com background-image detectado:', {
+              tagName: bgImageElement.tagName,
+              className: bgImageElement.className,
+              bgImage: bgImage.substring(0, 100),
+              hasGradient: bgImage.includes('linear-gradient') || bgImage.includes('radial-gradient')
+            });
+            
+            // Encontrou elemento com background-image (pode ter gradiente)
             bgImageElement.classList.add('selected');
             bgImageElement.style.zIndex = '1000';
             bgImageElement.setAttribute('data-cv-selected', '1');
+            bgImageElement.setAttribute('data-editable', 'background');
             setSelectedElement({ slideIndex, element: 'background' });
             setFocusedSlide(slideIndex);
             if (!expandedLayers.has(slideIndex)) setExpandedLayers(s => new Set(s).add(slideIndex));
@@ -425,32 +487,56 @@ export function useIframeWiring({
         const img = t.closest('img[data-editable="image"]') as HTMLImageElement | null;
         if (img) { void startImgDrag(doc, slideIndex, img, ev); return; }
 
-        // Background drag strategies
+        // Background drag strategies - busca mais abrangente
+        // 1. Primeiro verifica se o elemento clicado já está marcado como background editável
+        const editableBg = t.closest('[data-editable="background"]') as HTMLElement | null;
+        if (editableBg) {
+          const cs = doc.defaultView?.getComputedStyle(editableBg);
+          const bgImage = cs?.backgroundImage || '';
+          if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+            console.log('🎯 Iniciando drag em elemento com data-editable="background"');
+            void startBgDrag(doc, slideIndex, editableBg, ev);
+            return;
+          }
+        }
+        
+        // 2. Verifica .bg div (comum em templates)
         const bgDiv = doc.querySelector('.bg') as HTMLElement | null;
         if (bgDiv) {
           const cs = doc.defaultView?.getComputedStyle(bgDiv);
           const bgImage = cs?.backgroundImage || '';
+          console.log('🔍 Verificando .bg div:', bgImage.substring(0, 80));
+          
           if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+            console.log('🎯 Usando .bg div para drag');
             void startBgDrag(doc, slideIndex, bgDiv, ev);
             return;
           }
         }
         
+        // 3. Verifica body
         if (doc.body) {
           const csBody = doc.defaultView?.getComputedStyle(doc.body);
           const bgImageBody = csBody?.backgroundImage || '';
           if (bgImageBody && bgImageBody !== 'none' && bgImageBody.includes('url(')) {
+            console.log('🎯 Usando body para drag');
             void startBgDrag(doc, slideIndex, doc.body, ev);
             return;
           }
         }
         
+        // 4. Busca na árvore de elementos (mais profundo)
         let bgEl: HTMLElement | null = t;
         let depth = 0;
         while (bgEl && bgEl !== doc.body.parentElement && depth < 20) {
           const cs = doc.defaultView?.getComputedStyle(bgEl);
           const bgImage = cs?.backgroundImage || '';
           if (bgImage && bgImage !== 'none' && bgImage.includes('url(')) {
+            console.log('🎯 Encontrou background na árvore (depth: ' + depth + '):', {
+              tagName: bgEl.tagName,
+              className: bgEl.className,
+              bgImage: bgImage.substring(0, 100)
+            });
             void startBgDrag(doc, slideIndex, bgEl, ev);
             return;
           }
@@ -473,6 +559,18 @@ export function useIframeWiring({
         const maxOffsetY = Math.max(0, st.dispH - st.contH);
         const xPerc = maxOffsetX ? (-nextLeft / maxOffsetX) * 100 : 50;
         const yPerc = maxOffsetY ? (-nextTop  / maxOffsetY) * 100 : 50;
+
+        // Log ocasional para debug (a cada 10 movimentos)
+        if (Math.random() < 0.1) {
+          console.log('🎯 Drag move:', {
+            dx, dy,
+            nextLeft, nextTop,
+            minLeft: st.minLeft, minTop: st.minTop,
+            maxOffsetX, maxOffsetY,
+            xPerc: xPerc.toFixed(1), yPerc: yPerc.toFixed(1),
+            kind: st.kind
+          });
+        }
 
         if (st.kind === 'img') {
           (st.targetEl as HTMLImageElement).style.objectPosition = `${xPerc}% ${yPerc}%`;

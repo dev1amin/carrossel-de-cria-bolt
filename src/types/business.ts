@@ -59,3 +59,42 @@ export interface FormQuestion {
   type: 'text' | 'select' | 'array_text';
   options: Array<{ label: string; value: string }>;
 }
+
+// ==================== Business Images ====================
+
+export interface BusinessImage {
+  id: string;
+  url: string;
+  label?: string | null;
+  alt_text?: string | null;
+  mime_type: string;
+  bytes: number;
+  width?: number | null;
+  height?: number | null;
+  created_at: string;
+}
+
+export interface BusinessImageUploadResponse {
+  id: string;
+  url: string;
+  created_at: string;
+}
+
+export interface BusinessImagesListResponse {
+  total: number;
+  images: BusinessImage[];
+}
+
+export interface BusinessImagesDeleteResponse {
+  deleted_count: number;
+  failed: Array<{
+    id: string;
+    reason: string;
+  }>;
+}
+
+export interface BusinessImageUploadRequest {
+  file: File;
+  label?: string;
+  alt_text?: string;
+}

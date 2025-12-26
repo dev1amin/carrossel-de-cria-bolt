@@ -106,16 +106,38 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
       setIsLoadingPreview(true);
       try {
         const templateId = carouselData.dados_gerais?.template || '1';
-        const slides = await templateService.fetchTemplate(templateId);
         
-        if (!cancelled && Array.isArray(slides)) {
-          const renderedSlides = templateRenderer.renderAllSlides(slides, carouselData);
-          setSlidesHtml(renderedSlides);
+        // Normaliza o ID do template (mapeia "1" -> "1-react", etc.)
+        const normalizedTemplateId = templateService.normalizeTemplateId(templateId);
+        
+        // Se for template React, retorna dados JSON para o ReactSlideRenderer
+        if (templateService.isReactTemplate(normalizedTemplateId)) {
+          console.log(`⚡ Template React detectado no preview: ${normalizedTemplateId}`);
+          const renderedSlides = carouselData.conteudos.map((slideData: any, index: number) => 
+            JSON.stringify({
+              __reactTemplate: true,
+              templateId: normalizedTemplateId,
+              slideIndex: index,
+              slideData: slideData,
+              dadosGerais: carouselData.dados_gerais,
+            })
+          );
+          if (!cancelled) {
+            setSlidesHtml(renderedSlides);
+            setTimeout(() => fitToHeight(), 100);
+          }
+        } else {
+          const slides = await templateService.fetchTemplate(normalizedTemplateId);
           
-          // Centraliza após carregar
-          setTimeout(() => {
-            fitToHeight();
-          }, 100);
+          if (!cancelled && Array.isArray(slides)) {
+            const renderedSlides = templateRenderer.renderAllSlides(slides, carouselData);
+            setSlidesHtml(renderedSlides);
+            
+            // Centraliza após carregar
+            setTimeout(() => {
+              fitToHeight();
+            }, 100);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar preview do carrossel:', error);
@@ -326,9 +348,8 @@ export const CarouselPreviewModal: React.FC<CarouselPreviewModalProps> = ({
               >
                 <div
                   style={{
-                    transform: `scale(${zoom})`,
-                    transformOrigin: "top left",
-                    willChange: "transform",
+                    // Usa zoom ao invés de transform:scale para texto nítido
+                    zoom: zoom,
                   }}
                 >
                   {slidesHtml.length > 0 ? (
