@@ -650,15 +650,6 @@ const GalleryPage = () => {
     }
   };
 
-  const handleSaveSuccess = () => {
-    // Recarregar a galeria após salvar um carrossel
-    if (activeSort === 'saved') {
-      loadSavedPostsAsCarousels();
-    } else {
-      loadGalleryFromAPI();
-    }
-  };
-
   // Uso do useMemo para evitar re-renderização do menu
   const memoizedNavigation = useMemo(() => <Navigation currentPage="gallery" />, []);
 

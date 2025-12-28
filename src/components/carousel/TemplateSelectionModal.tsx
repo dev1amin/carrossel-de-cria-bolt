@@ -1273,6 +1273,7 @@ const TemplateSelectionModal: React.FC<TemplateSelectionModalProps> = ({
                                         slideIndex={idx}
                                         slideData={slideData}
                                         dadosGerais={previewRawData.dados_gerais}
+                                        globalSettings={previewRawData.globalSettings}
                                         containerWidth={width}
                                         containerHeight={height}
                                       />

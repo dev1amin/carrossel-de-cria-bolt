@@ -3,7 +3,7 @@
  * 
  * Esta versão do editor separa responsabilidades em:
  * - Context: Estado global compartilhado
- * - Hooks: Lógica de negócios reutilizável (mobile + desktop)
+ * - Hooks: Lógica de negócios reutilizável (apenas desktop)
  * - Components: Componentes de UI
  * 
  * Uso:

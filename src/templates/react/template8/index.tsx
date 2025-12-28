@@ -107,10 +107,24 @@ export const SlideWithImage: React.FC<SlideProps> = ({ data, dadosGerais }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div style={baseStyles.slide}>
+    <div style={{ ...baseStyles.slide, position: 'relative' }}>
+      {/* Background editável */}
+      <div 
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+      
       <style>{FONT_IMPORT}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', width: '100%' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', width: '100%', position: 'relative', zIndex: 1 }}>
         <Header dadosGerais={dadosGerais} />
 
         <section

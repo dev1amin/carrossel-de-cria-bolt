@@ -125,10 +125,24 @@ export const SlideWithImage: React.FC<SlideProps> = ({ data, dadosGerais }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div style={baseStyles.slide}>
+    <div style={{ position: 'relative', ...baseStyles.slide }}>
       <style>{FONT_IMPORT}</style>
 
-      <Header dadosGerais={dadosGerais} />
+      {/* Background editável */}
+      <div
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: '#000000',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+
+      {/* Conteúdo do slide */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '40px', height: '100%', justifyContent: 'center' }}>
+        <Header dadosGerais={dadosGerais} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <TweetText title={data.title} subtitle={data.subtitle} />
@@ -149,8 +163,7 @@ export const SlideWithImage: React.FC<SlideProps> = ({ data, dadosGerais }) => {
             onError={() => setImgError(true)}
           />
         )}
-      </div>
-    </div>
+      </div>      </div>    </div>
   );
 };
 
@@ -168,7 +181,21 @@ export const SlideTextOnly: React.FC<SlideProps> = ({ data, dadosGerais }) => {
     >
       <style>{FONT_IMPORT}</style>
 
-      <Header dadosGerais={dadosGerais} />
+      {/* Background editável */}
+      <div
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: '#000000',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+
+      {/* Conteúdo do slide */}
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '40px', height: '100%', justifyContent: 'center' }}>
+        <Header dadosGerais={dadosGerais} />
 
       <section
         style={{
@@ -182,6 +209,7 @@ export const SlideTextOnly: React.FC<SlideProps> = ({ data, dadosGerais }) => {
         {data.title && <RenderHtml data-editable="title" html={data.title} as="p" style={{ marginBottom: '20px' }} />}
         {data.subtitle && <RenderHtml data-editable="subtitle" html={data.subtitle} as="p" style={{ marginBottom: '20px' }} />}
       </section>
+      </div>
     </div>
   );
 };

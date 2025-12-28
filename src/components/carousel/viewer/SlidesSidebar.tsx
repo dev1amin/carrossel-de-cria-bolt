@@ -172,6 +172,7 @@ interface SlidesSidebarProps {
   batchMode: boolean;
   selectedSlides: Set<number>;
   isMinimized?: boolean;
+  isMobile?: boolean; // Nova prop para mobile
   onToggleMinimize?: () => void;
   onSlideClick: (index: number) => void;
   onAddSlide?: () => void;
@@ -191,6 +192,7 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
   batchMode: batchModeProp,
   selectedSlides: selectedSlidesProp,
   isMinimized = false,
+  isMobile = false,
   onToggleMinimize,
   onSlideClick,
   onAddSlide,
@@ -224,6 +226,141 @@ export const SlidesSidebar: React.FC<SlidesSidebarProps> = ({
     };
   };
 
+  // Layout mobile: em modo minimizado, mostra horizontal no topo
+  if (isMobile) {
+    if (isMinimized) {
+      return (
+        <div className="h-16 bg-white border-b border-gray-light flex items-center shrink-0">
+          <button
+            onClick={onToggleMinimize}
+            className="h-full px-4 flex items-center justify-center hover:bg-gray-light border-r border-gray-light transition-colors"
+            title="Expandir Slides"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-DEFAULT -rotate-90" />
+          </button>
+          
+          <div className="flex-1 overflow-x-auto py-2 px-2 flex space-x-2 mobile-scroll">
+            {effectiveSlides.map((_, index) => {
+              const c = conteudos?.[index];
+              const key = c?.id ?? `${index}-${effectiveSlides.length}`;
+              return (
+                <button
+                  key={key}
+                  onClick={() => onSlideClick(index)}
+                  className={`
+                    w-12 h-12 rounded-md flex items-center justify-center text-xs font-bold transition-all border flex-shrink-0
+                    ${effectiveFocused === index
+                      ? 'bg-blue-DEFAULT text-white border-blue-DEFAULT'
+                      : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-300'
+                    }
+                  `}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Layout mobile expandido: sidebar cobrindo parte da tela
+    return (
+      <div className="absolute top-0 left-0 bottom-0 w-[280px] bg-light border-r border-gray-light flex flex-col shrink-0 z-30 shadow-lg">
+        {/* Header Mobile */}
+        <div className="h-16 bg-white border-b border-gray-light flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-gray-dark font-semibold text-base">Slides</h3>
+            <span className="text-sm text-gray-DEFAULT bg-gray-light px-2 py-1 rounded-full">
+              {effectiveSlides.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onToggleBatchMode}
+              className={`
+                p-2 rounded transition-colors
+                ${effectiveBatchMode ? 'bg-blue-DEFAULT text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'}
+              `}
+              title="Modo de seleção"
+            >
+              <CheckSquare className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onToggleMinimize}
+              className="p-2 hover:bg-gray-light rounded transition-colors"
+              title="Minimizar"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-DEFAULT rotate-90" />
+            </button>
+          </div>
+        </div>
+
+        {/* Resto do conteúdo igual ao desktop, mas com espaçamentos mobile */}
+        {effectiveBatchMode && effectiveSelectedSlides.size > 0 && (
+          <div className="px-4 py-3 bg-blue-light/30 border-b border-gray-light flex items-center justify-between">
+            <span className="text-sm text-blue-dark font-medium">
+              {effectiveSelectedSlides.size} selecionado(s)
+            </span>
+            <button
+              onClick={onBatchDelete}
+              className="text-sm text-red-500 hover:text-red-700 font-medium flex items-center gap-1"
+            >
+              <Trash2 className="w-4 h-4" />
+              Excluir
+            </button>
+          </div>
+        )}
+
+        {/* Slides list mobile */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 mobile-scroll">
+          {effectiveSlides.map((_, index) => {
+            const conteudo = getPreviewConteudo(index);
+            const key = conteudo?.id ?? `${index}-${effectiveSlides.length}`;
+
+            return (
+              <SlideCard
+                key={key}
+                index={index}
+                conteudo={conteudo}
+                isActive={effectiveFocused === index}
+                isGenerating={generatingSlides.has(index)}
+                hasError={errorSlides.has(index)}
+                isBatchMode={effectiveBatchMode}
+                isSelected={effectiveSelectedSlides.has(index)}
+                canDelete={canDelete}
+                onSelect={() => onSlideClick(index)}
+                onDelete={() => onDeleteSlide?.(index)}
+                onBatchToggle={() => onToggleSlideSelection(index)}
+              />
+            );
+          })}
+
+          {/* Add slide button mobile */}
+          <button
+            onClick={onAddSlide}
+            className="w-full p-5 rounded-lg border-2 border-dashed border-gray-light hover:border-blue-DEFAULT hover:bg-blue-light/10 transition-all flex items-center justify-center gap-3 text-gray-DEFAULT hover:text-blue-DEFAULT"
+          >
+            <Plus className="w-6 h-6" />
+            <span className="text-base font-medium">Adicionar Slide</span>
+          </button>
+        </div>
+
+        {/* Footer mobile */}
+        <div className="p-4 border-t border-gray-light bg-white">
+          <button
+            onClick={onBackToSetup}
+            className="w-full py-3 px-4 rounded-lg bg-gray-light hover:bg-gray-light/70 text-gray-dark text-base font-medium flex items-center justify-center gap-2 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Voltar ao Setup
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Layout Desktop
   if (isMinimized) {
     return (
       <div className="w-14 bg-white border-r border-gray-light flex flex-col items-center shrink-0">

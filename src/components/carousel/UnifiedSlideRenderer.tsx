@@ -33,6 +33,15 @@ interface UnifiedSlideRendererProps {
   // Para modo React
   slideData?: SlideData;
   dadosGerais?: DadosGerais;
+  globalSettings?: {
+    theme?: 'light' | 'dark';
+    accentColor?: string;
+    showSlideNumber?: boolean;
+    showVerifiedBadge?: boolean;
+    headerScale?: number;
+    fontStyle?: string;
+    fontScale?: number;
+  };
   
   // Comum
   templateId: string;
@@ -47,6 +56,7 @@ const UnifiedSlideRenderer: React.FC<UnifiedSlideRendererProps> = ({
   slideContent,
   slideData,
   dadosGerais,
+  globalSettings,
   templateId,
   slideIndex = 0,
   styles = {},
@@ -68,6 +78,7 @@ const UnifiedSlideRenderer: React.FC<UnifiedSlideRendererProps> = ({
         slideData={slideData}
         dadosGerais={dadosGerais}
         styles={styles[String(slideIndex)] || {}}
+        globalSettings={globalSettings}
         className={className}
         containerWidth={containerWidth}
         containerHeight={containerHeight}

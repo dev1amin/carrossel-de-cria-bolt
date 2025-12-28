@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
-import { ReactSlideRenderer, getTemplateDimensions } from '../templates/react';
+import { ReactSlideRenderer } from '../templates/react';
 
 // Dimensões dos templates (legado + React)
 const TEMPLATE_DIMENSIONS: Record<string, { width: number; height: number }> = {
@@ -108,7 +108,6 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
   // ✅ TEMPLATE REACT: Se for dados de template React, usa ReactSlideRenderer
   if (slideData && '__reactTemplate' in slideData && slideData.__reactTemplate === true) {
     const reactData = slideData as ReactTemplateData;
-    const dims = getTemplateDimensions(reactData.templateId);
     
     return (
       <div 
@@ -124,6 +123,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
           slideIndex={reactData.slideIndex}
           slideData={reactData.slideData}
           dadosGerais={reactData.dadosGerais}
+          globalSettings={reactData.globalSettings}
           containerWidth={effectiveWidth}
           containerHeight={effectiveHeight}
         />
@@ -380,7 +380,9 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
   }
 
   // Se for JSON, renderiza como card visual
-  const backgroundImage = slideData.imagem_fundo || slideData.imagem_fundo2 || slideData.imagem_fundo3;
+  // Após verificar que não é ReactTemplate, fazemos type assertion para SlideData
+  const jsonSlideData = slideData as SlideData;
+  const backgroundImage = jsonSlideData.imagem_fundo || jsonSlideData.imagem_fundo2 || jsonSlideData.imagem_fundo3;
   const isVideo = backgroundImage?.includes('.mp4');
 
   // Estado para controlar se a mídia carregou com sucesso
@@ -417,7 +419,7 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
           ) : (
             <img
               src={backgroundImage}
-              alt={slideData.title || 'Slide background'}
+              alt={jsonSlideData.title || 'Slide background'}
               className="w-full h-full object-cover"
               loading="lazy"
               onError={handleMediaError}
@@ -431,23 +433,23 @@ const SlideRenderer: React.FC<SlideRendererProps> = ({
 
       {/* Conteúdo */}
       <div className="relative z-10 text-white">
-        {slideData.title && (
+        {jsonSlideData.title && (
           <h2 className="text-3xl font-bold mb-3 leading-tight drop-shadow-lg">
-            {slideData.title}
+            {jsonSlideData.title}
           </h2>
         )}
-        {slideData.subtitle && (
+        {jsonSlideData.subtitle && (
           <p className="text-lg opacity-90 leading-relaxed drop-shadow-md">
-            {slideData.subtitle}
+            {jsonSlideData.subtitle}
           </p>
         )}
       </div>
 
       {/* Thumbnail (se existir e não for o background principal) */}
-      {slideData.thumbnail_url && slideData.thumbnail_url !== backgroundImage && (
+      {jsonSlideData.thumbnail_url && jsonSlideData.thumbnail_url !== backgroundImage && (
         <div className="absolute top-4 right-4 w-20 h-20 rounded-lg overflow-hidden border-2 border-white/20">
           <img
-            src={slideData.thumbnail_url}
+            src={jsonSlideData.thumbnail_url}
             alt="Thumbnail"
             className="w-full h-full object-cover"
             loading="lazy"

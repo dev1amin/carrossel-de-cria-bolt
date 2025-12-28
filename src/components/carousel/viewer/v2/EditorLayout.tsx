@@ -1,5 +1,5 @@
 /**
- * EditorLayout - Layout principal do editor (compartilhado entre mobile/desktop)
+ * EditorLayout - Layout principal do editor (apenas desktop)
  */
 
 import React, { memo } from 'react';
@@ -14,11 +14,10 @@ import { RightPropertiesPanel } from '../RightPropertiesPanel';
 import { SlideCloneModal } from '../SlideCloneModal';
 
 interface EditorLayoutProps {
-  isMobile: boolean;
   onClose: () => void;
 }
 
-export const EditorLayout: React.FC<EditorLayoutProps> = memo(({ isMobile, onClose }) => {
+export const EditorLayout: React.FC<EditorLayoutProps> = memo(({ onClose }) => {
   const { state, actions, refs, data } = useEditor();
   
   const {
@@ -69,11 +68,7 @@ export const EditorLayout: React.FC<EditorLayoutProps> = memo(({ isMobile, onClo
     );
   }
   
-  // Layout Mobile (em desenvolvimento - por enquanto usa mesmo que desktop)
-  if (isMobile) {
-    // TODO: Implementar layout mobile específico
-    // Por enquanto usa o layout desktop
-  }
+  // ...existing code...
   
   // Layout Desktop
   return (

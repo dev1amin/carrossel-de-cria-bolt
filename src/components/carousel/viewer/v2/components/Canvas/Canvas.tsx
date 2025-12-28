@@ -6,6 +6,7 @@ import React, { memo } from 'react';
 import { useEditor } from '../../context/EditorContext';
 import { CanvasControls } from './CanvasControls';
 import { SlideRenderer } from './SlideRenderer';
+// ...existing code...
 
 export const Canvas: React.FC = memo(() => {
   const { state, actions, refs, data } = useEditor();
@@ -14,6 +15,8 @@ export const Canvas: React.FC = memo(() => {
   const { zoom, pan, isDragging, dragStart } = canvas;
   const { templateDimensions } = data;
   const { containerRef } = refs;
+  
+  // ...existing code...
   
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-light">
@@ -24,6 +27,7 @@ export const Canvas: React.FC = memo(() => {
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none',
           background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+          height: 'auto',
         }}
         onMouseDown={(e) => {
           if (e.button === 0 && e.target === e.currentTarget) {
@@ -38,7 +42,6 @@ export const Canvas: React.FC = memo(() => {
         }}
         onMouseUp={(e) => {
           actions.setIsDragging(false);
-          // Se clicar no canvas (área de fundo), remove a seleção do elemento
           if (e.target === e.currentTarget) {
             actions.setSelectedElement({ slideIndex: focusedSlide, element: null });
           }
@@ -75,16 +78,16 @@ export const Canvas: React.FC = memo(() => {
         <CanvasControls />
 
         {/* Slide info */}
-        <div className="absolute top-4 left-4 z-20">
+        <div className="absolute z-20 top-4 left-4">
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md border border-gray-light px-3 py-1.5">
-            <span className="text-sm font-medium text-gray-dark">
+            <span className="font-medium text-gray-dark text-sm">
               Slide {focusedSlide + 1}
             </span>
             <span className="text-xs text-gray-DEFAULT ml-2">
               {templateDimensions.width} × {templateDimensions.height}px
             </span>
             {data.isReactTemplate && (
-              <span className="text-xs text-blue-500 ml-2 font-medium">
+              <span className="text-blue-500 font-medium ml-2 text-xs">
                 React
               </span>
             )}

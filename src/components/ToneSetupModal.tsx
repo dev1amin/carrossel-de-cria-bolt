@@ -756,7 +756,7 @@ export const ToneSetupModal: React.FC<ToneSetupModalProps> = ({ isOpen, onClose,
 
       console.log('💾 Salvando tom de voz:', saveData);
       
-      const response = await fetch('https://carousel-api-sepia.vercel.app/api/business/tone-of-voice', {
+      const response = await fetch('/api/business/tone-of-voice', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

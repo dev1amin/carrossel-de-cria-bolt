@@ -80,10 +80,9 @@ const GRADIENTS = {
 };
 
 // Componente de Background com imagem
-const BackgroundWithGradient: React.FC<{ src?: string; gradient: string; position?: string }> = ({ 
+const BackgroundWithGradient: React.FC<{ src?: string; gradient: string }> = ({ 
   src, 
-  gradient, 
-  position = 'center center' 
+  gradient
 }) => {
   const [hasError, setHasError] = useState(false);
   

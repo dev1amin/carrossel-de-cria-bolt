@@ -49,6 +49,15 @@ export interface ReactCanvasPreviewProps {
   slideData: SlideData;
   dadosGerais: DadosGerais;
   elementStyles?: Record<string, ElementStyles>;
+  globalSettings?: {
+    theme?: 'light' | 'dark';
+    accentColor?: string;
+    showSlideNumber?: boolean;
+    showVerifiedBadge?: boolean;
+    headerScale?: number;
+    fontStyle?: string;
+    fontScale?: number;
+  };
   containerRef: React.MutableRefObject<HTMLDivElement | null>;
   slideRef?: (el: HTMLDivElement | null) => void; // Ref callback para capturar o elemento do slide
   selectedElement?: { slideIndex: number; element: EditableElementType };
@@ -81,8 +90,7 @@ export const ReactCanvasPreview = forwardRef<ReactCanvasPreviewRef, ReactCanvasP
   templateId,
   slideData,
   dadosGerais,
-  elementStyles = {},
-  containerRef,
+  elementStyles = {},  globalSettings,  containerRef,
   slideRef: externalSlideRef,
   selectedElement,
   onWheel,
@@ -285,6 +293,7 @@ export const ReactCanvasPreview = forwardRef<ReactCanvasPreviewRef, ReactCanvasP
               slideData={slideData}
               dadosGerais={dadosGerais}
               styles={elementStyles}
+              globalSettings={globalSettings}
               containerWidth={templateDims.width}
               containerHeight={templateDims.height}
               onElementClick={onElementClick}

@@ -13,7 +13,7 @@
 // NOTA: Templates 1-8 agora são 100% React (não precisam de JSON)
 const templateImports: Record<string, () => Promise<{ default: { slides: string[] } }>> = {
   // Templates 1-8 são React puro, não precisam de JSON
-  '9': () => import('../../templates/template9.json'),
+  // Template 9 removido - não existe o arquivo JSON
 };
 
 // Templates que usam renderização React (sem iframe, sem JSON)

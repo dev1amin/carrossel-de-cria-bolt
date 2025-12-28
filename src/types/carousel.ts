@@ -33,7 +33,7 @@ export interface CarouselResponse extends CarouselData {}
 
 // ==================== Element Types ====================
 
-export type ElementType = 'title' | 'subtitle' | 'background' | 'image' | 'nome' | 'arroba' | 'avatar' | null;
+export type ElementType = 'title' | 'subtitle' | 'background' | 'image' | 'nome' | 'arroba' | 'avatar' | 'slide' | null;
 
 export interface ElementStyles {
   fontSize?: string;
@@ -42,6 +42,9 @@ export interface ElementStyles {
   textDecoration?: string; // 'none' | 'underline' | 'line-through'
   textAlign?: string;
   color?: string;
+  backgroundColor?: string; // Para cor de fundo
+  backgroundPosition?: string; // Para posição de background
+  backgroundSize?: string; // Para tamanho de background
   objectPosition?: string; // Para imagens e vídeos
   backgroundPositionX?: string; // Para backgrounds CSS
   backgroundPositionY?: string; // Para backgrounds CSS

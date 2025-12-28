@@ -26,10 +26,18 @@ import {
   Upload,
   Crop,
 } from 'lucide-react';
-import type { CarouselData, ElementType, ElementStyles, TemplateCompatibility } from '../../../types/carousel';
+import type { CarouselData, ElementStyles, TemplateCompatibility } from '../../../types/carousel';
+import type { EditableElement } from './v2/types';
 import { isVideoUrl } from './viewerUtils';
 import { EditorGallery } from './EditorGallery';
 import { ImageCropModal } from './ImageCropModal';
+
+// Cores predefinidas para o color picker (mesmas da FloatingToolbar)
+const PRESET_COLORS = [
+  '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF',
+  '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#800080',
+  '#FFC0CB', '#808080', '#A52A2A', '#FFD700', '#4167B2',
+];
 
 // === Rich Text Editor Component ===
 interface RichTextEditorProps {
@@ -51,8 +59,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const lastValueRef = useRef(value);
   const isInternalChange = useRef(false);
-  const colorPickerRef = useRef<HTMLInputElement>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
   const savedSelectionRef = useRef<Range | null>(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [currentColor, setCurrentColor] = useState('#FFFFFF');
 
   // Atualiza o conteúdo apenas quando o valor externo muda E não é uma mudança interna
   useEffect(() => {
@@ -132,10 +142,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [onChange]);
 
   // Handler para o color picker
-  const handleColorChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const color = e.target.value;
+  const handleColorChange = useCallback((color: string) => {
+    console.log('🎨 RichTextEditor: Mudando cor para', color);
+    setCurrentColor(color);
+    setShowColorPicker(false);
     
     // Restaura a seleção antes de aplicar a cor
     restoreSelection();
@@ -147,7 +157,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       lastValueRef.current = newValue;
       onChange(newValue);
     }
-  }, [onChange, restoreSelection]);
+    saveSelection();
+  }, [onChange, restoreSelection, saveSelection]);
 
   // Esconde toolbar quando clicar fora (mas não imediatamente)
   const handleBlur = useCallback((e: React.FocusEvent) => {
@@ -160,9 +171,35 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       const activeElement = document.activeElement as HTMLElement;
       if (!activeElement?.closest('.rich-text-toolbar')) {
         setShowToolbar(false);
+        setShowColorPicker(false);
       }
     }, 300);
   }, []);
+
+  // Fecha color picker ao clicar fora
+  useEffect(() => {
+    if (!showColorPicker) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (colorPickerRef.current && !colorPickerRef.current.contains(e.target as Node)) {
+        setShowColorPicker(false);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowColorPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showColorPicker]);
 
   return (
     <div className="relative">
@@ -195,51 +232,62 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <Underline className="w-3.5 h-3.5" />
           </button>
           <div className="w-px h-4 bg-gray-600 mx-1" />
-          {/* Color picker que não fecha a toolbar */}
-          <div 
-            className="relative"
-            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-          >
-            <input
-              ref={colorPickerRef}
-              type="color"
-              className="w-6 h-6 rounded cursor-pointer border-0"
-              onMouseDown={(e) => { 
-                e.stopPropagation();
+          
+          {/* Color picker dropdown - igual à FloatingToolbar */}
+          <div className="relative" ref={colorPickerRef}>
+            <button
+              onMouseDown={(e) => {
                 e.preventDefault();
-                saveSelection(); 
-              }}
-              onInput={(e) => {
-                // Aplica cor durante o arrasto
                 e.stopPropagation();
-                e.preventDefault();
-                const color = (e.target as HTMLInputElement).value;
-                restoreSelection();
-                document.execCommand('foreColor', false, color);
-                if (editorRef.current) {
-                  isInternalChange.current = true;
-                  const newValue = editorRef.current.innerHTML;
-                  lastValueRef.current = newValue;
-                  onChange(newValue);
-                }
                 saveSelection();
+                setShowColorPicker(!showColorPicker);
               }}
-              onChange={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleColorChange(e);
-              }}
-              onBlur={(e) => {
-                // Não propaga o blur para não fechar a toolbar
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
+              className="p-1.5 rounded hover:bg-gray-700 text-white flex items-center gap-1"
               title="Cor do texto"
-            />
+              style={{ color: currentColor }}
+            >
+              <Palette className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Dropdown de cores */}
+            {showColorPicker && (
+              <div
+                className="absolute top-full left-0 mt-1 bg-gray-900 rounded-lg shadow-lg p-2 z-50"
+                style={{ minWidth: '180px' }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <div className="grid grid-cols-5 gap-1 mb-2">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handleColorChange(color)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="w-7 h-7 rounded border-2 border-gray-700 hover:border-white transition-colors"
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+                
+                {/* Input customizado */}
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-700">
+                  <input
+                    type="color"
+                    value={currentColor}
+                    onChange={(e) => handleColorChange(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer"
+                    title="Escolher cor personalizada"
+                  />
+                  <span className="text-xs text-gray-400 flex-1">{currentColor}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -270,7 +318,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
 // === Types ===
 interface RightPropertiesPanelProps {
-  selectedElement: { slideIndex: number; element: ElementType };
+  selectedElement: { slideIndex: number; element: EditableElement };
   carouselData: CarouselData;
   editedContent: Record<string, any>;
   isLoadingProperties: boolean;
@@ -279,12 +327,13 @@ interface RightPropertiesPanelProps {
   isSearching: boolean;
   uploadedImages: Record<number, string>;
   isMinimized?: boolean;
+  isMobile?: boolean; // Nova prop para mobile
   templateCompatibility?: TemplateCompatibility;
   globalSettings: GlobalSettings;
   iframeRefs?: React.MutableRefObject<(HTMLIFrameElement | null)[]>;
   onToggleMinimize?: () => void;
   onUpdateEditedValue: (slideIndex: number, field: string, value: any) => void;
-  onUpdateElementStyle: (slideIndex: number, element: ElementType, prop: keyof ElementStyles, value: string) => void;
+  onUpdateElementStyle: (slideIndex: number, element: EditableElement, prop: keyof ElementStyles, value: string) => void;
   onBackgroundImageChange: (slideIndex: number, imageUrl: string) => void;
   onAvatarChange?: (imageUrl: string) => void;
   onSearchKeywordChange: (keyword: string) => void;
@@ -292,7 +341,7 @@ interface RightPropertiesPanelProps {
   onImageUpload: (slideIndex: number, e: React.ChangeEvent<HTMLInputElement>) => void;
   onAvatarUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onGenerateAIImage?: (slideIndex: number, prompt?: string) => void;
-  getElementStyle: (slideIndex: number, element: ElementType) => ElementStyles;
+  getElementStyle: (slideIndex: number, element: EditableElement) => ElementStyles;
   getEditedValue: (slideIndex: number, field: string, def: any) => any;
   onUpdateGlobalSettings: (settings: Partial<GlobalSettings>) => void;
 }
@@ -464,7 +513,7 @@ const AvatarSettings: React.FC<AvatarSettingsProps> = ({
       formData.append('file', file);
       const token = localStorage.getItem('access_token');
       
-      const response = await fetch('https://carousel-api-sepia.vercel.app/api/business/images', {
+      const response = await fetch('/api/business/images', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -520,7 +569,7 @@ const AvatarSettings: React.FC<AvatarSettingsProps> = ({
       formData.append('file', file);
       const token = localStorage.getItem('access_token');
       
-      const uploadResponse = await fetch('https://carousel-api-sepia.vercel.app/api/business/images', {
+      const uploadResponse = await fetch('/api/business/images', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -669,6 +718,7 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
   isSearching,
   uploadedImages,
   isMinimized = false,
+  isMobile = false,
   templateCompatibility = 'video-image',
   globalSettings,
   iframeRefs,
@@ -803,6 +853,519 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
     };
   };
 
+  // Layout mobile: diferentes comportamentos
+  if (isMobile) {
+    if (isMinimized) {
+      // Mobile minimizado: botão flutuante no canto
+      return (
+        <button
+          onClick={onToggleMinimize}
+          className="fixed bottom-20 right-4 w-14 h-14 bg-white border border-gray-light rounded-full shadow-lg flex items-center justify-center z-40 hover:bg-gray-light transition-colors"
+          title="Expandir Propriedades"
+        >
+          <Settings2 className="w-6 h-6 text-blue-DEFAULT" />
+        </button>
+      );
+    }
+
+    // Mobile expandido: painel que cobre a tela
+    return (
+      <div className="fixed inset-0 bg-white z-40 flex flex-col">
+        {/* Header Mobile */}
+        <div className="h-16 border-b border-gray-light flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <Settings2 className="w-5 h-5 text-blue-DEFAULT" />
+            <h3 className="text-gray-dark font-semibold text-lg">Propriedades</h3>
+          </div>
+          <button
+            onClick={onToggleMinimize}
+            className="p-2 hover:bg-gray-light rounded transition-colors"
+            title="Minimizar"
+          >
+            <ChevronRight className="w-5 h-5 text-gray-DEFAULT" />
+          </button>
+        </div>
+
+        {/* Content Mobile */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 mobile-scroll">
+          {/* SECTION A: Global Settings */}
+          <CollapsibleSection
+            title="Configurações Globais"
+            icon={<Sliders className="w-5 h-5 text-blue-DEFAULT" />}
+            isOpen={openSections.global}
+            onToggle={() => toggleSection('global')}
+          >
+            <div className="space-y-6">
+              {/* Theme Toggle - Only for templates 7 and 8 */}
+              {(data.dados_gerais?.template === '7' || data.dados_gerais?.template === '8') && (
+                <div className="flex items-center justify-between py-4 px-4 bg-gray-light/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Sun className="w-5 h-5 text-yellow-500" />
+                    <span className="text-base font-medium text-gray-dark">Tema</span>
+                  </div>
+                  <div className="flex items-center bg-white rounded-lg border border-gray-light p-1">
+                    <button
+                      onClick={() => onUpdateGlobalSettings({ theme: 'light' })}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        globalSettings.theme === 'light'
+                          ? 'bg-blue-DEFAULT text-white'
+                          : 'text-gray-DEFAULT hover:text-gray-dark'
+                      }`}
+                    >
+                      Light
+                    </button>
+                    <button
+                      onClick={() => onUpdateGlobalSettings({ theme: 'dark' })}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        globalSettings.theme === 'dark'
+                          ? 'bg-blue-dark text-white'
+                          : 'text-gray-DEFAULT hover:text-gray-dark'
+                      }`}
+                    >
+                      Dark
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Background Color - Mobile Layout */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Palette className="w-5 h-5 text-blue-DEFAULT" />
+                  <label className="text-base font-medium text-gray-dark">Cor de Fundo</label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={globalSettings.accentColor}
+                    onChange={(e) => onUpdateGlobalSettings({ accentColor: e.target.value })}
+                    className="w-12 h-12 rounded cursor-pointer border border-gray-light"
+                  />
+                  <input
+                    type="text"
+                    value={globalSettings.accentColor}
+                    onChange={(e) => onUpdateGlobalSettings({ accentColor: e.target.value })}
+                    className="flex-1 px-4 py-3 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                    placeholder="#4167B2"
+                  />
+                </div>
+              </div>
+
+              {/* Toggles - Mobile */}
+              <div className="space-y-4">
+                <ToggleControl
+                  label="Número do Slide"
+                  icon={<Hash className="w-5 h-5 text-gray-DEFAULT" />}
+                  checked={globalSettings.showSlideNumber}
+                  onChange={(checked) => onUpdateGlobalSettings({ showSlideNumber: checked })}
+                />
+                <ToggleControl
+                  label="Badge Verificado"
+                  icon={<BadgeCheck className="w-5 h-5 text-blue-DEFAULT" />}
+                  checked={globalSettings.showVerifiedBadge}
+                  onChange={(checked) => onUpdateGlobalSettings({ showVerifiedBadge: checked })}
+                />
+              </div>
+
+              {/* Font Style - Mobile */}
+              <div className="space-y-3">
+                <label className="text-base font-medium text-gray-dark block">
+                  Estilo de Fonte
+                </label>
+                <select
+                  value={globalSettings.fontStyle}
+                  onChange={(e) => onUpdateGlobalSettings({ fontStyle: e.target.value })}
+                  className="w-full px-4 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT bg-white"
+                >
+                  <option value="sans">Sans Serif</option>
+                  <option value="serif">Serif</option>
+                  <option value="mono">Monospace</option>
+                  <option value="display">Display</option>
+                </select>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          {/* SECTION B: Slide Settings - Mobile */}
+          <CollapsibleSection
+            title="Configurações do Slide"
+            icon={<Type className="w-5 h-5 text-blue-DEFAULT" />}
+            isOpen={openSections.slide}
+            onToggle={() => toggleSection('slide')}
+            badge={`#${selectedElement.slideIndex + 1}`}
+          >
+            {selectedElement.element === null ? (
+              <div className="text-center py-12">
+                <Type className="w-16 h-16 text-gray-light mx-auto mb-4" />
+                <p className="text-lg text-gray-DEFAULT">Selecione um elemento</p>
+                <p className="text-base text-gray-DEFAULT mt-2">
+                  Toque em um elemento no preview para editar
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Text Elements */}
+                {(selectedElement.element === 'title' || 
+                  selectedElement.element === 'subtitle' || 
+                  selectedElement.element === 'nome' || 
+                  selectedElement.element === 'arroba') && (
+                  <>
+                    {/* Text Content - Mobile */}
+                    <div className="space-y-3">
+                      <label className="text-base font-medium text-gray-dark block">
+                        Conteúdo do Texto
+                      </label>
+                      <textarea
+                        rows={selectedElement.element === 'title' ? 4 : 3}
+                        value={(() => {
+                          if (selectedElement.element === 'nome' || selectedElement.element === 'arroba') {
+                            const defaultValue = data.dados_gerais?.[selectedElement.element] || '';
+                            return editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? defaultValue;
+                          }
+                          const v = data.conteudos[selectedElement.slideIndex]?.[selectedElement.element] || '';
+                          const cleanValue = editedContent[`${selectedElement.slideIndex}-${selectedElement.element}`] ?? v;
+                          return cleanValue.replace(/<[^>]*>/g, ''); // Remove HTML tags para mobile
+                        })()}
+                        onChange={(e) =>
+                          onUpdateEditedValue(selectedElement.slideIndex, selectedElement.element!, e.target.value)
+                        }
+                        className="w-full px-4 py-4 text-base border border-gray-light rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                        placeholder="Digite o texto..."
+                      />
+                    </div>
+
+                    {/* Typography Settings - Mobile Grid */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-3">
+                          <label className="text-base font-medium text-gray-dark block">
+                            Tamanho da Fonte
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                            value={getElementStyle(selectedElement.slideIndex, selectedElement.element).fontSize}
+                            onChange={(e) =>
+                              onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'fontSize', e.target.value)
+                            }
+                            placeholder="24px"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-base font-medium text-gray-dark block">
+                            Peso da Fonte
+                          </label>
+                          <select
+                            className="w-full px-4 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT bg-white"
+                            value={getElementStyle(selectedElement.slideIndex, selectedElement.element).fontWeight}
+                            onChange={(e) =>
+                              onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'fontWeight', e.target.value)
+                            }
+                          >
+                            <option value="300">Light</option>
+                            <option value="400">Regular</option>
+                            <option value="500">Medium</option>
+                            <option value="600">Semi Bold</option>
+                            <option value="700">Bold</option>
+                            <option value="800">Extra Bold</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Text Align - Mobile */}
+                    <div className="space-y-3">
+                      <label className="text-base font-medium text-gray-dark block">
+                        Alinhamento
+                      </label>
+                      <div className="flex items-center gap-2 bg-gray-light/50 rounded-lg p-2">
+                        {[
+                          { value: 'left', icon: AlignLeft, label: 'Esquerda' },
+                          { value: 'center', icon: AlignCenter, label: 'Centro' },
+                          { value: 'right', icon: AlignRight, label: 'Direita' },
+                        ].map(({ value, icon: Icon, label }) => (
+                          <button
+                            key={value}
+                            onClick={() =>
+                              onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'textAlign', value)
+                            }
+                            className={`flex-1 p-4 rounded-lg transition-all flex flex-col items-center gap-2 ${
+                              getElementStyle(selectedElement.slideIndex, selectedElement.element).textAlign === value
+                                ? 'bg-blue-DEFAULT text-white shadow-lg'
+                                : 'bg-white hover:bg-blue-50 text-gray-dark'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Color - Mobile */}
+                    <div className="space-y-3">
+                      <label className="text-base font-medium text-gray-dark block">
+                        Cor do Texto
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          className="w-12 h-12 rounded cursor-pointer border border-gray-light"
+                          value={getElementStyle(selectedElement.slideIndex, selectedElement.element).color}
+                          onChange={(e) =>
+                            onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'color', e.target.value)
+                          }
+                        />
+                        <input
+                          type="text"
+                          className="flex-1 px-4 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                          value={getElementStyle(selectedElement.slideIndex, selectedElement.element).color}
+                          onChange={(e) =>
+                            onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'color', e.target.value)
+                          }
+                          placeholder="#FFFFFF"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Background - Cor de Fundo do Slide */}
+                {selectedElement.element === 'background' && (
+                  <div className="space-y-3">
+                    <label className="text-base font-medium text-gray-dark block">
+                      Cor de Fundo do Slide
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        className="w-12 h-12 rounded cursor-pointer border border-gray-light"
+                        value={getElementStyle(selectedElement.slideIndex, selectedElement.element).backgroundColor || '#000000'}
+                        onChange={(e) =>
+                          onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'backgroundColor', e.target.value)
+                        }
+                      />
+                      <input
+                        type="text"
+                        className="flex-1 px-4 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                        value={getElementStyle(selectedElement.slideIndex, selectedElement.element).backgroundColor || '#000000'}
+                        onChange={(e) =>
+                          onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'backgroundColor', e.target.value)
+                        }
+                        placeholder="#000000"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </CollapsibleSection>
+
+          {/* SECTION C: Image Settings - Mobile */}
+          {(selectedElement.element === 'background' || selectedElement.element === 'image') && (
+            <CollapsibleSection
+              title="Configurações de Imagem"
+              icon={<ImageIcon className="w-5 h-5 text-blue-DEFAULT" />}
+              isOpen={openSections.image}
+              onToggle={() => toggleSection('image')}
+            >
+              {isLoadingProperties ? (
+                <div className="flex items-center justify-center h-32">
+                  <Loader2 className="w-8 h-8 text-blue-DEFAULT animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Current Images - Mobile Grid */}
+                  <div className="space-y-3">
+                    <label className="text-base font-medium text-gray-dark">
+                      Imagens Disponíveis
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        data.conteudos[selectedElement.slideIndex]?.imagem_fundo,
+                        data.conteudos[selectedElement.slideIndex]?.imagem_fundo2,
+                        data.conteudos[selectedElement.slideIndex]?.imagem_fundo3,
+                        uploadedImages[selectedElement.slideIndex],
+                      ].filter(Boolean).map((url, idx) => {
+                        const isVid = isVideoUrl(url);
+                        if (isVid && !canUseVideo) return null;
+                        
+                        const currentBg = getEditedValue(
+                          selectedElement.slideIndex,
+                          'background',
+                          data.conteudos[selectedElement.slideIndex]?.imagem_fundo
+                        );
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => onBackgroundImageChange(selectedElement.slideIndex, url)}
+                            className={`
+                              relative rounded-lg overflow-hidden cursor-pointer transition-all
+                              ${currentBg === url 
+                                ? 'ring-4 ring-blue-DEFAULT ring-offset-2' 
+                                : 'hover:ring-4 hover:ring-blue-light ring-offset-2'
+                              }
+                            `}
+                          >
+                            <img 
+                              src={url} 
+                              alt={`Option ${idx + 1}`}
+                              className="w-full aspect-square object-cover"
+                            />
+                            {isVid && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                <Play className="w-8 h-8 text-white" fill="white" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Image Position - Mobile */}
+                  <div className="space-y-3">
+                    <label className="text-base font-medium text-gray-dark block">
+                      Posição da Imagem
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { value: 'top', label: 'Topo', icon: '⬆️' },
+                        { value: 'center', label: 'Centro', icon: '⬅️➡️' },
+                        { value: 'bottom', label: 'Baixo', icon: '⬇️' },
+                      ].map(({ value, label, icon }) => (
+                        <button
+                          key={value}
+                          onClick={() => handleImagePositionChange(value as 'top' | 'center' | 'bottom')}
+                          className={`
+                            flex flex-col items-center gap-2 py-4 rounded-lg text-sm font-medium transition-all border-2
+                            ${imageSettings.position === value
+                              ? 'bg-blue-DEFAULT text-white border-blue-DEFAULT'
+                              : 'bg-white text-gray-dark border-gray-light hover:border-blue-light hover:bg-blue-light/10'
+                            }
+                          `}
+                        >
+                          <span className="text-2xl">{icon}</span>
+                          <span>{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Search Images - Mobile */}
+                  <div className="space-y-3">
+                    <label className="text-base font-medium text-gray-dark block">
+                      Buscar Imagens
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={searchKeyword}
+                        onChange={(e) => onSearchKeywordChange(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && onSearchImages()}
+                        className="w-full pl-12 pr-20 py-4 text-base border border-gray-light rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                        placeholder="Buscar imagens..."
+                      />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-DEFAULT" />
+                      <button
+                        onClick={onSearchImages}
+                        disabled={isSearching || !searchKeyword.trim()}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-blue-DEFAULT text-white text-sm rounded-md disabled:bg-gray-light disabled:text-gray-DEFAULT"
+                      >
+                        {isSearching ? '...' : 'Buscar'}
+                      </button>
+                    </div>
+
+                    {searchResults.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                        {searchResults.map((url, idx) => (
+                          <img
+                            key={idx}
+                            src={url}
+                            alt={`Result ${idx + 1}`}
+                            onClick={() => onBackgroundImageChange(selectedElement.slideIndex, url)}
+                            className="w-full aspect-square object-cover rounded cursor-pointer hover:ring-4 hover:ring-blue-DEFAULT ring-offset-2"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Generate - Mobile */}
+                  <div className="pt-4 border-t border-gray-light space-y-3">
+                    <label className="text-base font-medium text-gray-dark block">
+                      Gerar com IA
+                    </label>
+                    <textarea
+                      value={imageSettings.aiPrompt}
+                      onChange={(e) => setImageSettings((prev) => ({ ...prev, aiPrompt: e.target.value }))}
+                      className="w-full px-4 py-4 text-base border border-gray-light rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-DEFAULT"
+                      rows={3}
+                      placeholder="Descreva a imagem que deseja gerar..."
+                    />
+                    <button
+                      onClick={() => {
+                        setIsGeneratingAI(true);
+                        onGenerateAIImage?.(selectedElement.slideIndex, imageSettings.aiPrompt);
+                      }}
+                      disabled={isGeneratingAI || !imageSettings.aiPrompt.trim()}
+                      className="w-full flex items-center justify-center gap-3 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {isGeneratingAI ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Gerando...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          Gerar Imagem
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </CollapsibleSection>
+          )}
+
+          {/* SECTION D: Gallery - Mobile */}
+          <CollapsibleSection
+            title="Galeria de Imagens"
+            icon={<Images className="w-5 h-5 text-blue-DEFAULT" />}
+            isOpen={openSections.gallery}
+            onToggle={() => toggleSection('gallery')}
+          >
+            <div className="space-y-4">
+              {/* Upload de imagem */}
+              <div>
+                <label className="block w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => _onImageUpload(selectedElement.slideIndex, e)}
+                    className="hidden"
+                  />
+                  <div className="w-full py-8 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-blue-DEFAULT hover:bg-blue-light/10 transition-colors">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
+                    <p className="text-base font-medium text-gray-600">Toque para fazer upload</p>
+                    <p className="text-sm text-gray-400 mt-1">PNG, JPG até 10MB</p>
+                  </div>
+                </label>
+              </div>
+              
+              <div className="text-sm text-gray-DEFAULT text-center">
+                Galeria completa em desenvolvimento
+              </div>
+            </div>
+          </CollapsibleSection>
+        </div>
+      </div>
+    );
+  }
+
+  // Layout Desktop
   // Minimized state
   if (isMinimized) {
     return (
@@ -1105,6 +1668,36 @@ export const RightPropertiesPanel: React.FC<RightPropertiesPanelProps> = ({
                       });
                   }}
                 />
+              )}
+
+              {/* Background - Cor de Fundo do Slide */}
+              {selectedElement.element === 'background' && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium text-gray-dark block mb-1.5">
+                      Cor de Fundo
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        className="w-8 h-8 rounded cursor-pointer border border-gray-light"
+                        value={getElementStyle(selectedElement.slideIndex, selectedElement.element).backgroundColor || '#000000'}
+                        onChange={(e) =>
+                          onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'backgroundColor', e.target.value)
+                        }
+                      />
+                      <input
+                        type="text"
+                        className="flex-1 px-2 py-1.5 text-xs border border-gray-light rounded focus:outline-none focus:ring-1 focus:ring-blue-DEFAULT"
+                        value={getElementStyle(selectedElement.slideIndex, selectedElement.element).backgroundColor || '#000000'}
+                        onChange={(e) =>
+                          onUpdateElementStyle(selectedElement.slideIndex, selectedElement.element!, 'backgroundColor', e.target.value)
+                        }
+                        placeholder="#000000"
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </>
           )}

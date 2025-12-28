@@ -154,8 +154,23 @@ export const Slide1Cover: React.FC<SlideProps> = ({ data }) => {
         gridTemplateRows: 'minmax(0, 1fr) auto',
         background: '#000',
         color: '#111',
+        position: 'relative',
       }}
     >
+      {/* Background editável */}
+      <div 
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+      
       <style>{FONT_IMPORT}</style>
 
       {/* Foto top */}
@@ -212,8 +227,23 @@ export const SlideContent: React.FC<SlideProps> = ({ data, slideIndex }) => {
         gridTemplateRows: '1fr',
         background: '#000',
         color: '#111',
+        position: 'relative',
       }}
     >
+      {/* Background editável */}
+      <div 
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+      
       <style>{FONT_IMPORT}</style>
 
       <section
@@ -264,8 +294,23 @@ export const Slide10CTA: React.FC<SlideProps> = ({ data }) => {
         gridTemplateRows: 'auto minmax(40%, auto) 1fr',
         background: '#fff',
         color: '#37474F',
+        position: 'relative',
       }}
     >
+      {/* Background editável */}
+      <div 
+        data-editable="background"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'auto',
+        }}
+      />
+      
       <style>{FONT_IMPORT}</style>
 
       {/* Barra CTA */}

@@ -73,6 +73,15 @@ interface ReactSlideRendererProps {
   slideData: SlideData;
   dadosGerais?: DadosGerais;
   styles?: Record<string, any>;
+  globalSettings?: {
+    theme?: 'light' | 'dark';
+    accentColor?: string;
+    showSlideNumber?: boolean;
+    showVerifiedBadge?: boolean;
+    headerScale?: number;
+    fontStyle?: string;
+    fontScale?: number;
+  };
   className?: string;
   containerWidth?: number;
   containerHeight?: number;
@@ -91,6 +100,7 @@ export const ReactSlideRenderer: React.FC<ReactSlideRendererProps> = ({
   slideData,
   dadosGerais,
   styles = {},
+  globalSettings,
   className = '',
   containerWidth,
   containerHeight,
@@ -450,6 +460,17 @@ export const ReactSlideRenderer: React.FC<ReactSlideRendererProps> = ({
     // Se não há estilos de background customizados, adiciona posição padrão
     if (!hasBackgroundStyles) {
       css += `[data-editable="background"] { background-position: center center !important; }\n`;
+    }
+    
+    // Aplica cor de fundo global se configurada
+    // Funciona como fallback - se não há backgroundColor específico do slide, usa a cor global
+    if (globalSettings?.accentColor) {
+      css += `[data-editable="background"]:not([style*="background-color"]) { background-color: ${globalSettings.accentColor} !important; }\n`;
+      
+      // Se também não há estilos específicos do elemento, força a cor global
+      if (!styles.background?.backgroundColor) {
+        css += `[data-editable="background"] { background-color: ${globalSettings.accentColor} !important; }\n`;
+      }
     }
     
     return css;
